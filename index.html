@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eloi Cortés — Hub</title>
+<meta name="description" content="Personal hub of Eloi Cortés. Select a destination.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c10;
+  --bg2: #0f1218;
+  --bg3: #151820;
+  --border: #1e2330;
+  --border2: #262d3e;
+  --text: #e8eaf0;
+  --text2: #8b91a8;
+  --text3: #555e78;
+  --gold: #c9a84c;
+  --gold2: #f0c96b;
+  --blue: #4a7fd4;
+  --blue2: #6b9fef;
+  --green: #4caf88;
+  --purple: #8b6fd4;
+  --accent: #c9a84c;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+html { scrollbar-width: none; }
+::-webkit-scrollbar { width: 0; }
+a { color: inherit; text-decoration: none; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Ambient background accents */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.18;
+}
+body::before {
+  top: -200px; left: -180px;
+  width: 520px; height: 520px;
+  background: radial-gradient(circle, var(--gold) 0%, transparent 70%);
+}
+body::after {
+  bottom: -220px; right: -200px;
+  width: 560px; height: 560px;
+  background: radial-gradient(circle, var(--blue) 0%, transparent 70%);
+}
+
+/* ─── LAYOUT ─── */
+.wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 56px 32px 48px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── HEADER ─── */
+header.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 96px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+.brand .mark {
+  width: 30px; height: 30px;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  box-shadow: 0 0 24px rgba(201, 168, 76, 0.2);
+}
+.meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text3);
+}
+
+/* ─── HERO ─── */
+.hero {
+  margin-bottom: 72px;
+  max-width: 780px;
+}
+.hero .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  margin-bottom: 28px;
+}
+.hero .eyebrow::before {
+  content: "";
+  width: 28px; height: 1px;
+  background: var(--gold);
+}
+.hero h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: clamp(44px, 7vw, 82px);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--gold);
+  font-weight: 300;
+}
+.hero p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--text2);
+  max-width: 620px;
+}
+
+/* ─── SECTION LABEL ─── */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: var(--text3);
+  margin-bottom: 28px;
+}
+.section-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--border2), transparent);
+}
+
+/* ─── GRID ─── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 48px;
+}
+
+/* ─── CARD ─── */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 26px 26px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  min-height: 220px;
+  transition: transform 0.35s ease, border-color 0.35s ease, background 0.35s ease;
+  overflow: hidden;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(201, 168, 76, 0.08), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border2);
+  background: var(--bg3);
+}
+.card:hover::before { opacity: 1; }
+
+.card .num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.12em;
+  margin-bottom: 14px;
+}
+.card h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 12px;
+  letter-spacing: 0.005em;
+}
+.card p {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.65;
+  margin-bottom: 24px;
+  flex: 1;
+}
+.card .foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+.card .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--green);
+}
+.card .tag::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.card .tag.soon { color: var(--text3); }
+.card .tag.soon::before { background: var(--text3); box-shadow: none; }
+.card .arrow {
+  color: var(--text3);
+  font-size: 20px;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+.card:hover .arrow { color: var(--gold); transform: translateX(4px); }
+
+/* Disabled / coming soon */
+.card.disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.card.disabled:hover {
+  transform: none;
+  border-color: var(--border);
+  background: var(--bg2);
+}
+.card.disabled:hover::before { opacity: 0; }
+.card.disabled:hover .arrow { color: var(--text3); transform: none; }
+
+/* ─── FOOTER ─── */
+footer.bottom {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text3);
+  max-width: 1120px;
+  margin: 0 auto;
+  width: 100%;
+}
+footer.bottom .dot {
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 640px) {
+  .wrap { padding: 36px 20px 32px; }
+  header.top { margin-bottom: 56px; }
+  .hero { margin-bottom: 48px; }
+  .hero h1 { font-size: 44px; }
+  .grid { grid-template-columns: 1fr; gap: 16px; }
+  footer.bottom { padding: 20px; flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <span class="mark">EC</span>
+      <span>Eloi Cortés</span>
+    </div>
+    <div class="meta">Hub · v1</div>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">Select a destination</div>
+    <h1>A quiet place<br>for <em>serious work</em>.</h1>
+    <p>A personal hub for the tools, dashboards and spaces I use day to day. Pick where you want to go.</p>
+  </section>
+
+  <div class="section-label">Spaces</div>
+
+  <div class="grid">
+
+    <a href="./strategic-hub/" class="card">
+      <div class="num">01 / Executive</div>
+      <h2>Strategic Hub</h2>
+      <p>Executive strategy workspace — planning, CRM, operations and dashboards in one place.</p>
+      <div class="foot">
+        <span class="tag">Live</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <div class="card disabled" aria-disabled="true">
+      <div class="num">02 / —</div>
+      <h2>Coming soon</h2>
+      <p>More spaces will land here as they go live.</p>
+      <div class="foot">
+        <span class="tag soon">In progress</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer class="bottom">
+  <div><span class="dot"></span>All systems operational</div>
+  <div>© Eloi Cortés</div>
+</footer>
+
+</body>
+</html>
