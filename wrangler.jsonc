@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "my-hub",
+  "main": "worker.js",
+  "compatibility_date": "2026-04-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  }
+  // KV namespace binding (DATA_KV) is configured in the Cloudflare Dashboard
+  // (Workers & Pages → my-hub → Bindings → Add binding → KV namespace)
+  // so the namespace ID is not committed to the repo.
+}
