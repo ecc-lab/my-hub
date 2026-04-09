@@ -189,6 +189,25 @@ body.sidebar-open #sidebar-overlay { display: block; }
   margin-bottom: 20px;
 }
 
+.sidebar-logo .hub-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text3);
+  text-decoration: none;
+  padding: 4px 10px 4px 0;
+  margin-bottom: 12px;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+.sidebar-logo .hub-back:hover {
+  color: var(--gold);
+  transform: translateX(-2px);
+}
+
 .sidebar-logo .name {
   font-family: 'Cormorant Garamond', serif;
   font-size: 20px;
@@ -2138,6 +2157,76 @@ body.sidebar-open #sidebar-overlay { display: block; }
 }
 
 /* ─── SAVE BAR ─── */
+/* ─── BACK TO HUB button ─── */
+#back-to-hub {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 250;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px 8px 11px;
+  background: rgba(15, 18, 24, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text2);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  text-decoration: none;
+  transition: color 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+}
+#back-to-hub:hover {
+  color: var(--gold);
+  border-color: var(--gold);
+  transform: translateX(-2px);
+}
+#back-to-hub svg { flex-shrink: 0; }
+@media (max-width: 768px) {
+  #back-to-hub {
+    top: 10px;
+    right: 10px;
+    padding: 6px 10px 6px 8px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+  }
+  #back-to-hub svg { width: 11px; height: 11px; }
+}
+
+/* ─── CLOUD SYNC status pill ─── */
+#cloud-sync-status {
+  position: fixed;
+  top: 14px;
+  right: 88px;
+  z-index: 249;
+  padding: 6px 12px;
+  background: rgba(15, 18, 24, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text3);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.25s ease, transform 0.25s ease, color 0.25s ease;
+  pointer-events: none;
+}
+#cloud-sync-status.visible { opacity: 1; transform: translateY(0); }
+#cloud-sync-status.ok { color: var(--green); }
+#cloud-sync-status.err { color: var(--red); }
+@media (max-width: 768px) {
+  #cloud-sync-status { display: none; }
+}
+
 #save-bar {
   position: fixed;
   bottom: 20px;
@@ -5040,6 +5129,15 @@ body.sidebar-open #tab-nav {
 </head>
 <body>
 
+<!-- ─── BACK TO HUB (floating, top-right) ─── -->
+<a href="../" id="back-to-hub" title="Back to Hub">
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  <span>Hub</span>
+</a>
+
+<!-- ─── CLOUD SYNC STATUS PILL ─── -->
+<div id="cloud-sync-status"></div>
+
 <!-- ─── MOBILE BOTTOM TAB BAR ─── -->
 <nav id="bottom-tabs">
   <button class="bottom-tab bottom-tab-main active" id="btab-strategy" data-switchtab="strategy" onclick="switchTab('strategy',this);mobileTabActive('btab-strategy')">
@@ -5260,6 +5358,7 @@ body.sidebar-open #tab-nav {
 <!-- ─── SIDEBAR ─── -->
 <nav id="sidebar">
   <div class="sidebar-logo">
+    <a href="../" class="hub-back" title="Back to Hub">← Hub</a>
     <div class="name">Eloi Cortés</div>
     <div class="sub">Executive Strategy Hub</div>
   </div>
@@ -10983,9 +11082,94 @@ body.sidebar-open #tab-nav {
 
 <script>
 // ═══════════════════════════════════════════════
-//  PERSISTENCE SYSTEM — localStorage + file bake
+//  PERSISTENCE SYSTEM — localStorage + cloud KV
 // ═══════════════════════════════════════════════
 const STORAGE_KEY = 'eloi_hub_v1';
+
+// ── Cloud sync (Cloudflare Pages Function + KV) ──
+const CLOUD_ENDPOINT = '/api/data/strategic-hub';
+const CLOUD_KEYS = [
+  'eloi_hub_v1',        // main form fields snapshot
+  'eloi_crm_v1',        // CRM rows
+  'eloi_sprint',        // weekly sprint
+  'eloi_used_posts',    // posts used
+  'eloi_post_drafts',   // post drafts
+  'eloi_scorecard'      // scorecard
+  // NOTE: eloi_coach_key (API key) intentionally NOT synced to cloud
+];
+let _cloudSyncTimer = null;
+let _cloudLoaded = false;
+
+// Keep the ORIGINAL setItem so we can write without triggering cloudSync
+// (used during the initial hydrate from the cloud snapshot).
+const _origSetItem = localStorage.setItem.bind(localStorage);
+
+function cloudStatus(msg, type) {
+  const el = document.getElementById('cloud-sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'visible' + (type ? ' ' + type : '');
+  clearTimeout(cloudStatus._t);
+  cloudStatus._t = setTimeout(() => el.classList.remove('visible'), 2500);
+}
+
+async function cloudLoad() {
+  try {
+    const res = await fetch(CLOUD_ENDPOINT, { cache: 'no-store', credentials: 'same-origin' });
+    if (!res.ok) { cloudStatus('⚠ cloud ' + res.status, 'err'); return false; }
+    const txt = await res.text();
+    if (!txt || txt === 'null') { cloudStatus('☁ empty', null); return false; }
+    const blob = JSON.parse(txt);
+    if (!blob || typeof blob !== 'object') return false;
+    // Hydrate localStorage from the cloud snapshot
+    for (const k of CLOUD_KEYS) {
+      if (blob[k] !== undefined) {
+        const v = blob[k];
+        try { _origSetItem(k, typeof v === 'string' ? v : JSON.stringify(v)); }
+        catch(e) { console.warn('hydrate fail', k, e); }
+      }
+    }
+    cloudStatus('☁ loaded', 'ok');
+    return true;
+  } catch (e) {
+    console.warn('Cloud load failed', e);
+    cloudStatus('⚠ offline', 'err');
+    return false;
+  }
+}
+
+function cloudSyncNow() {
+  if (!_cloudLoaded) return; // avoid clobbering cloud with empty local before first load finishes
+  try {
+    const blob = {};
+    for (const k of CLOUD_KEYS) {
+      const raw = localStorage.getItem(k);
+      if (raw === null) continue;
+      try { blob[k] = JSON.parse(raw); } catch { blob[k] = raw; }
+    }
+    fetch(CLOUD_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(blob)
+    }).then(r => {
+      if (r.ok) cloudStatus('☁ synced', 'ok');
+      else cloudStatus('⚠ sync ' + r.status, 'err');
+    }).catch(() => cloudStatus('⚠ offline', 'err'));
+  } catch (e) { console.warn('Cloud sync error', e); }
+}
+
+function cloudSync() {
+  clearTimeout(_cloudSyncTimer);
+  _cloudSyncTimer = setTimeout(cloudSyncNow, 650);
+}
+
+// ── Patch localStorage.setItem so ANY save automatically triggers cloudSync
+// for the keys we care about. This avoids touching every save-site in the code.
+localStorage.setItem = function(key, value) {
+  _origSetItem(key, value);
+  if (CLOUD_KEYS.includes(key)) cloudSync();
+};
 
 // ── Load all saved values on startup ──
 function loadSavedData() {
@@ -11167,11 +11351,14 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ── Init on load ──
-document.addEventListener('DOMContentLoaded', () => {
-  loadSavedData();
+// ── Init on load (cloud-first, then local fallback) ──
+document.addEventListener('DOMContentLoaded', async () => {
+  cloudStatus('☁ loading…');
+  await cloudLoad();       // pulls cloud snapshot into localStorage (best effort)
+  _cloudLoaded = true;     // unlock cloudSync AFTER the initial hydrate
+  loadSavedData();         // existing local-first restore (now reads hydrated values)
   attachSaveListeners();
-  setTimeout(initOkrProgress, 150); // After loadSavedData restores values
+  setTimeout(initOkrProgress, 150);
   attachIkigaiListeners();
   initIkigai();
   initGoldenCircle();
