@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VDB Finance — Mi Planificador Financiero Personal</title>
+  <meta name="description" content="Planificador financiero personal: presupuesto, patrimonio, hipoteca, libertad financiera y jubilación.">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ea5e9'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='20' font-weight='800' font-family='sans-serif'>V</text></svg>">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useMemo,useEffect,useCallback,useRef,createContext,useContext}=React;
+const C={bg:"#f1f5f9",sf:"#ffffff",sa:"#f8fafc",bd:"#e2e8f0",bh:"#cbd5e1",ac:"#0ea5e9",ad:"rgba(14,165,233,0.08)",ag:"rgba(14,165,233,0.2)",gn:"#16a34a",gd:"rgba(22,163,74,0.08)",gb:"rgba(22,163,74,0.25)",rd:"#dc2626",rdd:"rgba(220,38,38,0.08)",rb:"rgba(220,38,38,0.25)",am:"#d97706",amd:"rgba(217,119,6,0.08)",bl:"#2563eb",bld:"rgba(37,99,235,0.08)",blb:"rgba(37,99,235,0.25)",tx:"#1e293b",td:"#475569",tm:"#94a3b8",w:"#fff",pu:"#7c3aed"};
+const MO=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const fmt=(n,d=0)=>{if(n==null||isNaN(n))return"0";return Number(n).toLocaleString("es-ES",{minimumFractionDigits:d,maximumFractionDigits:d})};
+const fP=(n,d=1)=>{if(n==null||isNaN(n))return"0%";return(Number(n)*100).toFixed(d)+"%"};
+const mn={fontFamily:"'JetBrains Mono',monospace"};
+const STORAGE_PREFIX="vdb_";
+const CSS=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:${C.bg};color:${C.tx};font-size:13px}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:${C.bg}}::-webkit-scrollbar-thumb{background:${C.bh};border-radius:3px}
+input[type=number]{font-family:'JetBrains Mono',monospace;font-size:13px;background:${C.sa};border:1px solid ${C.bd};color:${C.tx};padding:7px 8px;border-radius:7px;width:100%;text-align:right;outline:none;transition:border .2s}
+input[type=number]:focus{border-color:${C.ac};box-shadow:0 0 0 2px ${C.ad}}input[type=number]{-moz-appearance:textfield}input[type=number]::-webkit-inner-spin-button{opacity:0}
+input[type=text],input[type=email],input[type=password]{font-family:'Inter',sans-serif;font-size:13px;background:${C.sa};border:1px solid ${C.bd};color:${C.tx};padding:8px 12px;border-radius:7px;width:100%;outline:none;transition:border .2s}
+input[type=text]:focus,input[type=email]:focus,input[type=password]:focus{border-color:${C.ac};box-shadow:0 0 0 2px ${C.ad}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:1024px){main{max-width:100%!important;padding:14px 10px!important}}
+@media(max-width:768px){
+  body{font-size:12px}
+  header{flex-wrap:wrap!important;padding:8px 10px!important;gap:6px!important}
+  header>nav{order:3;width:100%;display:flex!important;justify-content:flex-start!important;gap:2px!important;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;scrollbar-width:none}
+  header>nav::-webkit-scrollbar{display:none}
+  header>nav button{padding:6px 10px!important;font-size:11px!important;white-space:nowrap;flex-shrink:0}
+  main{padding:10px 6px!important}
+  div[style*="gridTemplateColumns"]{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))!important}
+  input[type=number]{padding:5px 4px!important;font-size:12px!important}
+  table th{font-size:10px!important;padding:4px 2px!important}
+  table td{padding:1px!important}
+  table input[type=number]{width:52px!important;padding:4px 3px!important;font-size:11px!important}
+  table input[type=text]{font-size:10px!important;width:72px!important}
+  table select{font-size:9px!important;width:60px!important;padding:3px!important}
+  svg{max-width:100%!important;height:auto!important}
+}
+@media(max-width:480px){
+  header>nav button span.tab-label{display:none}
+  div[style*="gridTemplateColumns"]{grid-template-columns:1fr 1fr!important}
+  table input[type=number]{width:44px!important;font-size:10px!important;padding:3px 2px!important}
+  table input[type=text]{width:58px!important;font-size:9px!important}
+  table th{font-size:9px!important;padding:3px 1px!important}
+  button{font-size:11px!important}
+}`;
+
+if(typeof document!=='undefined'){document.addEventListener('focusin',e=>{if(e.target?.type==='number')setTimeout(()=>e.target.select(),0)})}
+
+// === useLocalData: localStorage replacement for Firebase ===
+function useLocalData(key,def){
+  const[d,sD]=useState(()=>{
+    try{const s=localStorage.getItem(STORAGE_PREFIX+key);return s!==null?JSON.parse(s):def}
+    catch(e){return def}
+  });
+  const save=useCallback(v=>{
+    sD(v);
+    try{localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(v))}
+    catch(e){console.error("Error guardando "+key+":",e)}
+  },[key]);
+  return[d,save];
+}
+
+const Cd=({children,style:s})=><div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:14,padding:20,boxShadow:"0 1px 4px rgba(0,0,0,.04)",...s}}>{children}</div>;
+const ST=({icon,children,sub,right})=><div style={{marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{display:"flex",alignItems:"center",gap:9}}><span style={{fontSize:20}}>{icon}</span><h3 style={{fontSize:16,fontWeight:600}}>{children}</h3></div>{sub&&<p style={{fontSize:11,color:C.tm,marginTop:3,marginLeft:29}}>{sub}</p>}</div>{right&&<div>{right}</div>}</div>;
+const Bg=({value,type="neutral"})=>{const c={positive:C.gn,negative:C.rd,neutral:C.ac,warning:C.am};const b={positive:C.gd,negative:C.rdd,neutral:C.ad,warning:C.amd};return<span style={{display:"inline-block",padding:"4px 10px",borderRadius:6,fontSize:12,fontWeight:600,...mn,color:c[type],background:b[type]}}>{value}</span>};
+const Bt=({children,active,onClick,style:s})=><button onClick={onClick} style={{padding:"8px 16px",borderRadius:8,border:`1px solid ${active?C.ac:C.bd}`,background:active?C.ad:C.w,color:active?C.ac:C.td,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif",...s}}>{children}</button>;
+const PB=({children,onClick,disabled,style:s})=><button onClick={onClick} disabled={disabled} style={{padding:"11px 24px",borderRadius:10,border:"none",background:disabled?C.bd:`linear-gradient(135deg,${C.ac},#0284c7)`,color:disabled?C.tm:C.w,fontSize:14,fontWeight:600,cursor:disabled?"not-allowed":"pointer",fontFamily:"'Inter',sans-serif",boxShadow:disabled?"none":`0 2px 12px ${C.ag}`,...s}}>{children}</button>;
+const Ab=({onClick})=><button onClick={onClick} style={{display:"flex",alignItems:"center",gap:5,padding:"6px 14px",borderRadius:7,border:`1px dashed ${C.bh}`,background:"transparent",color:C.tm,fontSize:12,cursor:"pointer",fontFamily:"'Inter',sans-serif",marginTop:8}}>+ Añadir</button>;
+const Xb=({onClick})=><button onClick={onClick} title="Eliminar" style={{background:"transparent",border:"none",color:C.bh,cursor:"pointer",fontSize:14,padding:"2px 4px"}} onMouseEnter={e=>e.target.style.color=C.rd} onMouseLeave={e=>e.target.style.color=C.bh}>✕</button>;
+const Sp=()=><div style={{width:20,height:20,border:`2px solid ${C.bd}`,borderTopColor:C.ac,borderRadius:"50%",animation:"spin .6s linear infinite",display:"inline-block"}}></div>;
+const Lb=({children})=><label style={{fontSize:11,color:C.td,display:"block",marginBottom:4,fontWeight:500}}>{children}</label>;
+const DH=()=><span style={{cursor:"grab",padding:"2px 5px",color:"#cbd5e1",fontSize:12,userSelect:"none"}}>⠿</span>;
+function useDrag(items,setItems){const di=React.useRef(null);return{onStart:(e,i)=>{di.current=i;e.dataTransfer.effectAllowed="move"},onOver:(e)=>{e.preventDefault()},onDrop:(e,i)=>{if(di.current===null||di.current===i)return;const n=[...items];const[m]=n.splice(di.current,1);n.splice(i,0,m);setItems(n);di.current=null}}}
+
+const Pill=({title,children})=>{const[open,setOpen]=useState(false);return<div style={{margin:"8px 0",borderRadius:8,border:`1px solid ${open?C.ac+"40":C.bd}`,background:open?C.ad:C.sa,overflow:"hidden",transition:"all .2s"}}><button onClick={()=>setOpen(!open)} style={{width:"100%",padding:"8px 12px",background:"transparent",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",fontFamily:"'Inter',sans-serif"}}><span style={{fontSize:12,fontWeight:600,color:open?C.ac:C.td}}>💡 {title}</span><span style={{fontSize:10,color:C.tm,transition:"transform .2s",transform:open?"rotate(180deg)":"rotate(0)"}}>{open?"▲":"▼"}</span></button>{open&&<div style={{padding:"0 12px 10px",fontSize:12,color:C.td,lineHeight:1.6}}>{children}</div>}</div>};
+
+function Onboarding({onFinish}){
+  const[step,setStep]=useState(0);
+  const[data,setData]=useState({income:0,rent:0,savings:0});
+  const steps=[
+    {title:"¡Bienvenido a VDB Finance! 🎉",desc:"En 30 segundos configuramos tu perfil. Si ya tienes datos, puedes saltar esto y usar Importar Excel desde el dashboard.",field:null},
+    {title:"¿Cuánto cobras al mes? 💰",desc:"Tu nómina neta mensual.",field:"income",label:"Nómina mensual neta (€)"},
+    {title:"¿Cuánto pagas de alquiler/hipoteca? 🏠",desc:"Tu gasto fijo más grande. Si no tienes, pon 0.",field:"rent",label:"Alquiler o hipoteca (€/mes)"},
+    {title:"¿Cuánto tienes ahorrado? 🏦",desc:"Una estimación vale.",field:"savings",label:"Ahorro total aproximado (€)"},
+    {title:"¡Todo listo! 🚀",desc:"Ya tienes lo básico. Desde el dashboard puedes importar un Excel completo si quieres rellenarlo todo de golpe.",field:null},
+  ];
+  const s=steps[step];
+  return<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}}>
+    <div style={{width:"95%",maxWidth:440,background:C.w,borderRadius:20,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,.15)",animation:"fadeIn .4s"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+        <div style={{display:"flex",gap:4}}>{steps.map((_,i)=><div key={i} style={{width:i===step?24:8,height:8,borderRadius:4,background:i<=step?C.ac:C.bd,transition:"all .3s"}}/>)}</div>
+        <button onClick={()=>onFinish({income:0,rent:0,savings:0})} style={{background:"none",border:"none",fontSize:11,color:C.tm,cursor:"pointer"}}>Saltar →</button>
+      </div>
+      <h2 style={{fontSize:20,fontWeight:700,marginBottom:8}}>{s.title}</h2>
+      <p style={{fontSize:13,color:C.td,lineHeight:1.6,marginBottom:20}}>{s.desc}</p>
+      {s.field&&<div style={{marginBottom:20}}>
+        <Lb>{s.label}</Lb>
+        <input type="number" value={data[s.field]||""} onChange={e=>setData({...data,[s.field]:Number(e.target.value)||0})} style={{fontSize:16,padding:"12px 14px",fontWeight:600}}/>
+      </div>}
+      <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+        {step>0&&<Bt onClick={()=>setStep(step-1)}>← Atrás</Bt>}
+        {step<steps.length-1?<PB onClick={()=>setStep(step+1)}>Siguiente →</PB>
+        :<PB onClick={()=>onFinish(data)}>Empezar 🚀</PB>}
+      </div>
+    </div>
+  </div>;
+}
+
+const th={padding:"6px 8px",color:C.tm,fontWeight:500,textAlign:"right",fontSize:12,whiteSpace:"nowrap"};
+const Ctx=createContext();
+
+// === Charts ===
+const DualChart=({data,rates,goal,labels,width=620,height=180})=>{
+  if(!data||!data.length)return null;
+  const mx=Math.max(...data.map(Math.abs),1);const pad=35;const rPad=40;const bW=(width-pad-rPad)/data.length-3;const mid=height/2;
+  return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+    {data.map((v,i)=>{const h=Math.max((Math.abs(v)/mx)*(mid-18),2);const y=v>=0?mid-h:mid;
+      return<g key={i}><rect x={pad+i*(bW+3)} y={y} width={bW} height={h} rx={3} fill={v>=0?C.gn:C.rd} opacity={.65}/>
+        <text x={pad+i*(bW+3)+bW/2} y={height-3} textAnchor="middle" fill={C.tm} fontSize={10}>{labels?.[i]}</text>
+        <text x={pad+i*(bW+3)+bW/2} y={v>=0?y-4:y+h+10} textAnchor="middle" fill={v>=0?C.gn:C.rd} fontSize={9} {...mn}>{fmt(v)}</text></g>})}
+    <line x1={pad} y1={mid} x2={width-rPad} y2={mid} stroke={C.bd} strokeWidth={1}/>
+    {goal>0&&<><line x1={pad} y1={mid-(goal/mx)*(mid-18)} x2={width-rPad} y2={mid-(goal/mx)*(mid-18)} stroke={C.am} strokeWidth={1} strokeDasharray="4 3"/>
+      <text x={width-rPad+4} y={mid-(goal/mx)*(mid-18)+4} fill={C.am} fontSize={8} {...mn}>{fmt(goal)}€</text></>}
+    {rates&&rates.length>0&&<>{rates.map((r,i)=>{
+      const x=pad+i*(bW+3)+bW/2;const y2=mid-(Math.min(Math.max(r,-1),1))*(mid-18);
+      const nx=i<rates.length-1?pad+(i+1)*(bW+3)+bW/2:x;const ny=i<rates.length-1?mid-(Math.min(Math.max(rates[i+1],-1),1))*(mid-18):y2;
+      return<g key={"r"+i}>{i<rates.length-1&&<line x1={x} y1={y2} x2={nx} y2={ny} stroke={C.bl} strokeWidth={2} opacity={.7}/>}
+        <circle cx={x} cy={y2} r={3} fill={C.w} stroke={C.bl} strokeWidth={2}/>
+        <text x={x} y={y2-8} textAnchor="middle" fill={C.bl} fontSize={8} {...mn}>{(r*100).toFixed(0)}%</text></g>})}</>}
+  </svg>;
+};
+
+// === Defaults ===
+const INC_TYPES=["Laboral","Inversión","Alquiler","Seguro","Dividendos","Otros"];
+const EXP_TYPES=["Vivienda","Suministros","Suscripciones","Ocio","Salud","Vehículo","Alimentación","Restaurantes","Deuda","Vacaciones","Mascotas","Hijos","Cuidado Personal","Ropa","Regalos","Otros"];
+const D_I=[{name:"Nómina",type:"Laboral",amounts:Array(12).fill(2000)},{name:"Intereses y Dividendos",type:"Inversión",amounts:Array(12).fill(0)},{name:"Alquileres",type:"Alquiler",amounts:Array(12).fill(0)}];
+const D_M=[{name:"Alquiler",type:"Vivienda",monthly:1000,real:Array(12).fill(null)},{name:"Agua",type:"Suministros",monthly:20,real:Array(12).fill(null)},{name:"Luz",type:"Suministros",monthly:50,real:Array(12).fill(null)},{name:"Calefacción",type:"Suministros",monthly:70,real:Array(12).fill(null)},{name:"Netflix",type:"Suscripciones",monthly:12,real:Array(12).fill(null)},{name:"Gimnasio",type:"Suscripciones",monthly:40,real:Array(12).fill(null)},{name:"Ocio",type:"Ocio",monthly:100,real:Array(12).fill(null)},{name:"Hipoteca",type:"Vivienda",monthly:0,real:Array(12).fill(null)},{name:"Cuota deudas",type:"Deuda",monthly:100,real:Array(12).fill(null)}];
+const D_A=[{name:"Seguros",type:"Otros",annual:500},{name:"Rev. Vehículo",type:"Vehículo",annual:300},{name:"Viajes",type:"Vacaciones",annual:1000},{name:"Regalos",type:"Regalos",annual:100},{name:"Estudios",type:"Otros",annual:500}];
+const D_AS=[{name:"Efectivo",type:"efectivo",values:[10000,14800,19600,24400,29200,34000,38800,43600,48400,53200]},{name:"Bolsa",type:"inversión",values:Array(10).fill(0)},{name:"Cripto",type:"inversión",values:Array(10).fill(0)},{name:"Inmuebles",type:"inversión",values:Array(10).fill(0)}];
+const D_DB=[{name:"Hipoteca",values:Array(10).fill(0)}];
+
+// === Excel Export/Import (global) ===
+const PAT_YEARS=Array.from({length:10},(_,i)=>2023+i);
+
+function exportToExcel(includeData){
+  const wb=XLSX.utils.book_new();
+  const get=(key,def)=>{try{const s=localStorage.getItem(STORAGE_PREFIX+key);return s!==null?JSON.parse(s):def}catch(e){return def}};
+  const cy=new Date().getFullYear();
+  // README
+  const readme=[
+    ["VDB Finance — Plantilla de datos"],[""],
+    ["INSTRUCCIONES:"],
+    ["1. Rellena las hojas con tus datos. NO cambies los nombres de las hojas ni las cabeceras."],
+    ["2. En las hojas con columna 'Año', puedes poner varios años (un año por fila)."],
+    ["3. Tipos de ingreso permitidos: Laboral, Inversión, Alquiler, Seguro, Dividendos, Otros"],
+    ["4. Tipos de gasto permitidos: Vivienda, Suministros, Suscripciones, Ocio, Salud, Vehículo, Alimentación, Restaurantes, Deuda, Vacaciones, Mascotas, Hijos, Cuidado Personal, Ropa, Regalos, Otros"],
+    ["5. Tipos de activo permitidos: efectivo, inversión, pasivo"],
+    ["6. En las hojas Hipoteca, Jubilacion MC, Planificador y Otros: NO toques la columna 'Clave', solo edita la columna 'Valor'."],
+    ["7. Para campos sí/no, escribe 'si' o 'no' en minúsculas."],
+    ["8. Sube este Excel desde el dashboard con el botón 'Importar Excel'. Sustituirá tus datos actuales."],
+    [""],["Generado:",new Date().toLocaleString("es-ES")],
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(readme),"README");
+  const incHist=get("incomeHistory",{});
+  const meHist=get("meHistory",{});
+  const aeHist=get("aeHistory",{});
+  const allYears=new Set([...Object.keys(incHist),...Object.keys(meHist),...Object.keys(aeHist)].map(Number).filter(y=>y>0));
+  if(allYears.size===0)allYears.add(cy);
+  const years=[...allYears].sort();
+  // Ingresos
+  const incH=["Año","Concepto","Tipo",...MO];const incR=[];
+  if(includeData)years.forEach(y=>{(incHist[y]||[]).forEach(r=>incR.push([y,r.name,r.type||"Otros",...r.amounts]))});
+  if(incR.length===0){incR.push([cy,"Nómina","Laboral",...Array(12).fill(2000)]);incR.push([cy,"Dividendos","Inversión",...Array(12).fill(0)])}
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([incH,...incR]),"Ingresos");
+  // Gastos Mensuales
+  const meH=["Año","Concepto","Tipo","Base",...MO];const meR=[];
+  if(includeData)years.forEach(y=>{(meHist[y]||[]).forEach(r=>{const real=r.real||Array(12).fill(null);meR.push([y,r.name,r.type||"Otros",r.monthly||0,...real.map(v=>v!=null?v:"")])})});
+  if(meR.length===0){meR.push([cy,"Alquiler","Vivienda",800,...Array(12).fill("")]);meR.push([cy,"Luz","Suministros",50,...Array(12).fill("")])}
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([meH,...meR]),"Gastos Mensuales");
+  // Gastos Anuales
+  const aeH=["Año","Concepto","Tipo","€/año"];const aeR=[];
+  if(includeData)years.forEach(y=>{(aeHist[y]||[]).forEach(r=>aeR.push([y,r.name,r.type||"Otros",r.annual||0]))});
+  if(aeR.length===0)aeR.push([cy,"Seguros","Otros",500]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([aeH,...aeR]),"Gastos Anuales");
+  // Histórico Patrimonio
+  const fh=get("finHistory",[]);const fhR=[["Año","Ingresos","Gastos"]];
+  if(Array.isArray(fh)&&fh.length>0)fh.forEach(h=>fhR.push([h.year,h.income||0,h.expense||0]));
+  else for(let y=2023;y<=2032;y++)fhR.push([y,0,0]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fhR),"Historico Patrimonio");
+  // Activos
+  const assets=get("assets",[]);const asR=[["Concepto","Tipo",...PAT_YEARS]];
+  if(assets.length>0)assets.forEach(a=>asR.push([a.name,a.type||"efectivo",...(a.values||Array(10).fill(0))]));
+  else asR.push(["Efectivo","efectivo",...Array(10).fill(10000)]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(asR),"Activos");
+  // Deudas
+  const debts=get("debts",[]);const dbR=[["Concepto",...PAT_YEARS]];
+  if(debts.length>0)debts.forEach(d=>dbR.push([d.name,...(d.values||Array(10).fill(0))]));
+  else dbR.push(["(ejemplo)",...Array(10).fill(0)]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dbR),"Deudas");
+  // Hipoteca
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ["Clave","Valor"],
+    ["precio_vivienda",get("hPP",350000)],
+    ["entrada_pct",get("hDP",20)],
+    ["tin_pct",get("hT",2.45)],
+    ["plazo_anios",get("hY",30)],
+    ["cuota_min",get("hMn",1000)],
+    ["cuota_max",get("hMx",1200)],
+  ]),"Hipoteca");
+  // Jubilacion MC
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ["Clave","Valor"],
+    ["edad_actual",get("mcAge",35)],
+    ["edad_jubilacion",get("mcRetAge",65)],
+    ["esperanza_vida",get("mcLifeExp",90)],
+    ["patrimonio_inicial",get("mcInitP",0)],
+    ["aportacion_mensual",get("mcContr",0)],
+    ["retirada_mensual",get("mcWith",1500)],
+    ["rendimiento_medio_pct",get("mcMeanR",7)],
+    ["volatilidad_pct",get("mcVol",15)],
+    ["ajustar_inflacion",get("mcInf",false)?"si":"no"],
+    ["inflacion_pct",get("mcInfR",2.5)],
+  ]),"Jubilacion MC");
+  // Planificador
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ["Clave","Valor"],
+    ["edad_actual",get("m7Age",35)],
+    ["edad_jubilacion",get("m7RetAge",65)],
+    ["esperanza_vida",get("m7LifeExp",90)],
+    ["patrimonio_actual",get("m7Pat",0)],
+    ["acumulacion_anual",get("m7Accum",0)],
+    ["gasto_mensual_jubilacion",get("m7Need",2000)],
+    ["rendimiento_jubilacion_pct",get("m7RetReturn",3)],
+    ["ajustar_inflacion",get("m7Inf",false)?"si":"no"],
+    ["inflacion_pct",get("m7InfR",2.5)],
+  ]),"Planificador");
+  // Otros
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ["Clave","Valor"],
+    ["objetivo_ahorro_mensual",get("savingsGoal",400)],
+  ]),"Otros");
+  const fname=includeData?`vdb_finance_backup_${new Date().toISOString().split("T")[0]}.xlsx`:"vdb_finance_plantilla.xlsx";
+  XLSX.writeFile(wb,fname);
+}
+
+async function importFromExcel(file){
+  const data=await file.arrayBuffer();const wb=XLSX.read(data);
+  const set=(key,val)=>localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(val));
+  const readSheet=(name)=>{const sh=wb.Sheets[name];if(!sh)return[];return XLSX.utils.sheet_to_json(sh,{header:1,defval:null}).filter(r=>r&&r.length>0&&r[0]!=null&&r[0]!=="")};
+  const summary=[];
+  // Ingresos
+  const incData=readSheet("Ingresos");
+  if(incData.length>1){
+    const incHist={};const incMaster=[];const seen=new Set();
+    incData.slice(1).forEach(row=>{
+      const year=Number(row[0]);const name=String(row[1]||"").trim();const type=String(row[2]||"Otros").trim();
+      if(!year||!name)return;
+      const amounts=MO.map((_,i)=>Number(row[3+i])||0);
+      if(!incHist[year])incHist[year]=[];
+      incHist[year].push({name,type,base:null,amounts});
+      const k=name+"|"+type;if(!seen.has(k)){seen.add(k);incMaster.push({name,type})}
+    });
+    if(Object.keys(incHist).length>0){set("incomeHistory",incHist);set("incRows",incMaster);summary.push("Ingresos: "+Object.values(incHist).reduce((s,a)=>s+a.length,0)+" filas")}
+  }
+  // Gastos Mensuales
+  const meData=readSheet("Gastos Mensuales");
+  if(meData.length>1){
+    const meHist={};const meMaster=[];const seen=new Set();
+    meData.slice(1).forEach(row=>{
+      const year=Number(row[0]);const name=String(row[1]||"").trim();const type=String(row[2]||"Otros").trim();
+      if(!year||!name)return;
+      const monthly=Number(row[3])||0;
+      const real=MO.map((_,i)=>{const v=row[4+i];return v!=null&&v!==""?Number(v)||0:null});
+      if(!meHist[year])meHist[year]=[];
+      meHist[year].push({name,type,monthly,real});
+      const k=name+"|"+type;if(!seen.has(k)){seen.add(k);meMaster.push({name,type})}
+    });
+    if(Object.keys(meHist).length>0){set("meHistory",meHist);set("meRows",meMaster);summary.push("Gastos Mensuales: "+Object.values(meHist).reduce((s,a)=>s+a.length,0)+" filas")}
+  }
+  // Gastos Anuales
+  const aeData=readSheet("Gastos Anuales");
+  if(aeData.length>1){
+    const aeHist={};const aeMaster=[];const seen=new Set();
+    aeData.slice(1).forEach(row=>{
+      const year=Number(row[0]);const name=String(row[1]||"").trim();const type=String(row[2]||"Otros").trim();
+      if(!year||!name)return;
+      const annual=Number(row[3])||0;
+      if(!aeHist[year])aeHist[year]=[];
+      aeHist[year].push({name,type,annual,real:Array(12).fill(null)});
+      const k=name+"|"+type;if(!seen.has(k)){seen.add(k);aeMaster.push({name,type})}
+    });
+    if(Object.keys(aeHist).length>0){set("aeHistory",aeHist);set("aeRows",aeMaster);summary.push("Gastos Anuales: "+Object.values(aeHist).reduce((s,a)=>s+a.length,0)+" filas")}
+  }
+  // Histórico Patrimonio
+  const fhData=readSheet("Historico Patrimonio");
+  if(fhData.length>1){
+    const finHist=fhData.slice(1).map(row=>({year:Number(row[0])||0,income:Number(row[1])||0,expense:Number(row[2])||0})).filter(h=>h.year>0);
+    if(finHist.length>0){set("finHistory",finHist);summary.push("Histórico Patrimonio: "+finHist.length+" años")}
+  }
+  // Activos
+  const asData=readSheet("Activos");
+  if(asData.length>1){
+    const assets=asData.slice(1).map(row=>({name:String(row[0]||"").trim(),type:String(row[1]||"efectivo").trim(),values:Array.from({length:10},(_,i)=>Number(row[2+i])||0)})).filter(a=>a.name);
+    if(assets.length>0){set("assets",assets);summary.push("Activos: "+assets.length)}
+  }
+  // Deudas
+  const dbData=readSheet("Deudas");
+  if(dbData.length>1){
+    const debts=dbData.slice(1).map(row=>({name:String(row[0]||"").trim(),values:Array.from({length:10},(_,i)=>Number(row[1+i])||0)})).filter(d=>d.name&&d.name!=="(ejemplo)");
+    if(debts.length>0){set("debts",debts);summary.push("Deudas: "+debts.length)}
+  }
+  // Config sheets
+  const readConfig=(sheetName,mapping)=>{
+    const data=readSheet(sheetName);if(data.length<2)return 0;let count=0;
+    data.slice(1).forEach(row=>{
+      const key=String(row[0]||"").trim();const val=row[1];
+      if(mapping[key]&&val!=null&&val!==""){
+        const target=mapping[key];let pv;
+        if(target.type==="bool"){const sv=String(val).toLowerCase();pv=sv==="si"||sv==="sí"||sv==="true"||sv==="1"||val===true||val===1}
+        else{pv=Number(val);if(isNaN(pv))return}
+        set(target.key,pv);count++;
+      }
+    });
+    return count;
+  };
+  if(readConfig("Hipoteca",{precio_vivienda:{key:"hPP"},entrada_pct:{key:"hDP"},tin_pct:{key:"hT"},plazo_anios:{key:"hY"},cuota_min:{key:"hMn"},cuota_max:{key:"hMx"}}))summary.push("Hipoteca");
+  if(readConfig("Jubilacion MC",{edad_actual:{key:"mcAge"},edad_jubilacion:{key:"mcRetAge"},esperanza_vida:{key:"mcLifeExp"},patrimonio_inicial:{key:"mcInitP"},aportacion_mensual:{key:"mcContr"},retirada_mensual:{key:"mcWith"},rendimiento_medio_pct:{key:"mcMeanR"},volatilidad_pct:{key:"mcVol"},ajustar_inflacion:{key:"mcInf",type:"bool"},inflacion_pct:{key:"mcInfR"}}))summary.push("Jubilación MC");
+  if(readConfig("Planificador",{edad_actual:{key:"m7Age"},edad_jubilacion:{key:"m7RetAge"},esperanza_vida:{key:"m7LifeExp"},patrimonio_actual:{key:"m7Pat"},acumulacion_anual:{key:"m7Accum"},gasto_mensual_jubilacion:{key:"m7Need"},rendimiento_jubilacion_pct:{key:"m7RetReturn"},ajustar_inflacion:{key:"m7Inf",type:"bool"},inflacion_pct:{key:"m7InfR"}}))summary.push("Planificador");
+  if(readConfig("Otros",{objetivo_ahorro_mensual:{key:"savingsGoal"}}))summary.push("Objetivo ahorro");
+  set("onboarded",true);
+  return summary;
+}
+
+function wipeAllData(){
+  if(!confirm("¿BORRAR TODOS tus datos? Esta acción NO se puede deshacer."))return;
+  if(!confirm("Última oportunidad. Pulsa OK SOLO si tienes una copia de seguridad. ¿Borrar definitivamente?"))return;
+  Object.keys(localStorage).filter(k=>k.startsWith(STORAGE_PREFIX)).forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+
+// === Mis Datos card (used in M0) ===
+function MisDatosCard(){
+  const[msg,setMsg]=useState("");const fileRef=useRef(null);
+  const handleImport=async(e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    try{
+      const summary=await importFromExcel(file);
+      if(summary.length===0){setMsg("⚠️ Excel leído pero no se encontró ningún dato válido. ¿Has usado la plantilla correcta?");setTimeout(()=>setMsg(""),6000)}
+      else{setMsg("✅ Importado correctamente: "+summary.join(" · ")+". Recargando...");setTimeout(()=>location.reload(),1500)}
+    }catch(err){setMsg("❌ Error: "+err.message);setTimeout(()=>setMsg(""),6000)}
+    e.target.value="";
+  };
+  return<Cd style={{marginBottom:16,borderTop:`3px solid ${C.ac}`,background:`linear-gradient(135deg,#f0f9ff,#ffffff)`}}>
+    <ST icon="📁" sub="Importa todos tus datos desde Excel, exporta una copia de seguridad o empieza de cero">Mis Datos</ST>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10,marginBottom:msg?12:0}}>
+      <button onClick={()=>exportToExcel(false)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.gn}`,background:C.gd,color:C.gn,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📥 Descargar plantilla<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel vacío con la estructura</div></button>
+      <button onClick={()=>fileRef.current?.click()} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.ac}`,background:C.ad,color:C.ac,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📤 Importar Excel<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Sustituye tus datos actuales</div></button>
+      <input type="file" ref={fileRef} accept=".xlsx,.xls" onChange={handleImport} style={{display:"none"}}/>
+      <button onClick={()=>exportToExcel(true)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.bl}`,background:C.bld,color:C.bl,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>💾 Backup ahora<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel con TODOS tus datos</div></button>
+      <button onClick={wipeAllData} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.rd}`,background:C.rdd,color:C.rd,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>🗑️ Borrar todo<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Empezar de cero</div></button>
+    </div>
+    {msg&&<div style={{padding:"10px 12px",borderRadius:8,background:msg.startsWith("✅")?C.gd:msg.startsWith("⚠️")?C.amd:C.rdd,color:msg.startsWith("✅")?C.gn:msg.startsWith("⚠️")?C.am:C.rd,fontSize:12,fontWeight:600}}>{msg}</div>}
+    <Pill title="¿Dónde se guardan mis datos?">Tus datos se guardan únicamente en el navegador de este ordenador (localStorage), no salen a ningún servidor. Esto significa: solo tú los ves, pero también que <strong>si limpias la caché del navegador o cambias de ordenador, se pierden</strong>. Por eso es importante usar el botón <strong>Backup</strong> de vez en cuando para tener una copia en Excel fuera del navegador.</Pill>
+  </Cd>;
+}
+
+function M0(){
+  const{income:inc,monthlyExp:me,annualExp:ae,savingsGoal:sg}=useContext(Ctx);
+  const[savedHip]=useLocalData("hipScenario",null);
+  const tIY=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0);
+  const tEY=me.reduce((s,r)=>s+(r.monthly||0),0)*12+ae.reduce((s,r)=>s+r.annual,0);
+  const rY=tIY-tEY,sr=tIY>0?rY/tIY:0;
+  const bestMonth=MO[MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)-(me.reduce((s,r)=>s+(r.monthly||0),0)+ae.reduce((s,r)=>s+r.annual/12,0))).reduce((best,v,i,a)=>v>a[best]?i:best,0)];
+  const[savedMC]=useLocalData("mcGoal",null);
+  const[assets]=useLocalData("assets",D_AS);const[debts]=useLocalData("debts",D_DB);
+  const patYrIdx=Math.min(9,Math.max(0,new Date().getFullYear()-1-2023));
+  const patNow=assets.reduce((s,a)=>s+(a.values?.[patYrIdx]||0),0)-debts.reduce((s,d)=>s+(d.values?.[patYrIdx]||0),0);
+  const patYear=2023+patYrIdx;
+  const[m7Age]=useLocalData("m7Age",35);const[m7RetAge]=useLocalData("m7RetAge",65);const[m7LifeExp]=useLocalData("m7LifeExp",90);const[m7Need]=useLocalData("m7Need",2000);const[m7Accum]=useLocalData("m7Accum",0);const[m7RetReturn]=useLocalData("m7RetReturn",3);
+
+  return<div style={{animation:"fadeIn .3s"}}>
+    <Cd style={{marginBottom:16,background:`linear-gradient(135deg,#e0f2fe,#f0fdf4)`,borderTop:`3px solid ${C.ac}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:14}}>
+        <div style={{width:56,height:56,borderRadius:14,background:`linear-gradient(135deg,${C.ac},#0284c7)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:28,fontWeight:800,color:C.w}}>V</span></div>
+        <div><h2 style={{fontSize:22,fontWeight:700}}>Tu dinero, tus reglas 💪</h2><p style={{fontSize:13,color:C.td}}>Resumen de tu vida financiera. Cada número cuenta una historia.</p></div>
+      </div>
+    </Cd>
+
+    <MisDatosCard/>
+
+    <Cd style={{marginBottom:14}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>💰</span><h3 style={{fontSize:15,fontWeight:600}}>Ingresos y Gastos</h3></div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
+        {[{l:"Ingresos/año",v:`${fmt(tIY)} €`,c:C.gn},{l:"Gastos/año",v:`${fmt(tEY)} €`,c:C.rd},{l:"Ahorro/año",v:`${fmt(rY)} €`,c:rY>=0?C.gn:C.rd},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am},{l:"Obj. Mensual",v:`${fmt(sg)} €`,c:C.am},{l:"Mejor mes",v:bestMonth,c:C.bl}].map((x,i)=>
+          <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div></div>)}
+      </div>
+    </Cd>
+
+    <Cd style={{marginBottom:14}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>📊</span><h3 style={{fontSize:15,fontWeight:600}}>Patrimonio</h3></div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
+        {[{l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} €`,c:patNow>=0?C.ac:C.rd},{l:"Ahorro Anual",v:`${fmt(rY)} €`,c:rY>=0?C.gn:C.rd},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am}].map((x,i)=>
+          <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div></div>)}
+      </div>
+    </Cd>
+
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+      <Cd>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:18}}>🏛</span><h3 style={{fontSize:14,fontWeight:600}}>Hipoteca</h3></div>
+        {savedHip?<><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:6}}>
+          {[{l:"Importe",v:`${fmt(savedHip.amt)}€`,c:C.ac},{l:"Cuota",v:`${fmt(savedHip.cuota)}€/mes`,c:C.am},{l:"Ratio",v:`${savedHip.ratio}%`,c:Number(savedHip.ratio)<=35?C.gn:C.rd}].map((x,i)=>
+            <div key={i} style={{padding:6,borderRadius:6,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:8,color:C.tm}}>{x.l}</div><div style={{fontSize:13,fontWeight:700,color:x.c,...mn}}>{x.v}</div></div>)}
+        </div><p style={{fontSize:9,color:C.tm,marginTop:4}}>TIN {savedHip.tin}%, {savedHip.yrs}a — {savedHip.date}</p></>
+        :<p style={{fontSize:12,color:C.td}}>Ve a Hipoteca, configura y guarda tu escenario.</p>}
+      </Cd>
+      <Cd>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:18}}>🏆</span><h3 style={{fontSize:14,fontWeight:600}}>Libertad Financiera</h3></div>
+        <p style={{fontSize:12,color:C.td,lineHeight:1.5,marginBottom:10}}>Cuando tus inversiones cubren tus gastos, trabajas porque <strong>quieres</strong>.</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          <div style={{padding:8,borderRadius:6,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Tasa actual</div><div style={{fontSize:14,fontWeight:700,color:sr>=.2?C.gn:C.am,...mn}}>{fP(sr)}</div></div>
+          <div style={{padding:8,borderRadius:6,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.gn}`}}><div style={{fontSize:9,color:C.tm}}>Objetivo 20%</div><div style={{fontSize:12,fontWeight:600,color:sr>=.2?C.gn:C.rd}}>{sr>=.2?"✓ Cumplido":"✗ Pendiente"}</div></div>
+        </div>
+      </Cd>
+    </div>
+
+    <Cd style={{marginBottom:14}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:18}}>🎯</span><h3 style={{fontSize:15,fontWeight:600}}>Planificador Jubilación</h3></div>
+      {(()=>{
+        const rr=m7RetReturn/100;const annNeed=m7Need*12;const yrsToR=Math.max(0,m7RetAge-m7Age);const yrsInR=Math.max(0,m7LifeExp-m7RetAge);
+        const tgtPat=rr>0?annNeed*((1-Math.pow(1+rr,-yrsInR))/rr):annNeed*yrsInR;
+        const needGr=(()=>{for(let g=0;g<=25;g+=0.1){const rate=g/100;const fv=patNow*Math.pow(1+rate,yrsToR)+(m7Accum>0&&rate>0?m7Accum*(Math.pow(1+rate,yrsToR)-1)/rate:m7Accum*yrsToR);if(fv>=tgtPat)return g}return 99})();
+        const totalGap=Math.max(0,tgtPat-patNow);const annIncNeeded=yrsToR>0?totalGap/yrsToR:totalGap;
+        return m7Need>0?<><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
+          {[{l:`Necesitas a los ${m7RetAge}`,v:`${fmt(Math.round(tgtPat))} €`,c:C.ac},{l:"Crecimiento anual nec.",v:needGr>=99?"∞":needGr.toFixed(1)+"%",c:needGr<=5?C.gn:needGr<=8?C.am:C.rd},{l:"Ahorro anual nec.",v:`${fmt(Math.round(annIncNeeded))} €`,c:C.bl},{l:"Tu acumulación actual",v:`${fmt(m7Accum)} €/año`,c:m7Accum>=annIncNeeded?C.gn:C.am}].map((x,i)=>
+            <div key={i} style={{padding:8,borderRadius:6,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:8,color:C.tm}}>{x.l}</div><div style={{fontSize:14,fontWeight:700,color:x.c,...mn}}>{x.v}</div></div>)}
+        </div></>
+        :<p style={{fontSize:12,color:C.td}}>Ve a Planificador y configura tus datos.</p>
+      })()}
+    </Cd>
+  </div>;
+}
+
+function M1(){
+  const{income:inc,setIncome:sI,monthlyExp:me,setMonthlyExp:sM,annualExp:ae,setAnnualExp:sA,savingsGoal:sg,setSavingsGoal:sSG,selYear,setYear,YEARS,copyYear,addIncRow,delIncRow,addMeRow,delMeRow,addAeRow,delAeRow,incHist,meHist,aeHist,syncIncMeta,syncMeMeta,syncAeMeta,reorderInc,reorderMe,reorderAe}=useContext(Ctx);
+  const[showAeD,setAeD]=useState(false);
+  const[showCopy,setShowCopy]=useState(false);
+  const dragRef=React.useRef(null);
+  const mkDrag=(reorderFn)=>({onStart:(e,i)=>{dragRef.current=i;e.dataTransfer.effectAllowed="move"},onOver:e=>e.preventDefault(),onDrop:(e,i)=>{if(dragRef.current===null||dragRef.current===i)return;reorderFn(dragRef.current,i);dragRef.current=null}});
+  const dI=mkDrag(reorderInc);const dM=mkDrag(reorderMe);const dA=mkDrag(reorderAe);
+  const safeMe=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
+  const safeAe=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
+
+  const tIM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0));
+  const tMeM=MO.map((_,m)=>safeMe.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0));
+  const tAeM=MO.map(()=>ae.reduce((s,r)=>s+r.annual/12,0));
+  const rM=MO.map((_,m)=>tIM[m]-tMeM[m]-tAeM[m]);
+  const tIY=tIM.reduce((a,b)=>a+b,0),tMeY=tMeM.reduce((a,b)=>a+b,0),tAeY=ae.reduce((a,b)=>a+b.annual,0),tEY=tMeY+tAeY,rY=tIY-tEY;
+  const sr=tIY>0?rY/tIY:0;
+  const srM=MO.map((_,m)=>tIM[m]>0?rM[m]/tIM[m]:0);
+
+  return<div style={{animation:"fadeIn .3s"}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+      <strong style={{color:C.ac}}>💡 Tu cuenta de resultados personal.</strong> Pon lo que entra y lo que sale cada mes. Usa las pestañas de año para mantener tu histórico. Arrastra filas (⠿) para ordenar. Pulsa <em>"Mes a mes"</em> para ajustar gastos puntuales. Para rellenar todo de golpe, usa <strong>Importar Excel</strong> en el Dashboard.
+    </div>
+
+    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:16,flexWrap:"wrap"}}>
+      <span style={{fontSize:12,fontWeight:600,color:C.td,marginRight:4}}>📅 Año:</span>
+      {YEARS.map(y=><Bt key={y} active={selYear===y} onClick={()=>setYear(y)} style={{padding:"6px 16px",fontSize:13,fontWeight:selYear===y?700:400}}>{y}</Bt>)}
+      <button onClick={()=>setShowCopy(!showCopy)} style={{padding:"6px 10px",borderRadius:7,border:`1px solid ${C.bd}`,background:"transparent",color:C.tm,fontSize:11,cursor:"pointer",marginLeft:8}}>📋 Copiar año</button>
+      {showCopy&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 8px",background:C.sa,borderRadius:6,border:`1px solid ${C.bd}`}}>
+        <span style={{fontSize:11,color:C.td}}>Copiar {selYear} a:</span>
+        {YEARS.filter(y=>y!==selYear).map(y=><button key={y} onClick={()=>{copyYear(selYear,y);setShowCopy(false)}} style={{padding:"3px 10px",borderRadius:5,border:`1px solid ${C.ac}`,background:C.ad,color:C.ac,fontSize:11,cursor:"pointer"}}>{y}</button>)}
+      </div>}
+    </div>
+
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:12,marginBottom:18}}>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${C.am}`,padding:14}}>
+        <div style={{fontSize:22,marginBottom:3}}>🎯</div>
+        <div style={{fontSize:11,color:C.tm,marginBottom:6}}>Objetivo Ahorro Mensual</div>
+        <input type="number" value={sg} onChange={e=>sSG(Number(e.target.value)||0)} style={{width:100,textAlign:"center",fontSize:16,fontWeight:700,color:C.am,background:"transparent",border:`2px solid ${C.am}`,borderRadius:8,padding:"6px"}}/>
+        <div style={{fontSize:10,color:C.tm,marginTop:4}}>€ / mes</div>
+      </Cd>
+      {[{l:"Ingresos Anuales",v:`${fmt(tIY)} €`,c:C.gn,i:"📈"},{l:"Gastos Anuales",v:`${fmt(tEY)} €`,c:C.rd,i:"📉"},{l:"Resultado Anual",v:`${fmt(rY)} €`,c:rY>=0?C.gn:C.rd,i:"💰"},{l:"Tasa de Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am,i:"📊"}].map((x,i)=>
+        <Cd key={i} style={{textAlign:"center",borderTop:`3px solid ${x.c}`,padding:14}}><div style={{fontSize:22,marginBottom:3}}>{x.i}</div><div style={{fontSize:11,color:C.tm,marginBottom:4}}>{x.l}</div><div style={{fontSize:20,fontWeight:700,color:x.c,...mn}}>{x.v}</div></Cd>)}
+    </div>
+
+    <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <ST icon="📊">Resultado Mensual + Tasa de Ahorro</ST>
+      <DualChart data={rM} rates={srM} goal={sg} labels={MO} width={900} height={180}/>
+      <div style={{display:"flex",gap:14,marginTop:8,fontSize:11}}>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:10,background:C.gn,opacity:.65,display:"inline-block",borderRadius:2}}></span>Ahorro</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:3,background:C.bl,display:"inline-block"}}></span><span style={{color:C.bl}}>Tasa ahorro %</span></span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:1,borderTop:`2px dashed ${C.am}`,display:"inline-block"}}></span><span style={{color:C.am}}>Objetivo</span></span>
+      </div>
+    </Cd>
+    <Pill title="¿Qué es la tasa de ahorro y por qué importa?">Es el porcentaje de tus ingresos que no gastas. Un <strong>20%</strong> es el objetivo clásico. Por encima del <strong>50%</strong> estás en modo turbo hacia la libertad financiera.</Pill>
+
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}>
+      <ST icon="💵">Ingresos</ST>
+      <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}><colgroup>
+        <col style={{width:28}}/><col style={{width:90}}/><col style={{width:74}}/><col style={{width:62}}/>
+        {MO.map((_,i)=><col key={i} style={{width:62}}/>)}<col style={{width:66}}/><col style={{width:24}}/>
+      </colgroup><thead><tr>
+        <th style={{...th,textAlign:"left"}}></th>
+        <th style={{...th,textAlign:"left"}}>Concepto</th>
+        <th style={{...th,textAlign:"center"}}>Tipo</th>
+        <th style={{...th,color:C.am}}>Base</th>
+        {MO.map(m=><th key={m} style={th}>{m}</th>)}
+        <th style={{...th,color:C.ac}}>TOTAL</th><th></th>
+      </tr></thead><tbody>
+        {inc.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dI.onStart(e,idx)} onDragOver={dI.onOver} onDrop={e=>dI.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}>
+          <td style={{padding:"2px",textAlign:"center"}}><DH/></td>
+          <td style={{padding:"2px 4px"}}><input type="text" value={r.name} onChange={e=>syncIncMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:"100%"}}/></td>
+          <td style={{padding:"1px"}}><select value={r.type||"Otros"} onChange={e=>syncIncMeta(idx,"type",e.target.value)} style={{fontSize:9,padding:"4px 2px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:"100%"}}>{INC_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></td>
+          <td style={{padding:"1px"}}><input type="number" value={r.base!=null?r.base:""} placeholder="—" onChange={e=>{const v=Number(e.target.value)||0;const n=[...inc];n[idx]={...n[idx],base:v,amounts:Array(12).fill(v)};sI(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
+          {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><input type="number" value={r.amounts[m]||""} onChange={e=>{const n=[...inc];n[idx]={...n[idx],amounts:[...n[idx].amounts]};n[idx].amounts[m]=Number(e.target.value)||0;sI(n)}} style={{width:"100%",padding:"5px 3px"}}/></td>)}
+          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.gn}}>{fmt(r.amounts.reduce((a,b)=>a+b,0))}</td>
+          <td><Xb onClick={()=>delIncRow(idx)}/></td>
+        </tr>)}
+        <tr style={{borderTop:`2px solid ${C.bd}`}}><td></td><td style={{padding:"8px 4px",fontWeight:700}}>TOTAL</td><td></td><td></td>{tIM.map((v,i)=><td key={i} style={{padding:"8px 2px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(v)}</td>)}<td style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(tIY)}</td><td></td></tr>
+      </tbody></table>
+      <Ab onClick={()=>addIncRow({name:"(nuevo)",type:"Otros",base:0,amounts:Array(12).fill(0)})}/>
+    </Cd>
+
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}>
+      <ST icon="🏠">Gastos Mensuales</ST>
+      <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}><colgroup>
+        <col style={{width:28}}/><col style={{width:90}}/><col style={{width:74}}/><col style={{width:62}}/>
+        {MO.map((_,i)=><col key={i} style={{width:62}}/>)}<col style={{width:66}}/><col style={{width:24}}/>
+      </colgroup><thead><tr>
+        <th style={th}></th><th style={{...th,textAlign:"left"}}>Concepto</th><th style={{...th,textAlign:"center"}}>Tipo</th><th style={{...th,color:C.am}}>Base</th>
+        {MO.map(m=><th key={m} style={th}>{m}</th>)}
+        <th style={{...th,color:C.ac}}>TOTAL</th><th></th>
+      </tr></thead><tbody>
+        {safeMe.map((r,idx)=>{const real=r.real||Array(12).fill(null);return<tr key={idx} draggable onDragStart={e=>dM.onStart(e,idx)} onDragOver={dM.onOver} onDrop={e=>dM.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}>
+          <td style={{padding:"2px",textAlign:"center"}}><DH/></td>
+          <td style={{padding:"2px 4px"}}><input type="text" value={r.name} onChange={e=>syncMeMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:"100%"}}/></td>
+          <td style={{padding:"1px"}}><select value={r.type||"Otros"} onChange={e=>syncMeMeta(idx,"type",e.target.value)} style={{fontSize:9,padding:"4px 2px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:"100%"}}>{EXP_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></td>
+          <td style={{padding:"1px"}}><input type="number" value={r.monthly||""} onChange={e=>{const n=[...safeMe];const v=Number(e.target.value)||0;n[idx]={...n[idx],monthly:v,real:Array(12).fill(null)};sM(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
+          {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><input type="number" placeholder={r.monthly} value={real[m]!=null?real[m]:""} onChange={e=>{const n=[...safeMe];const nr=[...(n[idx].real||Array(12).fill(null))];nr[m]=e.target.value===""?null:Number(e.target.value)||0;n[idx]={...n[idx],real:nr};sM(n)}} style={{width:"100%",fontSize:12,padding:"5px 3px"}}/></td>)}
+          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.rd}}>{fmt(MO.reduce((s,_,m)=>s+(real[m]!=null?real[m]:r.monthly),0))}</td>
+          <td><Xb onClick={()=>delMeRow(idx)}/></td>
+        </tr>})}
+        <tr style={{borderTop:`2px solid ${C.bd}`}}><td></td><td style={{padding:"8px 4px",fontWeight:700}}>TOTAL</td><td></td><td></td>
+          {tMeM.map((v,i)=><td key={i} style={{padding:"8px 2px",textAlign:"right",...mn,fontSize:11,fontWeight:700,color:C.rd}}>{fmt(v)}</td>)}
+          <td style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.rd}}>{fmt(tMeY)}</td><td></td></tr>
+      </tbody></table>
+      <Ab onClick={()=>addMeRow({name:"(nuevo)",type:"Otros",monthly:0,real:Array(12).fill(null)})}/>
+    </Cd>
+
+    <Cd style={{marginBottom:16,overflowX:"auto"}}>
+      <ST icon="📅" right={<Bt active={showAeD} onClick={()=>setAeD(!showAeD)}>{showAeD?"Resumen":"Mes a mes"}</Bt>}>Gastos Anuales</ST>
+      {!showAeD?<table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,width:30}}></th><th style={{...th,textAlign:"left",width:120}}>Concepto</th><th style={{...th,textAlign:"center",width:72}}>Tipo</th><th style={{...th,color:C.ac,width:85}}>€/año</th><th style={th}>€/mes</th><th style={{width:28}}></th></tr></thead><tbody>
+        {safeAe.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dA.onStart(e,idx)} onDragOver={dA.onOver} onDrop={e=>dA.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}>
+          <td style={{padding:"2px",textAlign:"center"}}><DH/></td>
+          <td style={{padding:"3px 6px"}}><input type="text" value={r.name} onChange={e=>syncAeMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:12}}/></td>
+          <td style={{padding:"1px"}}><select value={r.type||"Otros"} onChange={e=>syncAeMeta(idx,"type",e.target.value)} style={{fontSize:9,padding:"4px 2px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:70}}>{EXP_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></td>
+          <td style={{padding:"2px 4px"}}><input type="number" value={r.annual||""} onChange={e=>{const n=[...safeAe];n[idx]={...n[idx],annual:Number(e.target.value)||0};sA(n)}} style={{width:85}}/></td>
+          <td style={{padding:"3px 6px",textAlign:"right",...mn,fontSize:12,color:C.td}}>{fmt(r.annual/12)}</td>
+          <td><Xb onClick={()=>delAeRow(idx)}/></td>
+        </tr>)}
+        <tr style={{borderTop:`2px solid ${C.bd}`}}><td></td><td style={{padding:"8px 6px",fontWeight:700}}>TOTAL</td><td></td><td style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.rd}}>{fmt(tAeY)}</td><td style={{padding:"8px 6px",textAlign:"right",...mn,fontSize:12,color:C.td}}>{fmt(tAeY/12)}</td><td></td></tr>
+      </tbody></table>
+      :<table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,width:30}}></th><th style={{...th,textAlign:"left",width:100,position:"sticky",left:0,background:C.sf}}>Concepto</th><th style={{...th,color:C.am,width:60}}>Anual</th>{MO.map(m=><th key={m} style={{...th,minWidth:60}}>{m}</th>)}<th style={{...th,color:C.ac}}>TOTAL</th><th style={{width:28}}></th></tr></thead><tbody>
+        {safeAe.map((r,idx)=>{const rl=r.real||Array(12).fill(null);return<tr key={idx} draggable onDragStart={e=>dA.onStart(e,idx)} onDragOver={dA.onOver} onDrop={e=>dA.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}>
+          <td style={{padding:"2px",textAlign:"center"}}><DH/></td>
+          <td style={{padding:"3px 4px",position:"sticky",left:0,background:C.sf}}><input type="text" value={r.name} onChange={e=>syncAeMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:95}}/></td>
+          <td style={{padding:"2px"}}><input type="number" value={r.annual||""} onChange={e=>{const n=[...safeAe];n[idx]={...n[idx],annual:Number(e.target.value)||0};sA(n)}} style={{width:58,background:C.amd,borderColor:C.am}}/></td>
+          {MO.map((_,m)=><td key={m} style={{padding:"2px"}}><input type="number" placeholder={fmt(r.annual/12,0)} value={rl[m]!=null?rl[m]:""} onChange={e=>{const n=[...safeAe];const nr=[...(n[idx].real||Array(12).fill(null))];nr[m]=e.target.value===""?null:Number(e.target.value)||0;n[idx]={...n[idx],real:nr};sA(n)}} style={{width:56}}/></td>)}
+          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.rd}}>{fmt(MO.reduce((s,_,m)=>s+(rl[m]!=null?rl[m]:r.annual/12),0))}</td>
+          <td><Xb onClick={()=>delAeRow(idx)}/></td>
+        </tr>})}
+      </tbody></table>}
+      <Ab onClick={()=>addAeRow({name:"(nuevo)",type:"Otros",annual:0,real:Array(12).fill(null)})}/>
+    </Cd>
+  </div>;
+}
+
+function M2(){
+  const[assets,sAs]=useLocalData("assets",D_AS);const[debts,sDb]=useLocalData("debts",D_DB);
+  const dAs=useDrag(assets,sAs);const dDb=useDrag(debts,sDb);
+  const[projGrowth,sPG]=useLocalData("projGrowth",Array(10).fill({pct:5}));
+  const safePG=Array.isArray(projGrowth)?projGrowth:Array(10).fill({pct:5});
+  const nY=10,sY=2023,yrs=Array.from({length:nY},(_,i)=>sY+i);
+  const defHist=yrs.map(y=>({year:y,income:0,expense:0}));
+  const[hist,sHist]=useLocalData("finHistory",defHist);
+  const safeH=yrs.map((y)=>{const f=Array.isArray(hist)?hist.find(h=>h.year===y):null;return f||{year:y,income:0,expense:0}});
+  const updH=(i,f,v)=>{const n=safeH.map((h,j)=>j===i?{...h,[f]:Number(v)||0}:h);sHist(n)};
+  const savH=safeH.map(h=>h.income-h.expense);
+  const srH=safeH.map(h=>h.income>0?(h.income-h.expense)/h.income:0);
+
+  const tA=yrs.map((_,i)=>assets.reduce((s,a)=>s+(a.values[i]||0),0));
+  const tEfectivo=yrs.map((_,i)=>assets.filter(a=>a.type==="efectivo").reduce((s,a)=>s+(a.values[i]||0),0));
+  const tInversion=yrs.map((_,i)=>assets.filter(a=>a.type==="inversión").reduce((s,a)=>s+(a.values[i]||0),0));
+  const tPasivo=yrs.map((_,i)=>assets.filter(a=>a.type==="pasivo"||a.type==="otro").reduce((s,a)=>s+(a.values[i]||0),0));
+  const tD=yrs.map((_,i)=>debts.reduce((s,d)=>s+(d.values[i]||0),0));
+  const pat=yrs.map((_,i)=>tA[i]-tD[i]);
+  const rend=pat.map((v,i)=>i===0?0:(pat[i-1]?((v-pat[i-1])/pat[i-1]):0));
+
+  const projBase=pat.reduce((last,v,i)=>v>0?i:last,-1);
+
+  const MLChart=({width=620,height=200})=>{const allV=[...safeH.map(h=>h.income),...safeH.map(h=>h.expense),...savH];if(allV.every(v=>v===0))return<div style={{textAlign:'center',padding:30,color:C.tm,fontSize:12}}>Rellena el histórico de ingresos y gastos arriba</div>;const mx=Math.max(...allV,1),mi=Math.min(...allV,0),rg=mx-mi||1;const pX=50,pY=18,cW=width-pX*2,cH=height-pY*2;const mkP=data=>data.map((v,i)=>({x:pX+(i/(data.length-1))*cW,y:pY+cH-((v-mi)/rg)*cH}));const mkD=pts=>pts.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");const pI=mkP(safeH.map(h=>h.income)),pE=mkP(safeH.map(h=>h.expense)),pS=mkP(savH);return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}><path d={mkD(pI)} fill="none" stroke={C.gn} strokeWidth={2.5}/><path d={mkD(pE)} fill="none" stroke={C.rd} strokeWidth={2.5}/><path d={mkD(pS)} fill="none" stroke={C.ac} strokeWidth={2} strokeDasharray="6 3"/>{pI.map((p,i)=><g key={"i"+i}><circle cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.gn} strokeWidth={2}/><text x={p.x} y={height-2} textAnchor="middle" fill={C.tm} fontSize={9}>{yrs[i]}</text></g>)}{pE.map((p,i)=><circle key={"e"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.rd} strokeWidth={2}/>)}{pS.map((p,i)=><circle key={"s"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.ac} strokeWidth={2}/>)}</svg>};
+
+  return<div style={{animation:"fadeIn .3s"}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+      <strong style={{color:C.ac}}>💡 Tu mapa financiero a vista de pájaro.</strong> Registra cuánto ganaste y gastaste cada año — el ahorro se calcula solo. Apunta tus activos y deudas para ver tu patrimonio neto real.
+    </div>
+
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}>
+      <ST icon="📋">Histórico Anual: Ingresos, Gastos y Ahorro</ST>
+      <table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:110,position:"sticky",left:0,background:C.sf}}></th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}</tr></thead><tbody>
+        <tr><td style={{padding:"5px 6px",fontWeight:600,color:C.gn,position:"sticky",left:0,background:C.sf}}>📈 Ingresos</td>{safeH.map((h,i)=><td key={i} style={{padding:"2px"}}><input type="number" value={h.income||""} onChange={e=>updH(i,"income",e.target.value)} style={{width:82}}/></td>)}</tr>
+        <tr><td style={{padding:"5px 6px",fontWeight:600,color:C.rd,position:"sticky",left:0,background:C.sf}}>📉 Gastos</td>{safeH.map((h,i)=><td key={i} style={{padding:"2px"}}><input type="number" value={h.expense||""} onChange={e=>updH(i,"expense",e.target.value)} style={{width:82}}/></td>)}</tr>
+        <tr style={{background:C.sa}}><td style={{padding:"6px",fontWeight:700,color:C.ac,position:"sticky",left:0,background:C.sa}}>💰 Ahorro</td>{savH.map((v,i)=><td key={i} style={{padding:"6px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:v>=0?C.gn:C.rd}}>{fmt(v)}</td>)}</tr>
+        <tr><td style={{padding:"6px",fontWeight:500,color:C.td,position:"sticky",left:0,background:C.sf}}>🎯 Tasa</td>{srH.map((v,i)=><td key={i} style={{padding:"6px 4px",textAlign:"right",...mn,fontSize:12,color:v>=.2?C.gn:v>0?C.am:C.rd}}>{safeH[i].income>0?fP(v):"–"}</td>)}</tr>
+      </tbody></table>
+    </Cd>
+
+    {projBase>=0&&projBase<nY-1&&<Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}>
+      <ST icon="🔮">Proyección Patrimonio</ST>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}><thead><tr>
+        <th style={{...th,textAlign:"left",width:130,position:"sticky",left:0,background:C.sf}}></th>
+        {yrs.map((y,i)=><th key={y} style={{...th,minWidth:90,background:i<=projBase?C.sf:C.ad}}>{y}{i>projBase?" 🔮":""}</th>)}
+      </tr></thead><tbody>
+        <tr><td style={{padding:"5px 6px",fontWeight:600,color:C.ac,position:"sticky",left:0,background:C.sf}}>📈 Crecimiento (%)</td>
+          {yrs.map((y,i)=><td key={i} style={{padding:"2px"}}>{i<=projBase?(i>0&&pat[i-1]>0?<span style={{display:"block",textAlign:"right",padding:"7px 4px",...mn,fontSize:12,color:C.ac}}>{fP(rend[i])}</span>:<span style={{display:"block",textAlign:"right",padding:"7px 4px",...mn,fontSize:12,color:C.tm}}>–</span>):<input type="number" value={(safePG[i]?.pct)||""} onChange={e=>{const n=[...safePG];n[i]={...n[i],pct:Number(e.target.value)||0};sPG(n)}} step="0.5" style={{width:82}}/>}</td>)}
+        </tr>
+        <tr style={{background:C.sa,borderTop:`2px solid ${C.bd}`}}><td style={{padding:"6px",fontWeight:700,color:C.ac,position:"sticky",left:0,background:C.sa}}>🏦 Patrimonio</td>
+          {yrs.map((y,i)=>{
+            if(i<=projBase)return<td key={i} style={{padding:"6px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.ac}}>{fmt(pat[i])}</td>;
+            const prev=i===projBase+1?pat[projBase]:(()=>{let p=pat[projBase];for(let j=projBase+1;j<i;j++){p=p*(1+((safePG[j]?.pct)||5)/100)}return p})();
+            const projected=prev*(1+((safePG[i]?.pct)||5)/100);
+            return<td key={i} style={{padding:"6px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.pu,fontStyle:"italic"}}>{fmt(Math.round(projected))}</td>
+          })}
+        </tr>
+      </tbody></table>
+    </Cd>}
+
+    <Pill title="Patrimonio Neto: el número más importante de tus finanzas">Patrimonio = Activos − Deudas. Si es negativo, prioriza reducir deuda. Si es positivo, hazlo crecer.</Pill>
+    <Pill title="La regla del 4%">Multiplica tus gastos anuales por 25 y obtendrás el patrimonio que necesitas para vivir de inversiones.</Pill>
+
+    <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center"}}><ST icon="📊">Evolución Financiera</ST><MLChart/><div style={{display:"flex",gap:16,marginTop:8,fontSize:11}}><span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:18,height:3,background:C.gn,display:"inline-block"}}></span>Ingresos</span><span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:18,height:3,background:C.rd,display:"inline-block"}}></span>Gastos</span><span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:18,height:3,background:C.ac,display:"inline-block"}}></span>Ahorro</span></div></Cd>
+
+    <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center"}}><ST icon="📈">Evolución Patrimonio Neto</ST>
+      {(()=>{
+        const fullData=[...pat];const fullLabels=[...yrs.map(String)];
+        for(let i=projBase+1;i<nY;i++){
+          if(projBase<0)break;
+          const prev=i===projBase+1?pat[projBase]:(()=>{let p=pat[projBase];for(let j=projBase+1;j<i;j++){p=p*(1+((safePG[j]?.pct)||5)/100)}return p})();
+          fullData[i]=Math.round(prev*(1+((safePG[i]?.pct)||5)/100));
+        }
+        if(fullData.every(v=>v===0))return<div style={{textAlign:"center",padding:30,color:C.tm,fontSize:12}}>Rellena activos y deudas para ver la evolución</div>;
+        const mi=Math.min(...fullData.filter(v=>v!==0),0),mx=Math.max(...fullData),rg=mx-mi||1;
+        const W=640,H=200,pX=50,pY=18,cW=W-pX*2,cH=H-pY*2;
+        const pts=fullData.map((v,i)=>({x:pX+(i/(fullData.length-1))*cW,y:pY+cH-((v-mi)/rg)*cH,proj:i>projBase&&projBase>=0}));
+        const realPts=pts.filter(p=>!p.proj);const projPts=projBase>=0?pts.filter((_,i)=>i>=projBase):[];
+        const mkD=ps=>ps.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");
+        return<svg width={W} height={H} style={{display:"block",maxWidth:"100%"}}>
+          <defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.ac} stopOpacity=".1"/><stop offset="100%" stopColor={C.ac} stopOpacity="0"/></linearGradient></defs>
+          {realPts.length>1&&<><path d={mkD(realPts)+`L${realPts[realPts.length-1].x} ${pY+cH}L${realPts[0].x} ${pY+cH}Z`} fill="url(#pg)"/><path d={mkD(realPts)} fill="none" stroke={C.ac} strokeWidth={2.5} strokeLinecap="round"/></>}
+          {projPts.length>1&&<path d={mkD(projPts)} fill="none" stroke={C.pu} strokeWidth={2} strokeDasharray="6 3"/>}
+          {pts.map((p,i)=><g key={i}><circle cx={p.x} cy={p.y} r={3.5} fill={C.w} stroke={p.proj?C.pu:C.ac} strokeWidth={2}/><text x={p.x} y={H-2} textAnchor="middle" fill={C.tm} fontSize={9}>{fullLabels[i]}</text>{(i%2===0||fullData.length<=6)&&<text x={p.x} y={p.y-9} textAnchor="middle" fill={p.proj?C.pu:C.td} fontSize={9} fontStyle={p.proj?"italic":"normal"} {...mn}>{fmt(fullData[i])}</text>}</g>)}
+        </svg>
+      })()}
+      <div style={{display:"flex",gap:14,marginTop:6,fontSize:10}}><span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:3,background:C.ac,display:"inline-block"}}></span>Real</span><span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:2,borderTop:`2px dashed ${C.pu}`,display:"inline-block"}}></span><span style={{color:C.pu}}>Proyección</span></span></div>
+    </Cd>
+
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}><ST icon="🏦" sub="Tipos: efectivo, inversión, pasivo">Activos</ST><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:100,position:"sticky",left:0,background:C.sf}}>Artículo</th><th style={{...th,textAlign:"center",width:75}}>Tipo</th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}<th style={{width:24}}></th></tr></thead><tbody>{assets.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dAs.onStart(e,idx)} onDragOver={dAs.onOver} onDrop={e=>dAs.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}><td style={{padding:"3px 4px",position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:2}}><DH/><input type="text" value={r.name} onChange={e=>{const n=[...assets];n[idx]={...n[idx],name:e.target.value};sAs(n)}} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:80}}/></span></td><td style={{padding:"2px"}}><select value={r.type||"efectivo"} onChange={e=>{const n=[...assets];n[idx]={...n[idx],type:e.target.value};sAs(n)}} style={{fontSize:10,padding:"4px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:75}}><option value="efectivo">Efectivo</option><option value="inversión">Inversión</option><option value="pasivo">Pasivo</option></select></td>{yrs.map((_,yi)=><td key={yi} style={{padding:"1px"}}><input type="number" value={r.values[yi]||""} onChange={e=>{const n=[...assets];n[idx]={...n[idx],values:[...n[idx].values]};n[idx].values[yi]=Number(e.target.value)||0;sAs(n)}} style={{width:82,padding:"6px 4px"}}/></td>)}<td><Xb onClick={()=>{if(assets.length>1){const n=[...assets];n.splice(idx,1);sAs(n)}}}/></td></tr>)}<tr style={{borderTop:`2px solid ${C.bd}`}}><td style={{padding:"8px 6px",fontWeight:700,position:"sticky",left:0,background:C.sf}}>TOTAL</td><td></td>{tA.map((v,i)=><td key={i} style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(v)}</td>)}<td></td></tr></tbody></table><Ab onClick={()=>sAs([...assets,{name:"(nuevo)",type:"efectivo",values:Array(nY).fill(0)}])}/></Cd>
+
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}><ST icon="⚠️">Deudas</ST><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:110,position:"sticky",left:0,background:C.sf}}>Artículo</th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}<th style={{width:24}}></th></tr></thead><tbody>{debts.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dDb.onStart(e,idx)} onDragOver={dDb.onOver} onDrop={e=>dDb.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}><td style={{padding:"3px 4px",position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:2}}><DH/><input type="text" value={r.name} onChange={e=>{const n=[...debts];n[idx]={...n[idx],name:e.target.value};sDb(n)}} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:85}}/></span></td>{yrs.map((_,yi)=><td key={yi} style={{padding:"1px"}}><input type="number" value={r.values[yi]||""} onChange={e=>{const n=[...debts];n[idx]={...n[idx],values:[...n[idx].values]};n[idx].values[yi]=Number(e.target.value)||0;sDb(n)}} style={{width:82,padding:"6px 4px"}}/></td>)}<td><Xb onClick={()=>{if(debts.length>1){const n=[...debts];n.splice(idx,1);sDb(n)}}}/></td></tr>)}<tr style={{borderTop:`2px solid ${C.bd}`}}><td style={{padding:"8px 6px",fontWeight:700,position:"sticky",left:0,background:C.sf}}>% s/ Activos</td>{tD.map((v,i)=><td key={i} style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:tA[i]>0?(v/tA[i]>.5?C.rd:v/tA[i]>.25?C.am:C.gn):C.tm}}>{tA[i]>0?(v/tA[i]*100).toFixed(1)+"%":"–"}</td>)}<td></td></tr></tbody></table><Ab onClick={()=>sDb([...debts,{name:"(nueva)",values:Array(nY).fill(0)}])}/></Cd>
+
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}><ST icon="💎">Patrimonio Neto</ST><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:110}}></th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}</tr></thead><tbody><tr><td style={{padding:"7px 6px",fontWeight:700,color:C.ac}}>Patrimonio</td>{pat.map((v,i)=><td key={i} style={{padding:"7px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.ac}}>{fmt(v)}</td>)}</tr><tr><td style={{padding:"7px 6px",color:C.td}}>Rendimiento</td>{rend.map((v,i)=><td key={i} style={{padding:"7px 4px",textAlign:"right",...mn,fontSize:12,color:i===0?C.tm:v>=0?C.gn:C.rd}}>{i===0?"–":fP(v)}</td>)}</tr></tbody></table></Cd>
+  </div>;
+}
+
+function M3(){
+  const allCtx=useContext(Ctx);
+  const[propPrice,sPropPrice]=useLocalData("hPP",350000);const[dpPct,sDpPct]=useLocalData("hDP",20);
+  const amt=Math.round(propPrice*(1-dpPct/100));const entrada=propPrice-amt;
+  const[savedHip,sSavedHip]=useLocalData("hipScenario",null);
+  const[tin,sTin]=useLocalData("hT",2.45);const[yrs,sYrs]=useLocalData("hY",30);const ppy=12;
+  const[tMin,sTMin]=useLocalData("hMn",1000);const[tMax,sTMax]=useLocalData("hMx",1200);
+
+  const EURIBOR_HIST=[
+    {p:"1999",v:3.044},{p:"2000",v:4.396},{p:"2001",v:4.258},{p:"2002",v:3.493},{p:"2003",v:2.344},{p:"2004",v:2.274},
+    {p:"2005",v:2.334},{p:"2006",v:3.441},{p:"2007",v:4.448},{p:"2008",v:4.810},{p:"2009",v:1.610},{p:"2010",v:1.350},
+    {p:"2011",v:2.010},{p:"2012",v:1.110},{p:"2013",v:0.536},{p:"2014",v:0.483},{p:"2015",v:0.168},{p:"2016",v:-0.034},
+    {p:"2017",v:-0.149},{p:"2018",v:-0.169},{p:"2019",v:-0.252},{p:"2020",v:-0.299},{p:"2021",v:-0.487},{p:"2022",v:0.991},
+    {p:"2023 prom",v:3.866},{p:"2024 prom",v:3.319},{p:"2025 prom",v:2.220},
+    {p:"Ene 26",v:2.290},{p:"Feb 26",v:2.221},{p:"Mar 26",v:2.446}
+  ];
+  const[euriborData]=useState(EURIBOR_HIST);
+  const lastEuribor=euriborData[euriborData.length-1];
+  const maxEuribor=Math.max(...euriborData.map(d=>d.v));
+  const minEuribor=Math.min(...euriborData.map(d=>d.v));
+  const avgEuribor=euriborData.reduce((s,d)=>s+d.v,0)/euriborData.length;
+
+  const EuriborChart=({width=900,height=240})=>{
+    const data=euriborData;const vals=data.map(d=>d.v);
+    const mi=Math.min(...vals)-0.3;const mx=Math.max(...vals)+0.3;const rg=mx-mi||1;
+    const pX=50,pY=14,cW=width-pX-20,cH=height-pY-34;
+    const pts=data.map((d,i)=>({x:pX+(i/(data.length-1))*cW,y:pY+cH-((d.v-mi)/rg)*cH}));
+    const mkD=ps=>ps.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");
+    const yLabs=Array.from({length:7},(_,i)=>mi+(mx-mi)*i/6);
+    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+      <defs><linearGradient id="eurGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.ac} stopOpacity=".15"/><stop offset="100%" stopColor={C.ac} stopOpacity="0"/></linearGradient></defs>
+      {yLabs.map(v=><g key={v}><line x1={pX} y1={pY+cH-((v-mi)/rg)*cH} x2={width-20} y2={pY+cH-((v-mi)/rg)*cH} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={pY+cH-((v-mi)/rg)*cH+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{v.toFixed(1)}%</text></g>)}
+      <path d={mkD(pts)+`L${pts[pts.length-1].x} ${pY+cH}L${pts[0].x} ${pY+cH}Z`} fill="url(#eurGrad)"/>
+      <path d={mkD(pts)} fill="none" stroke={C.ac} strokeWidth={2}/>
+      {pts.map((p,i)=>{const show=i%2===0||i===data.length-1;return<g key={i}>
+        {show&&<circle cx={p.x} cy={p.y} r={2.5} fill={C.w} stroke={C.ac} strokeWidth={1.5}/>}
+        {show&&<text x={p.x} y={height-4} textAnchor="middle" fill={C.tm} fontSize={8} transform={data[i].p.length>4?`rotate(-30 ${p.x} ${height-4})`:undefined}>{data[i].p}</text>}
+      </g>})}
+    </svg>
+  };
+
+  const step=15000,rStep=0.25;
+  const rates=useMemo(()=>{const r=[];for(let i=0.5;i<=6;i+=rStep)r.push(Math.round(i*1000)/1000);return r},[]);
+  const amounts=useMemo(()=>{const a=[];for(let v=amt-step*5;v<=amt+step*5;v+=step)if(v>0)a.push(v);return a},[amt]);
+  const calc=(p,r,y,n)=>{const ri=r/100/n,np=y*n;if(ri===0)return p/np;return(p*ri*Math.pow(1+ri,np))/(Math.pow(1+ri,np)-1)};
+  const matrix=useMemo(()=>amounts.map(a=>rates.map(r=>calc(a,r,yrs,ppy))),[amounts,rates,yrs]);
+  const cc=(val,r,a)=>{if(val>=tMin&&val<=tMax)return{bg:C.gd,t:C.gn};if(Math.abs(r-tin)<rStep/2&&a===amt)return{bg:C.bld,t:C.bl};return{bg:"transparent",t:C.tm}};
+
+  return<div style={{animation:"fadeIn .3s"}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+      <strong style={{color:C.ac}}>💡 Tu calculadora hipotecaria.</strong> Introduce el importe y el tipo. La matriz te muestra la cuota para cada combinación. Verde = dentro de tu rango. Azul = tu escenario exacto.
+    </div>
+    <Cd style={{marginBottom:16}}>
+      <ST icon="⚙️">Parámetros Hipoteca</ST>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:14}}>
+        <div><Lb>Precio vivienda (€)</Lb><input type="number" value={propPrice} onChange={e=>sPropPrice(Number(e.target.value)||0)}/></div>
+        <div><Lb>Entrada (%)</Lb><input type="number" value={dpPct} onChange={e=>sDpPct(Number(e.target.value)||0)} step="5"/><div style={{fontSize:10,color:C.am,fontWeight:600,marginTop:3,...mn}}>{fmt(entrada)} €</div></div>
+        <div><Lb>Importe hipoteca (€) <span style={{color:C.ac,fontSize:10}}>auto</span></Lb><div style={{padding:"8px",borderRadius:7,background:C.ad,border:`1px solid ${C.ac}40`,textAlign:"right",...mn,fontSize:14,fontWeight:700,color:C.ac}}>{fmt(amt)} €</div></div>
+        <div><Lb>TIN (%)</Lb><input type="number" value={tin} onChange={e=>sTin(Number(e.target.value)||0)} step="0.01"/></div>
+        <div><Lb>Plazo (años)</Lb><input type="number" value={yrs} onChange={e=>sYrs(Number(e.target.value)||0)}/></div>
+        <div><Lb>Cuota Obj. Mín (€)</Lb><input type="number" value={tMin} onChange={e=>sTMin(Number(e.target.value)||0)}/></div>
+        <div><Lb>Cuota Obj. Máx (€)</Lb><input type="number" value={tMax} onChange={e=>sTMax(Number(e.target.value)||0)}/></div>
+      </div>
+      <Pill title="¿Qué es el TIN y el Euríbor?">El TIN es el interés que pagas. En hipotecas variables = Euríbor + diferencial. El Euríbor sube/baja según la política del BCE.</Pill>
+      <Pill title="Regla de oro: cuota &lt; 35% de tus ingresos">Cuanto menor sea ese %, menos vulnerable eres ante imprevistos. Una cuota del 25% te da mucho más colchón.</Pill>
+    </Cd>
+
+    <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 12px"}}>
+      <ST icon="📈" sub="Histórico Euríbor 12M">Euríbor</ST>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,width:"100%",marginBottom:14}}>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Actual ({lastEuribor.p})</div><div style={{fontSize:18,fontWeight:700,color:C.ac,...mn}}>{lastEuribor.v.toFixed(3)}%</div></div>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Máximo</div><div style={{fontSize:18,fontWeight:700,color:C.rd,...mn}}>{maxEuribor.toFixed(3)}%</div></div>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.gn}`}}><div style={{fontSize:9,color:C.tm}}>Mínimo</div><div style={{fontSize:18,fontWeight:700,color:C.gn,...mn}}>{minEuribor.toFixed(3)}%</div></div>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.bl}`}}><div style={{fontSize:9,color:C.tm}}>Media</div><div style={{fontSize:18,fontWeight:700,color:C.bl,...mn}}>{avgEuribor.toFixed(3)}%</div></div>
+      </div>
+      <EuriborChart/>
+    </Cd>
+
+    <Cd style={{overflowX:"auto"}}><ST icon="📐">Matriz Cuota Mensual</ST><table style={{borderCollapse:"collapse",fontSize:11}}><thead><tr><th style={{padding:"6px 8px",color:C.ac,fontWeight:600,textAlign:"left",position:"sticky",left:0,background:C.sf,zIndex:2,minWidth:80}}>€\TIN%</th>{rates.map(r=><th key={r} style={{padding:"5px",color:Math.abs(r-tin)<rStep/2?C.bl:C.tm,fontWeight:Math.abs(r-tin)<rStep/2?700:400,textAlign:"right",minWidth:52,background:Math.abs(r-tin)<rStep/2?C.bld:"transparent"}}>{r.toFixed(2)}</th>)}</tr></thead><tbody>{matrix.map((row,ri)=><tr key={ri}><td style={{padding:"5px 8px",fontWeight:600,color:amounts[ri]===amt?C.bl:C.tx,position:"sticky",left:0,background:amounts[ri]===amt?C.bld:C.sf,zIndex:1,...mn,fontSize:12}}>{fmt(amounts[ri])}</td>{row.map((v,ci)=>{const col=cc(v,rates[ci],amounts[ri]);return<td key={ci} style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:11,background:col.bg,color:col.t}}>{fmt(v,0)}</td>})}</tr>)}</tbody></table></Cd>
+
+    <Cd style={{marginTop:16}}>
+      <ST icon="🏦">¿Me dará el banco la hipoteca?</ST>
+      {(()=>{const{income:inc}=allCtx;const tIMon=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0));const avgMon=tIMon.reduce((a,b)=>a+b,0)/12;const cuota=calc(amt,tin,yrs,ppy);const ratio=avgMon>0?cuota/avgMon:0;const pct=(ratio*100).toFixed(1);const ok=ratio<=0.35;
+        const maxCuota=avgMon*0.35;const ri2=tin/100/ppy;const np2=yrs*ppy;const maxHip=ri2>0?maxCuota*(Math.pow(1+ri2,np2)-1)/(ri2*Math.pow(1+ri2,np2)):maxCuota*np2;
+        const maxProperty=dpPct>0?maxHip/(1-dpPct/100):maxHip;const entradaNec=maxProperty-maxHip;
+        return<div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:14}}>
+          <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Ingreso mensual</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(avgMon)} €</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.am}`}}><div style={{fontSize:9,color:C.tm}}>Tu cuota</div><div style={{fontSize:16,fontWeight:700,color:C.am,...mn}}>{fmt(cuota)} €</div></div>
+          <div style={{padding:10,borderRadius:8,background:ok?C.gd:C.rdd,borderLeft:`3px solid ${ok?C.gn:C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Ratio</div><div style={{fontSize:16,fontWeight:700,color:ok?C.gn:C.rd,...mn}}>{pct}%</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.rdd,borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Total intereses</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(Math.round(cuota*yrs*12-amt))} €</div></div>
+        </div>
+        <div style={{padding:14,borderRadius:10,background:"linear-gradient(135deg,#e0f2fe,#f0fdf4)",border:`1px solid ${C.ac}30`,marginBottom:12}}>
+          <div style={{fontSize:13,fontWeight:600,color:C.tx,marginBottom:10}}>💰 ¿Cuánto podrías comprar?</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
+            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Hipoteca máxima</div><div style={{fontSize:18,fontWeight:700,color:C.ac,...mn}}>{fmt(maxHip)} €</div></div>
+            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Precio máx. vivienda</div><div style={{fontSize:18,fontWeight:700,color:C.gn,...mn}}>{fmt(maxProperty)} €</div></div>
+            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Entrada necesaria</div><div style={{fontSize:18,fontWeight:700,color:C.am,...mn}}>{fmt(entradaNec)} €</div></div>
+          </div>
+        </div>
+        <Bt onClick={()=>sSavedHip({date:new Date().toLocaleDateString("es-ES"),propPrice,dpPct,amt,tin,yrs,cuota:Math.round(cuota),ratio:pct,maxHip:Math.round(maxHip),maxProp:Math.round(maxProperty)})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
+        {savedHip&&<span style={{fontSize:11,color:C.pu,marginLeft:10}}>Guardado: {savedHip.date}</span>}
+      </div>})()}
+    </Cd>
+  </div>;
+}
+
+function M4(){
+  const{income:inc,monthlyExp:me,annualExp:ae}=useContext(Ctx);
+  const autoI=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0);
+  const autoE=me.reduce((s,r)=>s+(r.monthly||0),0)*12+ae.reduce((s,r)=>s+r.annual,0);
+  const[aI,sAI]=useLocalData("gI",autoI);const[aE,sAE]=useLocalData("gE",autoE);
+  const[iP,sIP]=useLocalData("gP",0);const[aR,sAR]=useLocalData("gR",5);
+  useEffect(()=>{if(autoI>0)sAI(autoI)},[autoI]);
+  useEffect(()=>{if(autoE>0)sAE(autoE)},[autoE]);
+  const sav=aI-aE,sr=aI>0?sav/aI:0,r=aR/100;
+  const proj=useMemo(()=>{const rows=[];let p=iP;rows.push({y:0,inc:0,exp:0,sav:0,ret:0,cov:0,pat:p});for(let y=1;y<=99;y++){const ret=p*r;const cov=aE>0?ret/aE:0;p+=sav+ret;rows.push({y,inc:aI,exp:aE,sav,ret,cov,pat:p})}return rows},[aI,aE,iP,r,sav]);
+  const goT=useMemo(()=>{const rows=[];for(let s=5;s<=95;s+=5){const rt=s/100,exp=aI*(1-rt);if(exp<=0){rows.push({rate:s,yrs:0,me:0});continue}const target=exp/(r||.001);const sv=aI*rt;let p=0,y=0;while(p<target&&y<200){p=p*(1+r)+sv;y++}rows.push({rate:s,yrs:y,me:exp/12})}return rows},[aI,r]);
+  const goY=proj.find(p=>p.cov>=1);
+  return<div style={{animation:"fadeIn .3s"}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+      <strong style={{color:C.ac}}>💡 ¿Cuándo trabajas porque quieres, no porque debes?</strong> Los datos se cargan solos desde Ingresos. Ajusta el rendimiento y observa el interés compuesto.
+    </div>
+    <Cd style={{marginBottom:16}}>
+      <ST icon="⚙️">Datos de Partida</ST>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:14}}>
+        <div><Lb>Ingreso Anual (€)</Lb><input type="number" value={aI} onChange={e=>sAI(Number(e.target.value)||0)}/></div>
+        <div><Lb>Gasto Anual (€)</Lb><input type="number" value={aE} onChange={e=>sAE(Number(e.target.value)||0)}/></div>
+        <div><Lb>Patrimonio Inicial (€)</Lb><input type="number" value={iP} onChange={e=>sIP(Number(e.target.value)||0)}/></div>
+        <div><Lb>Rendimiento Medio (%)</Lb><input type="number" value={aR} onChange={e=>sAR(Number(e.target.value)||0)}/></div>
+      </div>
+      <div style={{display:"flex",gap:12,marginTop:14,flexWrap:"wrap"}}><Bg value={`Ahorro: ${fmt(sav)} €/año`} type={sav>0?"positive":"negative"}/><Bg value={`Tasa: ${fP(sr)}`} type={sr>=.2?"positive":"warning"}/>{goY&&<Bg value={`🏆 Libertad año ${goY.y}`} type="positive"/>}</div>
+      <Pill title="El poder del interés compuesto">Einstein lo llamó la 8ª maravilla del mundo. Tiempo × rendimiento = magia.</Pill>
+    </Cd>
+    <Cd style={{marginBottom:16}}><ST icon="🏆">Tasa de Ahorro vs Años</ST>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:8}}>
+        {goT.map((row,i)=>{const hl=Math.abs(sr*100-row.rate)<5;return<div key={i} style={{padding:"10px",borderRadius:8,background:hl?C.ad:C.sa,border:hl?`2px solid ${C.ac}`:`1px solid ${C.bd}`}}><div style={{fontSize:17,fontWeight:700,color:hl?C.ac:C.tx,...mn}}>{row.rate}%</div><div style={{fontSize:10,color:C.tm}}>Tasa ahorro</div><div style={{fontSize:14,fontWeight:600,color:row.yrs<=20?C.gn:row.yrs<=40?C.am:C.rd,...mn,marginTop:4}}>{row.yrs>=200?"∞":`${row.yrs.toFixed(1)} años`}</div></div>})}
+      </div>
+    </Cd>
+    <Cd style={{overflowX:"auto"}}><ST icon="📊">Proyección</ST>
+      <div style={{maxHeight:450,overflowY:"auto"}}><table style={{width:"100%",borderCollapse:"collapse"}}><thead style={{position:"sticky",top:0,background:C.sf,zIndex:1}}><tr>{["Año","Ingresos","Gastos","Ahorro","Rdto.","% Cubierto","Patrimonio"].map(h=><th key={h} style={{padding:"7px 6px",color:C.tm,fontWeight:500,textAlign:"right",borderBottom:`2px solid ${C.bd}`,fontSize:12}}>{h}</th>)}</tr></thead><tbody>
+        {proj.slice(0,60).map((row,i)=>{const isGO=row.cov>=1&&(i===0||proj[i-1].cov<1);return<tr key={i} style={{background:isGO?C.gd:row.cov>=1?"rgba(22,163,74,.02)":"transparent",borderBottom:`1px solid ${C.bg}`}}><td style={{padding:"5px 6px",textAlign:"right",fontWeight:isGO?700:400,color:isGO?C.gn:C.tx,fontSize:12}}>{isGO?`🏆 ${row.y}`:row.y}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12}}>{fmt(row.inc)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12}}>{fmt(row.exp)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:row.sav>=0?C.gn:C.rd}}>{fmt(row.sav)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:C.ac}}>{fmt(row.ret)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:row.cov>=1?C.gn:C.am}}>{row.y===0?"–":(row.cov*100).toFixed(1)+"%"}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.ac}}>{fmt(row.pat)}</td></tr>})}
+      </tbody></table></div>
+    </Cd>
+  </div>;
+}
+
+function M6(){
+  const{income:inc,monthlyExp:me,annualExp:ae}=useContext(Ctx);
+  const autoSavM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0)/12-(me.reduce((s,r)=>s+(r.monthly||0),0)+ae.reduce((s,r)=>s+r.annual/12,0));
+  const[savedGoal,setSG]=useLocalData("mcGoal",null);
+  const[age,sAge]=useLocalData("mcAge",35);const[retAge,sRet]=useLocalData("mcRetAge",65);const[lifeExp,sLife]=useLocalData("mcLifeExp",90);
+  const[assets2026]=useLocalData("assets",D_AS);const[debts2026]=useLocalData("debts",D_DB);
+  const autoPat=useMemo(()=>{for(let i=9;i>=0;i--){const tA=assets2026.reduce((s,a)=>s+(a.values?.[i]||0),0);const tD=debts2026.reduce((s,d)=>s+(d.values?.[i]||0),0);if(tA-tD>0)return tA-tD}return 0},[assets2026,debts2026]);
+  const[initP,sInit]=useLocalData("mcInitP",0);const[mContr,sMC]=useLocalData("mcContr",0);
+  const[mWith,sMW]=useLocalData("mcWith",1500);const[meanR,sMR]=useLocalData("mcMeanR",7);const[vol,sVol]=useLocalData("mcVol",15);
+  const[nSims,sNS]=useState(300);const[res,setRes]=useState(null);const[running,sRun]=useState(false);
+  const[adjInf,setInf]=useLocalData("mcInf",false);const[infRate,sInfR]=useLocalData("mcInfR",2.5);
+  const[events,setEv]=useLocalData("mcEvents",[]);
+  useEffect(()=>{if(autoSavM>0&&mContr===0)sMC(Math.max(0,Math.round(autoSavM)))},[autoSavM]);
+  useEffect(()=>{if(autoPat>0&&initP===0)sInit(autoPat)},[autoPat]);
+  const rN=()=>{let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+  const addEv=()=>setEv([...events,{name:"Compra casa",age:40,amount:50000}]);
+  const updEv=(i,f,v)=>{const n=[...events];n[i]={...n[i],[f]:f==="name"?v:Number(v)||0};setEv(n)};
+  const delEv=(i)=>{const n=[...events];n.splice(i,1);setEv(n)};
+
+  const run=()=>{sRun(true);setTimeout(()=>{
+    const accY=Math.max(0,retAge-age),distY=Math.max(0,lifeExp-retAge),totY=accY+distY;
+    const realR=adjInf?meanR-infRate:meanR;const mu=realR/100,sig=vol/100;
+    const annC=mContr*12,annW=mWith*12;
+    const paths=[],finals=[],retVals=[];let ruin=0;
+    const evMap={};events.forEach(ev=>{const yr=ev.age-age;if(yr>=0&&yr<=totY)evMap[yr]=(evMap[yr]||0)+ev.amount});
+    const detPath=[initP];let dp=initP;
+    for(let y=0;y<accY;y++){dp=dp*(1+mu)+annC-(evMap[y+1]||0);detPath.push(Math.max(0,dp))}
+    for(let y=0;y<distY;y++){dp=dp*(1+mu)-annW-(evMap[accY+y+1]||0);detPath.push(Math.max(0,dp))}
+    for(let s=0;s<nSims;s++){let p=initP;const path=[p];let ruined=false;
+      for(let y=0;y<accY;y++){p=Math.max(0,p*(1+mu+sig*rN())+annC-(evMap[y+1]||0));path.push(p)}
+      retVals.push(p);
+      for(let y=0;y<distY;y++){p=p*(1+mu+sig*rN())-annW-(evMap[accY+y+1]||0);if(p<0){p=0;if(!ruined){ruined=true;ruin++}}path.push(p)}
+      paths.push(path);finals.push(p)}
+    const pcts=[10,25,50,75,90],bands={};pcts.forEach(p=>bands[p]=[]);
+    for(let y=0;y<=totY;y++){const vals=paths.map(p=>p[Math.min(y,p.length-1)]).sort((a,b)=>a-b);pcts.forEach(p=>{bands[p].push(vals[Math.max(0,Math.floor(vals.length*p/100)-1)])})}
+    retVals.sort((a,b)=>a-b);finals.sort((a,b)=>a-b);
+    setRes({bands,paths:paths.slice(0,40),totY,accY,detPath,
+      retMed:retVals[Math.floor(retVals.length*.5)],retP10:retVals[Math.floor(retVals.length*.1)],retP90:retVals[Math.floor(retVals.length*.9)],
+      surv:((nSims-ruin)/nSims*100).toFixed(1),finalMed:finals[Math.floor(finals.length*.5)],ruin});
+    sRun(false)},80)};
+
+  const MCChart=({r,width=720,height=380})=>{
+    if(!r)return null;const{bands,totY,accY,detPath}=r;
+    const allVals=[...bands[90],...detPath];const allMax=Math.max(...allVals)*1.05;const allMin=1000;
+    const pX=65,pY=18,cW=width-pX-20,cH=height-pY-32;
+    const xP=i=>pX+(i/totY)*cW;
+    const yP=v=>{const c=Math.max(v,allMin);return pY+cH-(c-allMin)/(allMax-allMin||1)*cH};
+    const fmtY=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?Math.round(v/1e3)+"k":Math.round(v);
+    const yLabs=Array.from({length:6},(_,i)=>allMin+(allMax-allMin)*i/5);
+    const mkA=(lo,hi,col,op)=>{const t=bands[hi],b=bands[lo];return<path d={t.map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join("")+b.slice().reverse().map((v,i)=>`L${xP(totY-i)} ${yP(v)}`).join("")+"Z"} fill={col} opacity={op}/>};
+    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+      {yLabs.map(v=><g key={v}><line x1={pX} y1={yP(v)} x2={width-20} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}€</text></g>)}
+      <line x1={xP(accY)} y1={pY} x2={xP(accY)} y2={pY+cH} stroke={C.am} strokeWidth={1.5} strokeDasharray="5 3"/>
+      <text x={xP(accY)+4} y={pY+13} fill={C.am} fontSize={10} fontWeight={600}>Jubilación</text>
+      {mkA(10,90,"#0ea5e9",.06)}{mkA(25,75,"#0ea5e9",.12)}
+      <path d={detPath.map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join("")} fill="none" stroke={C.am} strokeWidth={2} strokeDasharray="8 4" opacity={.8}/>
+      <path d={bands[50].map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join("")} fill="none" stroke={C.ac} strokeWidth={2.5} strokeLinecap="round"/>
+      {Array.from({length:Math.min(totY+1,12)},(_,i)=>Math.round(i*totY/11)).map(yr=><text key={yr} x={xP(yr)} y={height-5} textAnchor="middle" fill={C.tm} fontSize={9}>{age+yr}</text>)}
+    </svg>};
+
+  return<div style={{animation:"fadeIn .3s"}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+      <strong style={{color:C.ac}}>💡 Planifica tu jubilación con datos reales.</strong> Pon cuánto aportas y necesitarás. Añade gastos puntuales y activa la inflación para realismo.
+    </div>
+    <Cd style={{marginBottom:16}}>
+      <ST icon="🎯">Planificador de Jubilación</ST>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:14}}>
+        <div><Lb>Edad Actual</Lb><input type="number" value={age} onChange={e=>sAge(Number(e.target.value)||0)}/></div>
+        <div><Lb>Edad Jubilación</Lb><input type="number" value={retAge} onChange={e=>sRet(Number(e.target.value)||0)}/></div>
+        <div><Lb>Esperanza de Vida</Lb><input type="number" value={lifeExp} onChange={e=>sLife(Number(e.target.value)||0)}/></div>
+        <div><Lb>Patrimonio Actual (€)</Lb><input type="number" value={initP} onChange={e=>sInit(Number(e.target.value)||0)}/></div>
+        <div><Lb>Aportación Mensual (€)</Lb><input type="number" value={mContr} onChange={e=>sMC(Number(e.target.value)||0)}/></div>
+        <div><Lb>Retirada Mensual Jub. (€)</Lb><input type="number" value={mWith} onChange={e=>sMW(Number(e.target.value)||0)}/></div>
+        <div><Lb>Rendimiento Medio (%)</Lb><input type="number" value={meanR} onChange={e=>sMR(Number(e.target.value)||0)} step="0.1"/></div>
+        <div><Lb>Volatilidad (%)</Lb><input type="number" value={vol} onChange={e=>sVol(Number(e.target.value)||0)} step="0.1"/></div>
+        <div><Lb>Nº Simulaciones</Lb><input type="number" value={nSims} onChange={e=>sNS(Math.min(1000,Math.max(50,Number(e.target.value)||100)))}/></div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:14,marginTop:14,padding:"10px 12px",borderRadius:8,background:adjInf?C.amd:C.sa,border:`1px solid ${adjInf?C.am:C.bd}`,cursor:"pointer"}} onClick={()=>setInf(!adjInf)}>
+        <span style={{fontSize:18}}>{adjInf?"✅":"⬜"}</span>
+        <div><span style={{fontSize:12,fontWeight:600,color:adjInf?C.am:C.td}}>Ajustar por inflación</span></div>
+        {adjInf&&<input type="number" value={infRate} onChange={e=>{e.stopPropagation();sInfR(Number(e.target.value)||0)}} onClick={e=>e.stopPropagation()} step="0.1" style={{width:60,fontSize:12}}/>}
+        {adjInf&&<span style={{fontSize:11,color:C.am}}>% anual</span>}
+      </div>
+      <div style={{marginTop:14}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:13,fontWeight:600,color:C.td}}>📌 Gastos puntuales</span><Ab onClick={addEv}/></div>
+        {events.map((ev,i)=><div key={i} style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
+          <input type="text" value={ev.name} onChange={e=>updEv(i,"name",e.target.value)} style={{width:140,fontSize:12}}/>
+          <div style={{display:"flex",alignItems:"center",gap:4}}><Lb>Edad</Lb><input type="number" value={ev.age} onChange={e=>updEv(i,"age",e.target.value)} style={{width:55}}/></div>
+          <div style={{display:"flex",alignItems:"center",gap:4}}><Lb>€</Lb><input type="number" value={ev.amount} onChange={e=>updEv(i,"amount",e.target.value)} style={{width:80}}/></div>
+          <Xb onClick={()=>delEv(i)}/>
+        </div>)}
+      </div>
+      <div style={{marginTop:18,display:"flex",gap:10,flexWrap:"wrap"}}>
+        <PB onClick={run} disabled={running}>{running?"⏳ Simulando...":"🎲 Simular Jubilación"}</PB>
+        {res&&<Bt onClick={()=>setSG({date:new Date().toLocaleDateString("es-ES"),retMed:res.retMed,surv:res.surv,mContr,mWith,age,retAge,lifeExp,meanR,vol})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar Objetivo</Bt>}
+        {savedGoal&&<span style={{fontSize:11,color:C.pu,alignSelf:"center"}}>Guardado: {savedGoal.date}</span>}
+      </div>
+    </Cd>
+    {res?<>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:12,marginBottom:16}}>
+        {[{l:`A los ${retAge}`,v:`${fmt(res.retMed)} €`,c:C.ac,s:"Mediana"},{l:"Pesimista (P10)",v:`${fmt(res.retP10)} €`,c:C.rd,s:"Percentil 10"},{l:"Optimista (P90)",v:`${fmt(res.retP90)} €`,c:C.gn,s:"Percentil 90"},{l:"Supervivencia",v:`${res.surv}%`,c:Number(res.surv)>=90?C.gn:C.am,s:`${nSims-res.ruin}/${nSims}`},{l:`A los ${lifeExp}`,v:`${fmt(res.finalMed)} €`,c:res.finalMed>0?C.gn:C.rd,s:"Mediana"}].map((x,i)=><Cd key={i} style={{textAlign:"center",borderTop:`3px solid ${x.c}`,padding:14}}><div style={{fontSize:10,color:C.tm}}>{x.l}</div><div style={{fontSize:18,fontWeight:700,color:x.c,...mn,marginTop:4}}>{x.v}</div><div style={{fontSize:9,color:C.tm,marginTop:2}}>{x.s}</div></Cd>)}
+      </div>
+      <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <ST icon="📈">Proyección ({nSims} simulaciones)</ST>
+        <MCChart r={res}/>
+      </Cd>
+    </>:<Cd style={{textAlign:"center",padding:50}}><div style={{fontSize:56,marginBottom:14}}>🎲</div><p style={{color:C.td,fontSize:14}}>Configura y pulsa "Simular Jubilación"</p></Cd>}
+  </div>;
+}
+
+function M7(){
+  const{income:inc,monthlyExp:me,annualExp:ae}=useContext(Ctx);
+  const[age,sAge]=useLocalData("m7Age",35);const[retAge,sRetAge]=useLocalData("m7RetAge",65);const[lifeExp,sLifeExp]=useLocalData("m7LifeExp",90);
+  const[currentPat,sCP]=useLocalData("m7Pat",0);const[monthlyNeed,sMN]=useLocalData("m7Need",2000);
+  const[annualAccum,sAA]=useLocalData("m7Accum",0);const[retReturn,sRR]=useLocalData("m7RetReturn",3);
+  const[adjInf,setInf]=useLocalData("m7Inf",false);const[infRate,sInfR]=useLocalData("m7InfR",2.5);
+  const[savedPlan,setSavedPlan]=useLocalData("m7Saved",null);
+  const[assets2]=useLocalData("assets",D_AS);const[debts2]=useLocalData("debts",D_DB);
+  const autoPat=useMemo(()=>{for(let i=9;i>=0;i--){const tA=assets2.reduce((s,a)=>s+(a.values?.[i]||0),0);const tD=debts2.reduce((s,d)=>s+(d.values?.[i]||0),0);if(tA-tD>0)return tA-tD}return 0},[assets2,debts2]);
+  const autoSavM=MO.map((_,m)=>inc.reduce((s,rr)=>s+(rr.amounts[m]||0),0)).reduce((a,b)=>a+b,0)/12-(me.reduce((s,rr)=>s+(rr.monthly||0),0)+ae.reduce((s,rr)=>s+rr.annual/12,0));
+  const loadFromData=()=>{if(autoPat>0)sCP(autoPat);if(autoSavM>0)sAA(Math.round(autoSavM*12))};
+
+  const yrsToRet=Math.max(0,retAge-age);const yrsInRet=Math.max(0,lifeExp-retAge);
+  const realRetReturn=adjInf?Math.max(0,retReturn-infRate):retReturn;const rr=realRetReturn/100;
+  const annualNeed=monthlyNeed*12;
+  const targetPat=rr>0?annualNeed*((1-Math.pow(1+rr,-yrsInRet))/rr):annualNeed*yrsInRet;
+  const neededGrowth=useMemo(()=>{if(yrsToRet<=0)return 0;for(let g=0;g<=25;g+=0.1){const rate=g/100;const fv=currentPat*Math.pow(1+rate,yrsToRet)+(annualAccum>0&&rate>0?annualAccum*(Math.pow(1+rate,yrsToRet)-1)/rate:annualAccum*yrsToRet);if(fv>=targetPat)return g}return 99},[currentPat,annualAccum,yrsToRet,targetPat]);
+
+  const chartData=useMemo(()=>{
+    const g=neededGrowth<99?neededGrowth/100:0.05;const points=[];let p=currentPat;
+    points.push({age,pat:p,phase:"acum"});
+    for(let y=1;y<=yrsToRet;y++){p=p*(1+g)+annualAccum;points.push({age:age+y,pat:Math.round(p),phase:"acum"})}
+    for(let y=1;y<=yrsInRet;y++){p=p*(1+rr)-annualNeed;points.push({age:retAge+y,pat:Math.max(0,Math.round(p)),phase:"ret"})}
+    return points;
+  },[age,retAge,lifeExp,currentPat,annualAccum,neededGrowth,rr,annualNeed,yrsToRet,yrsInRet]);
+
+  const PlanChart=({width=900,height=280})=>{
+    if(chartData.length<2)return null;
+    const vals=chartData.map(d=>d.pat);const mx=Math.max(...vals)*1.05;const mi=0;const rgY=mx-mi||1;
+    const pX=60,pY=14,cW=width-pX-20,cH=height-pY-34;
+    const pts=chartData.map((d,i)=>({x:pX+(i/(chartData.length-1))*cW,y:pY+cH-((d.pat-mi)/rgY)*cH,phase:d.phase}));
+    const acumPts=pts.filter(p=>p.phase==="acum");
+    const retPts=pts.filter((_,i)=>chartData[i].phase==="ret"||i===acumPts.length-1);
+    const mkD=ps=>ps.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");
+    const fmtY=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?Math.round(v/1e3)+"k":Math.round(v);
+    const yLabs=Array.from({length:6},(_,i)=>mi+(mx-mi)*i/5);
+    const retLine=acumPts.length>0?acumPts[acumPts.length-1]:null;
+    const xStep=Math.max(1,Math.floor(chartData.length/15));
+    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+      <defs><linearGradient id="m7g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.gn} stopOpacity=".12"/><stop offset="100%" stopColor={C.gn} stopOpacity="0"/></linearGradient><linearGradient id="m7r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.rd} stopOpacity=".08"/><stop offset="100%" stopColor={C.rd} stopOpacity="0"/></linearGradient></defs>
+      {yLabs.map(v=><g key={v}><line x1={pX} y1={pY+cH-((v-mi)/rgY)*cH} x2={width-20} y2={pY+cH-((v-mi)/rgY)*cH} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={pY+cH-((v-mi)/rgY)*cH+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}€</text></g>)}
+      {retLine&&<><line x1={retLine.x} y1={pY} x2={retLine.x} y2={pY+cH} stroke={C.am} strokeWidth={1.5} strokeDasharray="5 3"/><text x={retLine.x+4} y={pY+12} fill={C.am} fontSize={9} fontWeight={600}>Jubilación ({retAge})</text></>}
+      <line x1={pX} y1={pY+cH-((targetPat-mi)/rgY)*cH} x2={width-20} y2={pY+cH-((targetPat-mi)/rgY)*cH} stroke={C.ac} strokeWidth={1} strokeDasharray="6 3" opacity={.5}/>
+      {acumPts.length>1&&<><path d={mkD(acumPts)+`L${acumPts[acumPts.length-1].x} ${pY+cH}L${acumPts[0].x} ${pY+cH}Z`} fill="url(#m7g)"/><path d={mkD(acumPts)} fill="none" stroke={C.gn} strokeWidth={2.5}/></>}
+      {retPts.length>1&&<><path d={mkD(retPts)+`L${retPts[retPts.length-1].x} ${pY+cH}L${retPts[0].x} ${pY+cH}Z`} fill="url(#m7r)"/><path d={mkD(retPts)} fill="none" stroke={C.rd} strokeWidth={2.5}/></>}
+      {pts.map((p,i)=>{const show=i%xStep===0||i===acumPts.length-1||i===pts.length-1;return show?<g key={i}><circle cx={p.x} cy={p.y} r={3} fill={C.w} stroke={p.phase==="acum"?C.gn:C.rd} strokeWidth={2}/><text x={p.x} y={height-4} textAnchor="middle" fill={C.tm} fontSize={8}>{chartData[i].age}</text></g>:null})}
+    </svg>
+  };
+
+  const totalGap=Math.max(0,targetPat-currentPat);
+  const annualIncNeeded=yrsToRet>0?totalGap/yrsToRet:totalGap;
+  const onTrack=annualAccum>=annualIncNeeded;
+  const pctCovered=annualIncNeeded>0?annualAccum/annualIncNeeded:1;
+
+  return<div style={{animation:"fadeIn .3s"}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+      <strong style={{color:C.ac}}>💡 ¿Cuánto necesitas para jubilarte?</strong> Edad, jubilación, acumulación anual y gasto mensual. Te decimos si vas bien encaminado.
+    </div>
+    <Cd style={{marginBottom:16}}>
+      <ST icon="⚙️">Tus Datos</ST>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:14}}>
+        <div><Lb>Edad Actual</Lb><input type="number" value={age} onChange={e=>sAge(Number(e.target.value)||0)}/></div>
+        <div><Lb>Edad Jubilación</Lb><input type="number" value={retAge} onChange={e=>sRetAge(Number(e.target.value)||0)}/></div>
+        <div><Lb>Esperanza de Vida</Lb><input type="number" value={lifeExp} onChange={e=>sLifeExp(Number(e.target.value)||0)}/></div>
+        <div><Lb>Patrimonio Actual (€)</Lb><input type="number" value={currentPat} onChange={e=>sCP(Number(e.target.value)||0)}/></div>
+        <div><Lb>Acumulación Anual (€)</Lb><input type="number" value={annualAccum} onChange={e=>sAA(Number(e.target.value)||0)}/></div>
+        <div><Lb>Gasto Mensual Jub. (€)</Lb><input type="number" value={monthlyNeed} onChange={e=>sMN(Number(e.target.value)||0)}/></div>
+        <div><Lb>Rendimiento Jub. (%)</Lb><input type="number" value={retReturn} onChange={e=>sRR(Number(e.target.value)||0)} step="0.5"/></div>
+      </div>
+      <div style={{marginTop:10}}><button onClick={loadFromData} style={{padding:"6px 14px",borderRadius:7,border:`1px solid ${C.ac}`,background:C.ad,color:C.ac,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>🔄 Cargar desde mis datos</button></div>
+      <div style={{display:"flex",alignItems:"center",gap:14,marginTop:14,padding:"10px 12px",borderRadius:8,background:adjInf?C.amd:C.sa,border:`1px solid ${adjInf?C.am:C.bd}`,cursor:"pointer"}} onClick={()=>setInf(!adjInf)}>
+        <span style={{fontSize:18}}>{adjInf?"✅":"⬜"}</span>
+        <div><span style={{fontSize:12,fontWeight:600,color:adjInf?C.am:C.td}}>Ajustar por inflación</span></div>
+        {adjInf&&<input type="number" value={infRate} onChange={e=>{e.stopPropagation();sInfR(Number(e.target.value)||0)}} onClick={e=>e.stopPropagation()} step="0.5" style={{width:60,fontSize:12}}/>}
+      </div>
+      <div style={{marginTop:14}}>
+        <Bt onClick={()=>setSavedPlan({date:new Date().toLocaleDateString("es-ES"),targetPat:Math.round(targetPat),neededGrowth})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
+        {savedPlan&&<span style={{fontSize:11,color:C.pu,marginLeft:10}}>Guardado: {savedPlan.date}</span>}
+      </div>
+    </Cd>
+
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:16}}>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${C.ac}`,padding:14}}><div style={{fontSize:20}}>🏦</div><div style={{fontSize:10,color:C.tm}}>Necesitas a los {retAge}</div><div style={{fontSize:20,fontWeight:700,color:C.ac,...mn}}>{fmt(Math.round(targetPat))} €</div></Cd>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${C.bl}`,padding:14}}><div style={{fontSize:20}}>📈</div><div style={{fontSize:10,color:C.tm}}>Aumento anual nec.</div><div style={{fontSize:20,fontWeight:700,color:C.bl,...mn}}>{fmt(Math.round(annualIncNeeded))} €</div></Cd>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${onTrack?C.gn:C.am}`,padding:14}}><div style={{fontSize:20}}>🎯</div><div style={{fontSize:10,color:C.tm}}>Tu ritmo</div><div style={{fontSize:20,fontWeight:700,color:onTrack?C.gn:C.am,...mn}}>{(pctCovered*100).toFixed(0)}%</div></Cd>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${neededGrowth<=5?C.gn:neededGrowth<=8?C.am:C.rd}`,padding:14}}><div style={{fontSize:20}}>📊</div><div style={{fontSize:10,color:C.tm}}>Crecimiento nec.</div><div style={{fontSize:20,fontWeight:700,color:neededGrowth<=5?C.gn:neededGrowth<=8?C.am:C.rd,...mn}}>{neededGrowth>=99?"∞":neededGrowth.toFixed(1)+"%"}</div></Cd>
+    </div>
+
+    <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 12px"}}>
+      <ST icon="📈">Evolución de tu Patrimonio</ST>
+      <PlanChart/>
+      <div style={{display:"flex",gap:14,marginTop:8,fontSize:10}}>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:3,background:C.gn,display:"inline-block"}}></span>Acumulación</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:3,background:C.rd,display:"inline-block"}}></span>Jubilación</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:2,borderTop:`2px dashed ${C.ac}`,display:"inline-block"}}></span><span style={{color:C.ac}}>Objetivo</span></span>
+      </div>
+    </Cd>
+  </div>;
+}
+
+// ============ APP ============
+function App(){
+  const[tab,sTab]=useState("m0");
+  const CY=new Date().getFullYear();const YEARS=Array.from({length:CY-2023+2},(_,i)=>2023+i);
+  const[selYear,setYear]=useState(CY);
+  const[incHist,sIH]=useLocalData("incomeHistory",{});
+  const[meHist,sMH]=useLocalData("meHistory",{});
+  const[aeHist,sAH]=useLocalData("aeHistory",{});
+  const[sgHist,sSGH]=useLocalData("sgHistory",{});
+  const[incRows,sIncRows]=useLocalData("incRows",D_I.map(r=>({name:r.name,type:r.type||"Otros"})));
+  const[meRows,sMeRows]=useLocalData("meRows",D_M.map(r=>({name:r.name,type:r.type||"Otros"})));
+  const[aeRows,sAeRows]=useLocalData("aeRows",D_A.map(r=>({name:r.name,type:r.type||"Otros"})));
+
+  const income=useMemo(()=>{
+    const raw=incHist[selYear]||[];
+    return incRows.map((tmpl,i)=>{const src=raw[i]||{};return{...tmpl,base:src.base!=null?src.base:null,amounts:src.amounts||Array(12).fill(0)}});
+  },[incRows,incHist,selYear]);
+  const me=useMemo(()=>{
+    const raw=meHist[selYear]||[];
+    return meRows.map((tmpl,i)=>{const src=raw[i]||{};return{...tmpl,monthly:src.monthly||0,real:src.real||Array(12).fill(null)}});
+  },[meRows,meHist,selYear]);
+  const ae=useMemo(()=>{
+    const raw=aeHist[selYear]||[];
+    return aeRows.map((tmpl,i)=>{const src=raw[i]||{};return{...tmpl,annual:src.annual||0,real:src.real||Array(12).fill(null)}});
+  },[aeRows,aeHist,selYear]);
+  const sg=sgHist[selYear]||400;
+
+  const sI=v=>sIH({...incHist,[selYear]:v.map(r=>({name:r.name,type:r.type,base:r.base,amounts:r.amounts}))});
+  const sM=v=>sMH({...meHist,[selYear]:v.map(r=>({name:r.name,type:r.type,monthly:r.monthly,real:r.real}))});
+  const sA=v=>sAH({...aeHist,[selYear]:v.map(r=>({name:r.name,type:r.type,annual:r.annual,real:r.real}))});
+  const sSG=v=>sSGH({...sgHist,[selYear]:v});
+
+  const addIncRow=(row)=>{sIncRows([...incRows,{name:row.name,type:row.type||"Otros"}]);const h={...incHist};YEARS.forEach(y=>{const arr=h[y]||[];h[y]=[...arr,{name:row.name,type:row.type,base:0,amounts:y===selYear?row.amounts:Array(12).fill(0)}]});sIH(h)};
+  const delIncRow=(idx)=>{sIncRows(incRows.filter((_,i)=>i!==idx));const h={...incHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sIH(h)};
+  const addMeRow=(row)=>{sMeRows([...meRows,{name:row.name,type:row.type||"Otros"}]);const h={...meHist};YEARS.forEach(y=>{const arr=h[y]||[];h[y]=[...arr,{name:row.name,type:row.type,monthly:y===selYear?row.monthly:0,real:Array(12).fill(null)}]});sMH(h)};
+  const delMeRow=(idx)=>{sMeRows(meRows.filter((_,i)=>i!==idx));const h={...meHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sMH(h)};
+  const addAeRow=(row)=>{sAeRows([...aeRows,{name:row.name,type:row.type||"Otros"}]);const h={...aeHist};YEARS.forEach(y=>{const arr=h[y]||[];h[y]=[...arr,{name:row.name,type:row.type,annual:y===selYear?row.annual:0}]});sAH(h)};
+  const delAeRow=(idx)=>{sAeRows(aeRows.filter((_,i)=>i!==idx));const h={...aeHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sAH(h)};
+  const syncIncMeta=(idx,field,val)=>{const nr=[...incRows];nr[idx]={...nr[idx],[field]:val};sIncRows(nr);const h={...incHist};YEARS.forEach(y=>{if(h[y]&&h[y][idx])h[y]=[...h[y]].map((r,i)=>i===idx?{...r,[field]:val}:r)});sIH(h)};
+  const syncMeMeta=(idx,field,val)=>{const nr=[...meRows];nr[idx]={...nr[idx],[field]:val};sMeRows(nr);const h={...meHist};YEARS.forEach(y=>{if(h[y]&&h[y][idx])h[y]=[...h[y]].map((r,i)=>i===idx?{...r,[field]:val}:r)});sMH(h)};
+  const syncAeMeta=(idx,field,val)=>{const nr=[...aeRows];nr[idx]={...nr[idx],[field]:val};sAeRows(nr);const h={...aeHist};YEARS.forEach(y=>{if(h[y]&&h[y][idx])h[y]=[...h[y]].map((r,i)=>i===idx?{...r,[field]:val}:r)});sAH(h)};
+  const reorderInc=(fromIdx,toIdx)=>{const nr=[...incRows];const[m]=nr.splice(fromIdx,1);nr.splice(toIdx,0,m);sIncRows(nr);const h={...incHist,[selYear]:incHist[selYear]||income};YEARS.forEach(y=>{if(h[y]&&h[y].length>Math.max(fromIdx,toIdx)){const arr=[...h[y]];const[mv]=arr.splice(fromIdx,1);arr.splice(toIdx,0,mv);h[y]=arr}});sIH(h)};
+  const reorderMe=(fromIdx,toIdx)=>{const nr=[...meRows];const[m]=nr.splice(fromIdx,1);nr.splice(toIdx,0,m);sMeRows(nr);const h={...meHist,[selYear]:meHist[selYear]||me};YEARS.forEach(y=>{if(h[y]&&h[y].length>Math.max(fromIdx,toIdx)){const arr=[...h[y]];const[mv]=arr.splice(fromIdx,1);arr.splice(toIdx,0,mv);h[y]=arr}});sMH(h)};
+  const reorderAe=(fromIdx,toIdx)=>{const nr=[...aeRows];const[m]=nr.splice(fromIdx,1);nr.splice(toIdx,0,m);sAeRows(nr);const h={...aeHist,[selYear]:aeHist[selYear]||ae};YEARS.forEach(y=>{if(h[y]&&h[y].length>Math.max(fromIdx,toIdx)){const arr=[...h[y]];const[mv]=arr.splice(fromIdx,1);arr.splice(toIdx,0,mv);h[y]=arr}});sAH(h)};
+  const copyYear=(from,to)=>{sIH({...incHist,[to]:incHist[from]||income});sMH({...meHist,[to]:meHist[from]||me});sAH({...aeHist,[to]:aeHist[from]||ae});sSGH({...sgHist,[to]:sgHist[from]||sg})};
+
+  const[onboarded,setOnboarded]=useLocalData("onboarded",false);
+
+  const finishOnboarding=(data)=>{
+    if(data.income>0){
+      const nominaIdx=income.findIndex(r=>r.name.toLowerCase().includes("nómina")||r.name.toLowerCase().includes("nomina"));
+      if(nominaIdx>=0){
+        const newInc=income.map((r,i)=>i===nominaIdx?{...r,amounts:Array(12).fill(data.income)}:r);
+        sI(newInc);
+      }
+    }
+    if(data.rent>0){
+      const rentIdx=me.findIndex(r=>r.name.toLowerCase().includes("alquiler")||r.name.toLowerCase().includes("hipoteca"));
+      if(rentIdx>=0){
+        const newMe=me.map((r,i)=>i===rentIdx?{...r,monthly:data.rent,real:Array(12).fill(null)}:r);
+        sM(newMe);
+      }
+    }
+    if(data.savings>0)sSG(Math.round(data.savings/100)*10);
+    setOnboarded(true);sTab("m0");
+  };
+
+  const ctx={income,setIncome:sI,monthlyExp:me,setMonthlyExp:sM,annualExp:ae,setAnnualExp:sA,savingsGoal:sg,setSavingsGoal:sSG,selYear,setYear,YEARS,copyYear,incHist,meHist,aeHist,addIncRow,delIncRow,addMeRow,delMeRow,addAeRow,delAeRow,syncIncMeta,syncMeMeta,syncAeMeta,reorderInc,reorderMe,reorderAe};
+
+  const TABS=[{id:"m0",l:"Dashboard",i:"🏠"},{id:"m1",l:"Ingresos",i:"💰"},{id:"m2",l:"Patrimonio",i:"📊"},{id:"m3",l:"Hipoteca",i:"🏛"},{id:"m4",l:"Libertad Fin.",i:"🏆"},{id:"m6",l:"Jubilación",i:"🎲"},{id:"m7",l:"Planificador",i:"🎯"}];
+  const render=()=>{switch(tab){case"m0":return<M0/>;case"m1":return<M1/>;case"m2":return<M2/>;case"m3":return<M3/>;case"m4":return<M4/>;case"m6":return<M6/>;case"m7":return<M7/>;default:return<M0/>}};
+
+  return<><style>{CSS}</style><Ctx.Provider value={ctx}>
+    {!onboarded&&<Onboarding onFinish={finishOnboarding}/>}
+    <div style={{minHeight:"100vh",background:C.bg}}>
+      <header style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 20px",borderBottom:`1px solid ${C.bd}`,background:C.w,position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{display:"flex",alignItems:"center",justifyContent:"center",width:34,height:34,borderRadius:9,background:`linear-gradient(135deg,${C.ac},#0284c7)`}}><span style={{fontSize:15,fontWeight:800,color:C.w}}>V</span></div><span style={{fontSize:15,fontWeight:700}}>VDB</span><span style={{fontSize:15,color:C.td}}>Finance</span></div>
+        <nav style={{display:"flex",gap:4,flexWrap:"wrap"}}>{TABS.map(t=><Bt key={t.id} active={tab===t.id} onClick={()=>sTab(t.id)}><span style={{marginRight:4}}>{t.i}</span><span className="tab-label">{t.l}</span></Bt>)}</nav>
+        <div style={{fontSize:10,color:C.tm,display:"flex",alignItems:"center",gap:5}}><span style={{color:C.gn}}>●</span>Local</div>
+      </header>
+      <main style={{maxWidth:1440,margin:"0 auto",padding:"18px 16px"}}>{render()}</main>
+      <footer style={{textAlign:"center",padding:16,borderTop:`1px solid ${C.bd}`,color:C.tm,fontSize:10,marginTop:28,background:C.w}}>VDB Finance © {new Date().getFullYear()} — Datos guardados solo en tu navegador</footer>
+    </div>
+  </Ctx.Provider></>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
