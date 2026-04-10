@@ -285,6 +285,7 @@ function exportToExcel(includeData){
 }
 
 async function importFromExcel(file){
+if(file.size>5*1024*1024)throw new Error("Archivo demasiado grande (max 5MB)");
   const data=await file.arrayBuffer();const wb=XLSX.read(data);
   const set=(key,val)=>localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(val));
   const readSheet=(name)=>{const sh=wb.Sheets[name];if(!sh)return[];return XLSX.utils.sheet_to_json(sh,{header:1,defval:null}).filter(r=>r&&r.length>0&&r[0]!=null&&r[0]!=="")};

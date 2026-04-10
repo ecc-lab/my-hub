@@ -32,7 +32,7 @@ const SECURITY_HEADERS = {
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
   "content-security-policy":
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
+    "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "connect-src 'self'; " +
@@ -67,6 +67,10 @@ const RATE_MAX = 120;       // max requests per window
 
 function checkRateLimit(ip) {
   const now = Date.now();
+  // Inline cleanup of expired entries (Workers are stateless, setInterval won't work)
+  for (const [k, v] of rateLimits) {
+    if (now - v.start > RATE_WINDOW) rateLimits.delete(k);
+  }
   const entry = rateLimits.get(ip);
   if (!entry || now - entry.start > RATE_WINDOW) {
     rateLimits.set(ip, { start: now, count: 1 });
@@ -76,14 +80,6 @@ function checkRateLimit(ip) {
   if (entry.count > RATE_MAX) return false;
   return true;
 }
-
-// Periodic cleanup (prevent memory leak)
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of rateLimits) {
-    if (now - entry.start > RATE_WINDOW) rateLimits.delete(ip);
-  }
-}, RATE_WINDOW);
 
 // ── /api/data/:key handler ──
 async function handleData(request, env, key) {
@@ -150,7 +146,7 @@ async function handleCoach(request, env) {
   // Only allow messages endpoint with constrained params
   const payload = {
     model: body.model || "claude-sonnet-4-20250514",
-    max_tokens: Math.min(body.max_tokens || 1024, 2048),
+    max_tokens: 1024,
     system: body.system || "",
     messages: body.messages || [],
   };
@@ -193,6 +189,9 @@ export default {
     const dataMatch = url.pathname.match(/^\/api\/data\/(.+)$/);
     if (dataMatch) {
       const key = decodeURIComponent(dataMatch[1]);
+      if (!/^[a-zA-Z0-9:_-]+$/.test(key)) {
+        return jsonResponse({ error: "invalid key format" }, 400);
+      }
       return handleData(request, env, key);
     }
 
