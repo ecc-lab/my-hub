@@ -11100,6 +11100,7 @@ const CLOUD_KEYS = [
 ];
 let _cloudSyncTimer = null;
 let _cloudLoaded = false;
+let _cloudVersion = null; // tracks server version for conflict detection
 
 // Keep the ORIGINAL setItem so we can write without triggering cloudSync
 // (used during the initial hydrate from the cloud snapshot).
@@ -11130,7 +11131,10 @@ async function cloudLoad() {
         catch(e) { console.warn('hydrate fail', k, e); }
       }
     }
-    cloudStatus('☁ loaded', 'ok');
+    // Track server version for conflict detection
+    const sv = res.headers.get('x-data-version');
+    if (sv) _cloudVersion = parseInt(sv, 10);
+    cloudStatus('☁ loaded v' + (_cloudVersion || '?'), 'ok');
     return true;
   } catch (e) {
     console.warn('Cloud load failed', e);
@@ -11148,14 +11152,24 @@ function cloudSyncNow() {
       if (raw === null) continue;
       try { blob[k] = JSON.parse(raw); } catch { blob[k] = raw; }
     }
+    const hdrs = { 'content-type': 'application/json' };
+    if (_cloudVersion != null) hdrs['if-match'] = '"' + _cloudVersion + '"';
     fetch(CLOUD_ENDPOINT, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: hdrs,
       credentials: 'same-origin',
       body: JSON.stringify(blob)
     }).then(r => {
-      if (r.ok) cloudStatus('☁ synced', 'ok');
-      else cloudStatus('⚠ sync ' + r.status, 'err');
+      if (r.ok) {
+        return r.json().then(j => {
+          if (j.version) _cloudVersion = j.version;
+          cloudStatus('☁ synced v' + (_cloudVersion || '?'), 'ok');
+        });
+      } else if (r.status === 409) {
+        cloudStatus('⚠ conflict — reload page', 'err');
+      } else {
+        cloudStatus('⚠ sync ' + r.status, 'err');
+      }
     }).catch(() => cloudStatus('⚠ offline', 'err'));
   } catch (e) { console.warn('Cloud sync error', e); }
 }

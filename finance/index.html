@@ -96,7 +96,7 @@ function useLocalData(key,def){
   const save=useCallback(v=>{
     sD(v);
     try{localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(v))}
-    catch(e){console.error("Error guardando "+key+":",e)}
+    catch(e){if(e.name==='QuotaExceededError')alert('Almacenamiento lleno. Haz un Backup y borra datos antiguos.');else console.error("Error guardando "+key+":",e)}
   },[key]);
   return[d,save];
 }

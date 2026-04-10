@@ -663,21 +663,34 @@ function migrateV2() {
     var raw = localStorage.getItem('gymlog_ec_v2');
     if (!raw) return;
     var old = JSON.parse(raw);
-    if (old.sessions && old.sessions.length && !data.sessions.length) {
-      data.sessions = old.sessions;
+    // Validate structure before migrating
+    if (old.sessions && Array.isArray(old.sessions) && !data.sessions.length) {
+      var valid = old.sessions.filter(function(s) {
+        return s && s.date && Array.isArray(s.exercises);
+      });
+      if (valid.length) data.sessions = valid;
     }
-    if (old.weights) {
+    if (old.weights && typeof old.weights === 'object') {
       for (var k in old.weights) if (old.weights.hasOwnProperty(k)) {
-        if (data.weights[k] === undefined) data.weights[k] = old.weights[k];
+        var w = Number(old.weights[k]);
+        if (!isNaN(w) && data.weights[k] === undefined) data.weights[k] = w;
       }
     }
     save();
-    console.log('[gymlog] Migrated from v2');
-  } catch(e) {}
+    console.log('[gymlog] Migrated ' + (data.sessions.length) + ' sessions from v2');
+  } catch(e) { console.warn('[gymlog] v2 migration failed', e); }
 }
 
 function save() {
-  try { localStorage.setItem('gymlog_ec_v3', JSON.stringify(data)); } catch(e) {}
+  try {
+    localStorage.setItem('gymlog_ec_v3', JSON.stringify(data));
+  } catch(e) {
+    if (e.name === 'QuotaExceededError') {
+      alert('Almacenamiento lleno. Borra datos antiguos o limpia la caché del navegador.');
+    } else {
+      console.warn('[gymlog] save error', e);
+    }
+  }
 }
 
 function getEx(id)      { return data.exercises.find(function(e){return e.id===id}); }
