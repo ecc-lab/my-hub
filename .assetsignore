@@ -2,6 +2,14 @@ worker.js
 wrangler.jsonc
 .assetsignore
 .gitignore
+.git
+.env
+.env.*
+*.pem
+*.key
+*.secret
+*.log
+credentials.json
 README.md
 functions
 node_modules

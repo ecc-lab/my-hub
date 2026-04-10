@@ -7,32 +7,23 @@
   <meta name="description" content="Planificador financiero personal: presupuesto, patrimonio, hipoteca, libertad financiera y jubilación.">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ea5e9'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='20' font-weight='800' font-family='sans-serif'>V</text></svg>">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="root"></div>
 
-<!-- Cloud Sync Bootstrap — loads data from KV before React mounts -->
+<!-- Cloud Sync — async, non-blocking -->
 <script>
+var _financeCloudEP='/api/data/finance%3Adefault';
+var _financeCloudReady=false;
 (function(){
   var PREFIX='vdb_';
-  var EP='/api/data/finance%3Adefault';
-  // 1. Hydrate localStorage from cloud (synchronous, before React)
-  try{
-    var x=new XMLHttpRequest();x.open('GET',EP,false);x.send();
-    if(x.status===200&&x.responseText&&x.responseText!=='null'){
-      var b=JSON.parse(x.responseText);
-      for(var k in b)if(b.hasOwnProperty(k))
-        localStorage.setItem(k,typeof b[k]==='string'?b[k]:JSON.stringify(b[k]));
-    }
-  }catch(e){console.warn('[cloud] hydrate failed',e)}
-  // 2. Patch localStorage.setItem to auto-sync vdb_* keys to cloud
   var _o=localStorage.setItem.bind(localStorage),_t=null;
   localStorage.setItem=function(k,v){_o(k,v);
-    if(typeof k==='string'&&k.indexOf(PREFIX)===0){
+    if(_financeCloudReady&&typeof k==='string'&&k.indexOf(PREFIX)===0){
       clearTimeout(_t);_t=setTimeout(function(){
         var snap={};
         for(var i=0;i<localStorage.length;i++){
@@ -42,8 +33,10 @@
             catch(e){snap[key]=localStorage.getItem(key)}
           }
         }
-        fetch(EP,{method:'POST',headers:{'content-type':'application/json'},
-          body:JSON.stringify(snap)}).catch(function(){});
+        fetch(_financeCloudEP,{method:'POST',headers:{'content-type':'application/json'},
+          body:JSON.stringify(snap)}).then(function(r){
+            if(!r.ok)console.warn('[cloud] sync failed',r.status);
+          }).catch(function(e){console.warn('[cloud] sync error',e)});
       },800);
     }
   };
@@ -1163,7 +1156,22 @@ function App(){
     </div>
   </Ctx.Provider></>;
 }
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+// Async cloud hydrate, then mount React
+(async function(){
+  try {
+    const res = await fetch(_financeCloudEP, {cache:'no-store'});
+    if (res.ok) {
+      const txt = await res.text();
+      if (txt && txt !== 'null') {
+        const blob = JSON.parse(txt);
+        for (const k in blob) if (blob.hasOwnProperty(k))
+          localStorage.setItem(k, typeof blob[k]==='string' ? blob[k] : JSON.stringify(blob[k]));
+      }
+    }
+  } catch(e) { console.warn('[cloud] load failed, using local', e); }
+  _financeCloudReady = true;
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+})();
 </script>
 </body>
 </html>

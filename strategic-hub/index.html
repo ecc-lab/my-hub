@@ -11659,27 +11659,16 @@ function initAiBar() { /* AI DISABLED — loadModel and coach not called */ }
 //  Reads your full hub state, gives strategic challenges
 // ══════════════════════════════════════════════════════
 
-const COACH_KEY_STORE = 'eloi_coach_key_v1';
-let _coachKey = null;
+// Coach uses server-side API key via /api/coach proxy — no client key needed
+let _coachKey = true; // always "connected" — the Worker holds the key
 let _coachOpen = false;
 
 function initCoach() {
-  const k = localStorage.getItem(COACH_KEY_STORE);
-  if (k && k.startsWith('sk-ant-')) {
-    _coachKey = k;
-    _showCoachConnected();
-  }
+  _showCoachConnected();
 }
 
 function saveCoachKey() {
-  const v = document.getElementById('coach-api-key').value.trim();
-  if (!v.startsWith('sk-ant-')) {
-    document.getElementById('coach-key-status').textContent = '✗ Invalid key';
-    document.getElementById('coach-key-status').style.color = 'var(--red)';
-    return;
-  }
-  _coachKey = v;
-  localStorage.setItem(COACH_KEY_STORE, v);
+  // No-op: API key is server-side now
   _showCoachConnected();
 }
 
@@ -11689,7 +11678,7 @@ function _showCoachConnected() {
   const st  = document.getElementById('coach-key-status');
   if (inp) inp.style.display = 'none';
   if (btn) btn.style.display = 'none';
-  if (st)  { st.textContent = '✓ Connected'; st.style.color = 'var(--green)'; }
+  if (st)  { st.textContent = '\u2713 Connected (server-side)'; st.style.color = 'var(--green)'; }
 }
 
 function openCoachPanel() {
@@ -11824,14 +11813,9 @@ COACHING RULES:
 - Do NOT use bullet points. Prose only.`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/coach', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': _coachKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 600,
@@ -12291,7 +12275,7 @@ function renderCrmRow(r, i) {
       <option value="Hot" ${r.status==='Hot'?'selected':''}>⚡ Hot</option>
       <option value="Closed" ${r.status==='Closed'?'selected':''}>✓ Closed</option>
     </select></td>
-    <td><input class="crm-cell-input" value="${r.date||''}" placeholder="DD/MM" style="width:70px" onchange="updateCrmCell(${i},'date',this.value)"></td>
+    <td><input class="crm-cell-input" value="${_esc(r.date)}" placeholder="DD/MM" style="width:70px" onchange="updateCrmCell(${i},'date',this.value)"></td>
     <td><input class="crm-cell-input" value="${_esc(r.next)}" placeholder="Next action" onchange="updateCrmCell(${i},'next',this.value)"></td>
     <td><input class="crm-cell-input" value="${_esc(r.notes)}" placeholder="Notes…" onchange="updateCrmCell(${i},'notes',this.value)"></td>
     <td><button class="crm-del-btn" onclick="deleteCrmRow(${i})">×</button></td>

@@ -2,73 +2,205 @@
 //  my-hub Worker — handles /api/* requests, falls through to static
 // ════════════════════════════════════════════════════════════════
 //
-//  GET  /api/data/:key  → reads JSON from DATA_KV
-//  POST /api/data/:key  → writes JSON to DATA_KV
-//  Anything else        → served from static assets (ASSETS binding)
+//  GET  /api/data/:key   → reads JSON from DATA_KV
+//  POST /api/data/:key   → writes JSON to DATA_KV
+//  POST /api/coach       → proxies Anthropic API (key stays server-side)
+//  GET  /api/ping        → health check
+//  Anything else         → served from static assets (ASSETS binding)
 //
 //  Required bindings (configure in Cloudflare Dashboard):
-//    - DATA_KV    (KV namespace)
-//    - ASSETS     (set automatically from wrangler.jsonc)
+//    - DATA_KV          (KV namespace)
+//    - ASSETS           (set automatically from wrangler.jsonc)
+//    - ANTHROPIC_KEY    (secret — Settings → Variables → encrypt)
 
-const MAX_BYTES = 1_000_000; // 1 MB safety cap on each KV value
+const MAX_BYTES = 1_000_000;
 
-const jsonHeaders = {
+// ── Allowed KV keys (whitelist) ──
+const ALLOWED_KEYS = new Set([
+  "strategic-hub",
+  "gymlog:default",
+  "finance:default",
+]);
+
+// ── Security headers applied to ALL responses ──
+const SECURITY_HEADERS = {
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "DENY",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=()",
+  "content-security-policy":
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "connect-src 'self'; " +
+    "img-src 'self' data:; " +
+    "frame-ancestors 'none';",
+};
+
+const JSON_CT = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store, no-cache, must-revalidate",
 };
 
 function jsonResponse(obj, status = 200) {
-  return new Response(JSON.stringify(obj), { status, headers: jsonHeaders });
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { ...JSON_CT, ...SECURITY_HEADERS },
+  });
 }
 
+function addSecurityHeaders(response) {
+  const r = new Response(response.body, response);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    r.headers.set(k, v);
+  }
+  return r;
+}
+
+// ── Rate limiter (simple per-IP, stored in-memory per isolate) ──
+const rateLimits = new Map();
+const RATE_WINDOW = 60_000; // 1 minute
+const RATE_MAX = 120;       // max requests per window
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = rateLimits.get(ip);
+  if (!entry || now - entry.start > RATE_WINDOW) {
+    rateLimits.set(ip, { start: now, count: 1 });
+    return true;
+  }
+  entry.count++;
+  if (entry.count > RATE_MAX) return false;
+  return true;
+}
+
+// Periodic cleanup (prevent memory leak)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimits) {
+    if (now - entry.start > RATE_WINDOW) rateLimits.delete(ip);
+  }
+}, RATE_WINDOW);
+
+// ── /api/data/:key handler ──
 async function handleData(request, env, key) {
   if (!env.DATA_KV) {
-    return jsonResponse(
-      { error: "KV binding DATA_KV not configured on this Worker" },
-      500
-    );
+    return jsonResponse({ error: "service unavailable" }, 503);
+  }
+
+  if (!ALLOWED_KEYS.has(key)) {
+    return jsonResponse({ error: "not found" }, 404);
   }
 
   if (request.method === "GET") {
     const value = await env.DATA_KV.get(key);
-    return new Response(value ?? "null", { headers: jsonHeaders });
+    return new Response(value ?? "null", {
+      headers: { ...JSON_CT, ...SECURITY_HEADERS },
+    });
   }
 
   if (request.method === "POST" || request.method === "PUT") {
     const body = await request.text();
     if (body.length > MAX_BYTES) {
-      return jsonResponse({ error: "payload too large", limit: MAX_BYTES }, 413);
+      return jsonResponse({ error: "payload too large" }, 413);
     }
     try {
       JSON.parse(body);
     } catch {
-      return jsonResponse({ error: "invalid JSON body" }, 400);
+      return jsonResponse({ error: "bad request" }, 400);
     }
     await env.DATA_KV.put(key, body);
-    return jsonResponse({ ok: true, key, size: body.length });
+    return jsonResponse({ ok: true, size: body.length });
   }
 
   if (request.method === "OPTIONS") {
     return new Response(null, {
-      headers: { allow: "GET, POST, PUT, OPTIONS", "cache-control": "no-store" },
+      headers: {
+        allow: "GET, POST, PUT, OPTIONS",
+        ...SECURITY_HEADERS,
+        "cache-control": "no-store",
+      },
     });
   }
 
   return jsonResponse({ error: "method not allowed" }, 405);
 }
 
+// ── /api/coach handler (Anthropic proxy) ──
+async function handleCoach(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse({ error: "method not allowed" }, 405);
+  }
+
+  const apiKey = env.ANTHROPIC_KEY;
+  if (!apiKey) {
+    return jsonResponse({ error: "service unavailable" }, 503);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: "bad request" }, 400);
+  }
+
+  // Only allow messages endpoint with constrained params
+  const payload = {
+    model: body.model || "claude-sonnet-4-20250514",
+    max_tokens: Math.min(body.max_tokens || 1024, 2048),
+    system: body.system || "",
+    messages: body.messages || [],
+  };
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await resp.text();
+    return new Response(result, {
+      status: resp.status,
+      headers: { ...JSON_CT, ...SECURITY_HEADERS },
+    });
+  } catch {
+    return jsonResponse({ error: "upstream error" }, 502);
+  }
+}
+
+// ── Main fetch handler ──
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const ip = request.headers.get("cf-connecting-ip") || "unknown";
 
-    // Match /api/data/:key  (key may contain colons, hyphens, etc.)
-    const match = url.pathname.match(/^\/api\/data\/(.+)$/);
-    if (match) {
-      const key = decodeURIComponent(match[1]);
+    // Rate limit all /api/* requests
+    if (url.pathname.startsWith("/api/")) {
+      if (!checkRateLimit(ip)) {
+        return jsonResponse({ error: "too many requests" }, 429);
+      }
+    }
+
+    // /api/data/:key
+    const dataMatch = url.pathname.match(/^\/api\/data\/(.+)$/);
+    if (dataMatch) {
+      const key = decodeURIComponent(dataMatch[1]);
       return handleData(request, env, key);
     }
 
-    // Health check for debugging the Worker is running
+    // /api/coach (Anthropic proxy)
+    if (url.pathname === "/api/coach") {
+      return handleCoach(request, env);
+    }
+
+    // /api/ping
     if (url.pathname === "/api/ping") {
       return jsonResponse({
         ok: true,
@@ -77,7 +209,8 @@ export default {
       });
     }
 
-    // Everything else → static assets (the index.html, /strategic-hub/, etc.)
-    return env.ASSETS.fetch(request);
+    // Static assets with security headers
+    const assetResponse = await env.ASSETS.fetch(request);
+    return addSecurityHeaders(assetResponse);
   },
 };
