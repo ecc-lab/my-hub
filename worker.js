@@ -19,6 +19,7 @@ const MAX_BYTES = 1_000_000;
 const ALLOWED_KEYS = new Set([
   "strategic-hub",
   "gymlog:default",
+  "gymlog:ec_v3",
   "finance:default",
 ]);
 
