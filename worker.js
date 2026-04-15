@@ -30,13 +30,13 @@ const SECURITY_HEADERS = {
   "x-frame-options": "DENY",
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
-  "content-security-policy":
+  "content-security-policy-report-only":
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' https://fonts.gstatic.com; " +
-    "connect-src 'self'; " +
-    "img-src 'self' data:; " +
+    "font-src 'self' https://fonts.gstatic.com data:; " +
+    "connect-src 'self' https://api.anthropic.com; " +
+    "img-src 'self' data: blob:; " +
     "frame-ancestors 'none';",
 };
 
