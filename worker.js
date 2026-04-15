@@ -93,18 +93,9 @@ async function handleData(request, env, key) {
 
   if (request.method === "GET") {
     const value = await env.DATA_KV.get(key);
-    // Wrap raw data with version metadata for conflict detection
-    const meta = await env.DATA_KV.get(key + ":meta");
-    const version = meta ? JSON.parse(meta) : null;
-    const resp = new Response(value ?? "null", {
+    return new Response(value ?? "null", {
       headers: { ...JSON_CT, ...SECURITY_HEADERS },
     });
-    if (version) {
-      resp.headers.set("etag", '"' + version.v + '"');
-      resp.headers.set("x-data-version", String(version.v));
-      resp.headers.set("x-data-ts", String(version.ts));
-    }
-    return resp;
   }
 
   if (request.method === "POST" || request.method === "PUT") {
@@ -117,25 +108,8 @@ async function handleData(request, env, key) {
     } catch {
       return jsonResponse({ error: "bad request" }, 400);
     }
-
-    // Version conflict detection via If-Match header
-    const ifMatch = request.headers.get("if-match");
-    if (ifMatch) {
-      const meta = await env.DATA_KV.get(key + ":meta");
-      const current = meta ? JSON.parse(meta) : null;
-      const clientV = parseInt(ifMatch.replace(/"/g, ""), 10);
-      if (current && !isNaN(clientV) && clientV < current.v) {
-        return jsonResponse({ error: "conflict", server_version: current.v, your_version: clientV }, 409);
-      }
-    }
-
-    // Bump version
-    const metaRaw = await env.DATA_KV.get(key + ":meta");
-    const prev = metaRaw ? JSON.parse(metaRaw) : { v: 0, ts: 0 };
-    const newVersion = { v: prev.v + 1, ts: Date.now() };
     await env.DATA_KV.put(key, body);
-    await env.DATA_KV.put(key + ":meta", JSON.stringify(newVersion));
-    return jsonResponse({ ok: true, size: body.length, version: newVersion.v });
+    return jsonResponse({ ok: true, size: body.length });
   }
 
   if (request.method === "OPTIONS") {
