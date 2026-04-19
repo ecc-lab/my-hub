@@ -930,9 +930,55 @@ function M2(){
 
   const MLChart=({width=620,height=200})=>{const allV=[...safeH.map(h=>h.income),...safeH.map(h=>h.expense),...savH];if(allV.every(v=>v===0))return<div style={{textAlign:'center',padding:30,color:C.tm,fontSize:12}}>Rellena el histórico de ingresos y gastos arriba</div>;const mx=Math.max(...allV,1),mi=Math.min(...allV,0),rg=mx-mi||1;const pX=50,pY=18,cW=width-pX*2,cH=height-pY*2;const mkP=data=>data.map((v,i)=>({x:pX+(i/(data.length-1))*cW,y:pY+cH-((v-mi)/rg)*cH}));const mkD=pts=>pts.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");const pI=mkP(safeH.map(h=>h.income)),pE=mkP(safeH.map(h=>h.expense)),pS=mkP(savH);return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}><path d={mkD(pI)} fill="none" stroke={C.gn} strokeWidth={2.5}/><path d={mkD(pE)} fill="none" stroke={C.rd} strokeWidth={2.5}/><path d={mkD(pS)} fill="none" stroke={C.ac} strokeWidth={2} strokeDasharray="6 3"/>{pI.map((p,i)=><g key={"i"+i}><circle cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.gn} strokeWidth={2}/><text x={p.x} y={height-2} textAnchor="middle" fill={C.tm} fontSize={9}>{yrs[i]}</text></g>)}{pE.map((p,i)=><circle key={"e"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.rd} strokeWidth={2}/>)}{pS.map((p,i)=><circle key={"s"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.ac} strokeWidth={2}/>)}</svg>};
 
+  // --- Pie chart data for current year asset allocation ---
+  const curYrIdx=Math.min(nY-1,Math.max(0,new Date().getFullYear()-1-sY));
+  const pieEfectivo=tEfectivo[curYrIdx]||0;
+  const pieInversion=tInversion[curYrIdx]||0;
+  const piePasivo=tPasivo[curYrIdx]||0;
+  const pieTotal=pieEfectivo+pieInversion+piePasivo;
+  const pieSlices=pieTotal>0?[
+    {label:"Efectivo",value:pieEfectivo,color:C.ac},
+    {label:"Inversión",value:pieInversion,color:C.pu},
+    {label:"Pasivo",value:piePasivo,color:C.am}
+  ].filter(s=>s.value>0):[];
+  // Liquid vs Illiquid
+  const liqAmt=pieEfectivo;
+  const illiqAmt=pieInversion+piePasivo;
+  const liqTotal=liqAmt+illiqAmt;
+  const liqPct=liqTotal>0?liqAmt/liqTotal:0;
+  const illiqPct=liqTotal>0?illiqAmt/liqTotal:0;
+
   return<div style={{animation:"fadeIn .3s"}}>
     <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>💡 Tu mapa financiero a vista de pájaro.</strong> Registra cuánto ganaste y gastaste cada año — el ahorro se calcula solo. Apunta tus activos y deudas para ver tu patrimonio neto real.
+    </div>
+
+    {/* Asset Allocation Pie + Liquid vs Illiquid */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+      <Cd style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <ST icon="🥧">Distribución de Activos ({yrs[curYrIdx]})</ST>
+        {pieSlices.length>0?(()=>{
+          const cx=150,cy=150,r=120;
+          let cumAngle=-Math.PI/2;
+          const arcs=pieSlices.map(s=>{const angle=(s.value/pieTotal)*2*Math.PI;const startAngle=cumAngle;cumAngle+=angle;const endAngle=cumAngle;const midAngle=(startAngle+endAngle)/2;const largeArc=angle>Math.PI?1:0;const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);const x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);const lx=cx+(r*0.65)*Math.cos(midAngle),ly=cy+(r*0.65)*Math.sin(midAngle);const pct=((s.value/pieTotal)*100).toFixed(1);return{...s,path:pieSlices.length===1?null:`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z`,lx,ly,pct};});
+          return<svg width={300} height={300} style={{display:"block",maxWidth:"100%"}}>
+            {arcs.map((a,i)=>a.path?<path key={i} d={a.path} fill={a.color} opacity={0.75}/>:<circle key={i} cx={cx} cy={cy} r={r} fill={a.color} opacity={0.75}/>)}
+            {arcs.map((a,i)=><g key={"l"+i}><text x={a.lx} y={a.ly-6} textAnchor="middle" fill={C.w} fontSize={11} fontWeight={700}>{a.label}</text><text x={a.lx} y={a.ly+10} textAnchor="middle" fill={C.w} fontSize={10} {...mn}>{a.pct}%</text></g>)}
+          </svg>;
+        })():<div style={{textAlign:"center",padding:30,color:C.tm,fontSize:12}}>Sin datos de activos</div>}
+      </Cd>
+      <Cd>
+        <ST icon="💧">Líquido vs Ilíquido ({yrs[curYrIdx]})</ST>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+          <div style={{padding:10,borderRadius:8,background:C.ad,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Líquido (Efectivo)</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(liqAmt)} zł</div><div style={{fontSize:10,color:C.tm}}>{fP(liqPct)}</div></div>
+          <div style={{padding:10,borderRadius:8,background:"rgba(124,58,237,0.06)",textAlign:"center",borderLeft:`3px solid ${C.pu}`}}><div style={{fontSize:9,color:C.tm}}>Ilíquido (Inv.+Pasivo)</div><div style={{fontSize:16,fontWeight:700,color:C.pu,...mn}}>{fmt(illiqAmt)} zł</div><div style={{fontSize:10,color:C.tm}}>{fP(illiqPct)}</div></div>
+        </div>
+        <div style={{height:22,borderRadius:11,overflow:"hidden",display:"flex",background:C.bg,marginBottom:8}}>
+          <div style={{width:fP(liqPct),background:C.ac,transition:"width .3s",display:"flex",alignItems:"center",justifyContent:"center"}}>{liqPct>0.08&&<span style={{fontSize:9,color:C.w,fontWeight:600}}>{fP(liqPct)}</span>}</div>
+          <div style={{width:fP(illiqPct),background:C.pu,transition:"width .3s",display:"flex",alignItems:"center",justifyContent:"center"}}>{illiqPct>0.08&&<span style={{fontSize:9,color:C.w,fontWeight:600}}>{fP(illiqPct)}</span>}</div>
+        </div>
+        <div style={{fontSize:11,color:C.td,lineHeight:1.5,marginTop:8}}>Total activos: <strong style={{...mn}}>{fmt(liqTotal)} zł</strong></div>
+      </Cd>
     </div>
 
     <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}>
@@ -1106,6 +1152,110 @@ function M3(){
         {savedHip&&<span style={{fontSize:11,color:C.pu,marginLeft:10}}>Guardado: {savedHip.date}</span>}
       </div>})()}
     </Cd>
+
+    {/* Amortization Schedule */}
+    {(()=>{
+      const ri=tin/100/ppy,np=yrs*ppy;
+      const cuota=ri===0?amt/np:(amt*ri*Math.pow(1+ri,np))/(Math.pow(1+ri,np)-1);
+      // Build amortization schedule
+      const amort=[];let balance=amt,cumPrincipal=0,cumInterest=0;
+      for(let m=1;m<=np;m++){
+        const intPay=balance*ri;const prinPay=cuota-intPay;balance=Math.max(0,balance-prinPay);
+        cumPrincipal+=prinPay;cumInterest+=intPay;
+        amort.push({month:m,interest:intPay,principal:prinPay,cumPrincipal,cumInterest,balance});
+      }
+      const totalInterest=cumInterest;
+      const paidPct=amt>0?cumPrincipal/amt:0;
+
+      // Yearly summaries for chart
+      const yearlyData=[];
+      for(let y=0;y<yrs;y++){
+        const entry=amort[Math.min((y+1)*12-1,amort.length-1)];
+        if(entry)yearlyData.push({year:y+1,cumP:entry.cumPrincipal,cumI:entry.cumInterest});
+      }
+
+      return<>
+        <Cd style={{marginTop:16,marginBottom:16}}>
+          <ST icon="📊">Progreso de Amortización</ST>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
+            <div style={{padding:10,borderRadius:8,background:C.gd,textAlign:"center",borderLeft:`3px solid ${C.gn}`}}><div style={{fontSize:9,color:C.tm}}>Principal pagado</div><div style={{fontSize:16,fontWeight:700,color:C.gn,...mn}}>{fmt(Math.round(cumPrincipal))} zł</div></div>
+            <div style={{padding:10,borderRadius:8,background:C.rdd,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Intereses totales</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(Math.round(totalInterest))} zł</div></div>
+            <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Cuota mensual</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(Math.round(cuota))} zł</div></div>
+          </div>
+          <div style={{marginBottom:8,fontSize:11,color:C.td}}>Progreso: <strong style={{...mn}}>{(paidPct*100).toFixed(1)}%</strong> del principal amortizado</div>
+          <div style={{height:22,borderRadius:11,overflow:"hidden",display:"flex",background:C.bg}}>
+            <div style={{width:`${(paidPct*100).toFixed(1)}%`,background:`linear-gradient(90deg,${C.gn},#22c55e)`,transition:"width .3s",display:"flex",alignItems:"center",justifyContent:"center"}}>{paidPct>0.05&&<span style={{fontSize:9,color:C.w,fontWeight:600}}>{(paidPct*100).toFixed(1)}%</span>}</div>
+            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:9,color:C.tm}}>{(100-paidPct*100).toFixed(1)}% restante</span></div>
+          </div>
+        </Cd>
+
+        <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center"}}>
+          <ST icon="📈" sub="Principal acumulado vs Intereses acumulados">Principal vs Intereses</ST>
+          {(()=>{
+            const W=900,H=220,pL=60,pR=20,pT=16,pB=28,cW=W-pL-pR,cH=H-pT-pB;
+            const maxV=Math.max(yearlyData[yearlyData.length-1]?.cumP||1,yearlyData[yearlyData.length-1]?.cumI||1)*1.05;
+            const xP=i=>pL+(i/(yearlyData.length-1||1))*cW;
+            const yP=v=>pT+cH-(v/maxV)*cH;
+            const mkD=(arr,key)=>arr.map((d,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(d[key])}`).join(" ");
+            const mkArea=(key,col)=>{const line=mkD(yearlyData,key);return line+`L${xP(yearlyData.length-1)} ${pT+cH}L${xP(0)} ${pT+cH}Z`;};
+            const yTicks=Array.from({length:5},(_,i)=>maxV*i/4);
+            const xStep=Math.max(1,Math.floor(yearlyData.length/15));
+            return<svg width={W} height={H} style={{display:"block",maxWidth:"100%"}}>
+              {yTicks.map((v,i)=><g key={i}><line x1={pL} y1={yP(v)} x2={W-pR} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pL-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={8} {...mn}>{fmt(Math.round(v/1000))}k</text></g>)}
+              <path d={mkArea("cumP")} fill={C.gn} opacity={.15}/>
+              <path d={mkArea("cumI")} fill={C.rd} opacity={.1}/>
+              <path d={mkD(yearlyData,"cumP")} fill="none" stroke={C.gn} strokeWidth={2.5}/>
+              <path d={mkD(yearlyData,"cumI")} fill="none" stroke={C.rd} strokeWidth={2.5}/>
+              {yearlyData.map((d,i)=>{const show=i%xStep===0||i===yearlyData.length-1;return show?<g key={i}><circle cx={xP(i)} cy={yP(d.cumP)} r={2.5} fill={C.w} stroke={C.gn} strokeWidth={1.5}/><circle cx={xP(i)} cy={yP(d.cumI)} r={2.5} fill={C.w} stroke={C.rd} strokeWidth={1.5}/><text x={xP(i)} y={H-4} textAnchor="middle" fill={C.tm} fontSize={8}>{d.year}</text></g>:null})}
+              <text x={xP(yearlyData.length-1)+4} y={yP(yearlyData[yearlyData.length-1]?.cumI||0)+4} fill={C.rd} fontSize={9} {...mn}>{fmt(Math.round(totalInterest))} zł</text>
+            </svg>;
+          })()}
+          <div style={{display:"flex",gap:14,marginTop:8,fontSize:11}}>
+            <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:3,background:C.gn,display:"inline-block"}}></span>Principal</span>
+            <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:3,background:C.rd,display:"inline-block"}}></span>Intereses</span>
+          </div>
+        </Cd>
+      </>;
+    })()}
+
+    {/* What-If Extra Payment */}
+    {(()=>{
+      const[extraPay,setExtraPay]=useState(0);
+      const ri=tin/100/ppy,np=yrs*ppy;
+      const cuotaOrig=ri===0?amt/np:(amt*ri*Math.pow(1+ri,np))/(Math.pow(1+ri,np)-1);
+      // Original totals
+      const origTotalPaid=cuotaOrig*np;
+      const origTotalInterest=origTotalPaid-amt;
+      // With extra payment
+      const cuotaExtra=cuotaOrig+(extraPay||0);
+      let balExtra=amt,monthsExtra=0,totalInterestExtra=0;
+      while(balExtra>0.01&&monthsExtra<np*2){
+        const intPay=balExtra*ri;
+        const prinPay=Math.min(balExtra,cuotaExtra-intPay);
+        if(prinPay<=0)break;
+        totalInterestExtra+=intPay;
+        balExtra-=prinPay;
+        monthsExtra++;
+      }
+      const yearsExtra=Math.ceil(monthsExtra/12*10)/10;
+      const origYears=yrs;
+      const yearsSaved=Math.max(0,origYears-yearsExtra);
+      const interestSaved=Math.max(0,origTotalInterest-totalInterestExtra);
+
+      return<Cd style={{marginTop:16,marginBottom:16}}>
+        <ST icon="🔮" sub="Simula pagos extra mensuales">What-If: Pago Extra</ST>
+        <div style={{marginBottom:14}}>
+          <Lb>Pago extra mensual (zł)</Lb>
+          <input type="number" value={extraPay||""} onChange={e=>setExtraPay(Number(e.target.value)||0)} style={{width:160}} placeholder="0"/>
+        </div>
+        {extraPay>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
+          <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Original</div><div style={{fontSize:14,fontWeight:700,color:C.rd,...mn}}>{origYears} años</div><div style={{fontSize:10,color:C.tm}}>Intereses: {fmt(Math.round(origTotalInterest))} zł</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.gd,textAlign:"center",borderLeft:`3px solid ${C.gn}`}}><div style={{fontSize:9,color:C.tm}}>Con extra +{fmt(extraPay)} zł/mes</div><div style={{fontSize:14,fontWeight:700,color:C.gn,...mn}}>{yearsExtra} años</div><div style={{fontSize:10,color:C.tm}}>Intereses: {fmt(Math.round(totalInterestExtra))} zł</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.ad,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Te ahorras</div><div style={{fontSize:14,fontWeight:700,color:C.ac,...mn}}>{yearsSaved.toFixed(1)} años</div><div style={{fontSize:10,color:C.gn,fontWeight:600}}>{fmt(Math.round(interestSaved))} zł</div></div>
+        </div>}
+        {!extraPay&&<div style={{textAlign:"center",padding:16,color:C.tm,fontSize:12}}>Introduce un pago extra para ver el impacto</div>}
+      </Cd>;
+    })()}
   </div>;
 }
 
@@ -1121,7 +1271,45 @@ function M4(){
   const proj=useMemo(()=>{const rows=[];let p=iP;rows.push({y:0,inc:0,exp:0,sav:0,ret:0,cov:0,pat:p});for(let y=1;y<=99;y++){const ret=p*r;const cov=aE>0?ret/aE:0;p+=sav+ret;rows.push({y,inc:aI,exp:aE,sav,ret,cov,pat:p})}return rows},[aI,aE,iP,r,sav]);
   const goT=useMemo(()=>{const rows=[];for(let s=5;s<=95;s+=5){const rt=s/100,exp=aI*(1-rt);if(exp<=0){rows.push({rate:s,yrs:0,me:0});continue}const target=exp/(r||.001);const sv=aI*rt;let p=0,y=0;while(p<target&&y<200){p=p*(1+r)+sv;y++}rows.push({rate:s,yrs:y,me:exp/12})}return rows},[aI,r]);
   const goY=proj.find(p=>p.cov>=1);
+  // FIRE calculations
+  const fireAnnualExp=aE;
+  const fireNumber=fireAnnualExp*25;
+  const fireProgress=fireNumber>0?Math.min(iP/fireNumber,1):0;
+  const fireYearsToIndep=useMemo(()=>{
+    if(sav<=0&&r<=0)return Infinity;
+    let p=iP;
+    for(let y=1;y<=200;y++){
+      p=p*(1+r)+sav;
+      if(p>=fireNumber)return y;
+    }
+    return Infinity;
+  },[iP,sav,r,fireNumber]);
+
   return<div style={{animation:"fadeIn .3s"}}>
+    {/* FIRE KPIs */}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:16}}>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${C.ac}`,padding:16}}>
+        <div style={{fontSize:24,marginBottom:6}}>🔥</div>
+        <div style={{fontSize:10,color:C.tm,marginBottom:4}}>Número FIRE (Regla 4%)</div>
+        <div style={{fontSize:24,fontWeight:700,color:C.ac,...mn}}>{fmt(Math.round(fireNumber))} zł</div>
+        <div style={{fontSize:10,color:C.tm,marginTop:4}}>Gastos anuales ({fmt(fireAnnualExp)} zł) x 25</div>
+      </Cd>
+      <Cd style={{padding:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:20}}>📊</span><h3 style={{fontSize:14,fontWeight:600}}>% Progreso FIRE</h3></div>
+        <div style={{fontSize:28,fontWeight:700,color:fireProgress>=1?C.gn:fireProgress>=0.5?C.am:C.rd,...mn,textAlign:"center",marginBottom:8}}>{(fireProgress*100).toFixed(1)}%</div>
+        <div style={{height:22,borderRadius:11,overflow:"hidden",display:"flex",background:C.bg}}>
+          <div style={{width:`${(fireProgress*100).toFixed(1)}%`,background:fireProgress>=1?C.gn:fireProgress>=0.5?`linear-gradient(90deg,${C.am},${C.gn})`:C.am,transition:"width .3s",display:"flex",alignItems:"center",justifyContent:"center"}}>{fireProgress>0.08&&<span style={{fontSize:9,color:C.w,fontWeight:600}}>{(fireProgress*100).toFixed(1)}%</span>}</div>
+        </div>
+        <div style={{fontSize:10,color:C.tm,marginTop:6,textAlign:"center"}}>{fmt(Math.round(iP))} zł / {fmt(Math.round(fireNumber))} zł</div>
+      </Cd>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${fireYearsToIndep<=15?C.gn:fireYearsToIndep<=30?C.am:C.rd}`,padding:16}}>
+        <div style={{fontSize:24,marginBottom:6}}>⏱️</div>
+        <div style={{fontSize:10,color:C.tm,marginBottom:4}}>Años a Independencia</div>
+        <div style={{fontSize:24,fontWeight:700,color:fireYearsToIndep<=15?C.gn:fireYearsToIndep<=30?C.am:C.rd,...mn}}>{fireYearsToIndep>=200||!isFinite(fireYearsToIndep)?"∞":`${fireYearsToIndep} años`}</div>
+        <div style={{fontSize:10,color:C.tm,marginTop:4}}>Ahorro: {fmt(sav)} zł/año · Rdto: {aR}%</div>
+      </Cd>
+    </div>
+
     <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>💡 ¿Cuándo trabajas porque quieres, no porque debes?</strong> Los datos se cargan solos desde Ingresos. Ajusta el rendimiento y observa el interés compuesto.
     </div>
@@ -1359,6 +1547,82 @@ function M7(){
   </div>;
 }
 
+// ============ M8: Salud del Sistema ============
+function M8(){
+  const[incHist]=useLocalData("incomeHistory",{});
+  const[meHist]=useLocalData("meHistory",{});
+  const[aeHist]=useLocalData("aeHistory",{});
+
+  const sources=useMemo(()=>{
+    const now=new Date();
+    const check=(hist,label)=>{
+      const years=Object.keys(hist).map(Number).filter(y=>y>0).sort((a,b)=>b-a);
+      let lastMonth=null,lastYear=null;
+      for(const y of years){
+        const rows=hist[y]||[];
+        for(let m=11;m>=0;m--){
+          const hasData=rows.some(r=>{
+            if(r.amounts)return(r.amounts[m]||0)!==0;
+            if(r.real){const rv=r.real[m];if(rv!=null&&rv!==0)return true;}
+            if(r.monthly&&r.monthly>0)return true;
+            if(r.annual&&r.annual>0)return true;
+            return false;
+          });
+          if(hasData){lastMonth=m;lastYear=y;break;}
+        }
+        if(lastYear)break;
+      }
+      if(!lastYear)return{name:label,lastDate:null,daysSince:Infinity};
+      const lastDate=new Date(lastYear,lastMonth+1,0);
+      const daysSince=Math.floor((now-lastDate)/(1000*60*60*24));
+      return{name:label,lastDate:`${MO[lastMonth]} ${lastYear}`,daysSince};
+    };
+    return[
+      check(incHist,"Ingresos"),
+      check(meHist,"Gastos Mensuales"),
+      check(aeHist,"Gastos Anuales")
+    ];
+  },[incHist,meHist,aeHist]);
+
+  const upToDate=sources.filter(s=>s.daysSince<30).length;
+  const total=sources.length;
+  const statusColor=(days)=>days<30?C.gn:days<90?C.am:C.rd;
+  const statusLabel=(days)=>days<30?"OK":days<90?"Revisar":"Desactualizado";
+  const allHealthy=upToDate===total;
+
+  return<div style={{animation:"fadeIn .3s"}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+      <strong style={{color:C.ac}}>🩺 Salud de tus datos.</strong> Comprueba si tus fuentes de datos están actualizadas. Verde = al día, ámbar = pendiente de revisar, rojo = desactualizado.
+    </div>
+
+    <Cd style={{marginBottom:16,textAlign:"center",padding:20}}>
+      <div style={{fontSize:48,marginBottom:10}}>{allHealthy?"✅":"⚠️"}</div>
+      <div style={{fontSize:20,fontWeight:700,color:allHealthy?C.gn:C.am,...mn}}>{upToDate} de {total}</div>
+      <div style={{fontSize:12,color:C.td,marginTop:4}}>fuentes de datos al día (&lt;30 días)</div>
+    </Cd>
+
+    <Cd style={{marginBottom:16}}>
+      <ST icon="📋">Último mes con datos</ST>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+        <thead><tr>
+          <th style={{...th,textAlign:"left"}}>Fuente</th>
+          <th style={th}>Último mes</th>
+          <th style={th}>Días desde actualización</th>
+          <th style={th}>Estado</th>
+        </tr></thead>
+        <tbody>
+          {sources.map((s,i)=>{const clr=statusColor(s.daysSince);return<tr key={i} style={{borderBottom:`1px solid ${C.bg}`}}>
+            <td style={{padding:"8px 6px",fontWeight:600}}>{s.name}</td>
+            <td style={{padding:"8px 6px",textAlign:"right",...mn}}>{s.lastDate||"Sin datos"}</td>
+            <td style={{padding:"8px 6px",textAlign:"right",...mn,color:clr}}>{isFinite(s.daysSince)?`${s.daysSince} días`:"—"}</td>
+            <td style={{padding:"6px"}}><span style={{display:"inline-block",padding:"4px 10px",borderRadius:6,fontSize:10,fontWeight:600,color:clr,background:clr===C.gn?C.gd:clr===C.am?C.amd:C.rdd}}>{isFinite(s.daysSince)?statusLabel(s.daysSince):"Sin datos"}</span></td>
+          </tr>})}
+        </tbody>
+      </table>
+    </Cd>
+  </div>;
+}
+
 // ============ APP ============
 function App(){
   const[tab,sTab]=useState("m0");
@@ -1428,8 +1692,8 @@ function App(){
 
   const ctx={income,setIncome:sI,monthlyExp:me,setMonthlyExp:sM,annualExp:ae,setAnnualExp:sA,savingsGoal:sg,setSavingsGoal:sSG,selYear,setYear,YEARS,copyYear,incHist,meHist,aeHist,addIncRow,delIncRow,addMeRow,delMeRow,addAeRow,delAeRow,syncIncMeta,syncMeMeta,syncAeMeta,reorderInc,reorderMe,reorderAe};
 
-  const TABS=[{id:"m0",l:"Dashboard",i:"🏠"},{id:"m1",l:"Ingresos",i:"💰"},{id:"m1b",l:"Gastos",i:"📉"},{id:"m2",l:"Patrimonio",i:"📊"},{id:"m3",l:"Hipoteca",i:"🏛"},{id:"m4",l:"Libertad Fin.",i:"🏆"},{id:"m6",l:"Jubilación",i:"🎲"},{id:"m7",l:"Planificador",i:"🎯"}];
-  const render=()=>{switch(tab){case"m0":return<M0/>;case"m1":return<M1/>;case"m1b":return<M1b/>;case"m2":return<M2/>;case"m3":return<M3/>;case"m4":return<M4/>;case"m6":return<M6/>;case"m7":return<M7/>;default:return<M0/>}};
+  const TABS=[{id:"m0",l:"Dashboard",i:"🏠"},{id:"m1",l:"Ingresos",i:"💰"},{id:"m1b",l:"Gastos",i:"📉"},{id:"m2",l:"Patrimonio",i:"📊"},{id:"m3",l:"Hipoteca",i:"🏛"},{id:"m4",l:"Libertad Fin.",i:"🏆"},{id:"m6",l:"Jubilación",i:"🎲"},{id:"m7",l:"Planificador",i:"🎯"},{id:"m8",l:"Salud",i:"🩺"}];
+  const render=()=>{switch(tab){case"m0":return<M0/>;case"m1":return<M1/>;case"m1b":return<M1b/>;case"m2":return<M2/>;case"m3":return<M3/>;case"m4":return<M4/>;case"m6":return<M6/>;case"m7":return<M7/>;case"m8":return<M8/>;default:return<M0/>}};
 
   return<><style>{CSS}</style><Ctx.Provider value={ctx}>
     {!onboarded&&<Onboarding onFinish={finishOnboarding}/>}
