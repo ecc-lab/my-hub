@@ -154,7 +154,7 @@ const Ctx=createContext();
 const DualChart=({data,rates,goal,labels,width=620,height=180})=>{
   if(!data||!data.length)return null;
   const mx=Math.max(...data.map(Math.abs),1);const pad=35;const rPad=40;const bW=(width-pad-rPad)/data.length-3;const mid=height/2;
-  return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+  return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}>
     {data.map((v,i)=>{const h=Math.max((Math.abs(v)/mx)*(mid-18),2);const y=v>=0?mid-h:mid;
       return<g key={i}><rect x={pad+i*(bW+3)} y={y} width={bW} height={h} rx={3} fill={v>=0?C.gn:C.rd} opacity={.65}/>
         <text x={pad+i*(bW+3)+bW/2} y={height-3} textAnchor="middle" fill={C.tm} fontSize={10}>{labels?.[i]}</text>
@@ -452,7 +452,7 @@ function M0(){
     const pL=60,pR=20,pT=24,pB=30,cW=width-pL-pR,cH=height-pT-pB;
     const bW=Math.min(cW/bars.length-16,100);
     const mid=pT+cH/2;
-    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+    return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}>
       <line x1={pL} y1={mid} x2={width-pR} y2={mid} stroke={C.bd} strokeWidth={1}/>
       {bars.map((b,i)=>{const bH=Math.max((Math.abs(b.value)/maxAbs)*(cH/2-8),3);const x=pL+(cW/bars.length)*i+(cW/bars.length-bW)/2;const y=b.value>=0?mid-bH:mid;
         return<g key={i}>
@@ -477,7 +477,7 @@ function M0(){
     const mkArea=(getTop,getBot)=>{const top=PAT_YEARS.map((_,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(getTop(i))}`).join(" ");const bot=[...PAT_YEARS.keys()].reverse().map(i=>`L${xP(i)} ${yP(getBot(i))}`).join(" ");return top+" "+bot+" Z"};
     const nwLine=PAT_YEARS.map((_,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(netWorth[i])}`).join(" ");
     const yTicks=Array.from({length:5},(_,i)=>allMin+(range*i/4));
-    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+    return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}>
       {yTicks.map((v,i)=><g key={i}><line x1={pL} y1={yP(v)} x2={width-pR} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pL-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={8} {...mn}>{fmt(Math.round(v/1000))}k</text></g>)}
       <path d={mkArea(i=>stacked[i][2],()=>0)} fill={C.am} opacity={.15}/>
       <path d={mkArea(i=>stacked[i][1],i=>stacked[i][0])} fill={C.pu} opacity={.2}/>
@@ -792,7 +792,7 @@ function M1b(){
     const pL=45,pR=10,pT=12,pB=24,cW=width-pL-pR,cH=height-pT-pB;
     const xP=i=>pL+(i/11)*cW;const yP=v=>pT+cH-(v/mx)*cH;
     const mkD=d=>d.map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join(" ");
-    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+    return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}>
       {[0,.25,.5,.75,1].map(f=>{const v=mx*f;return<g key={f}><line x1={pL} y1={yP(v)} x2={width-pR} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pL-4} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={8} {...mn}>{fmt(Math.round(v))}</text></g>})}
       <path d={mkD(fijosM)} fill="none" stroke={C.rd} strokeWidth={2}/>
       <path d={mkD(varsM)} fill="none" stroke={C.am} strokeWidth={2} strokeDasharray="6 3"/>
@@ -928,7 +928,7 @@ function M2(){
 
   const projBase=pat.reduce((last,v,i)=>v>0?i:last,-1);
 
-  const MLChart=({width=620,height=200})=>{const allV=[...safeH.map(h=>h.income),...safeH.map(h=>h.expense),...savH];if(allV.every(v=>v===0))return<div style={{textAlign:'center',padding:30,color:C.tm,fontSize:12}}>Rellena el histórico de ingresos y gastos arriba</div>;const mx=Math.max(...allV,1),mi=Math.min(...allV,0),rg=mx-mi||1;const pX=50,pY=18,cW=width-pX*2,cH=height-pY*2;const mkP=data=>data.map((v,i)=>({x:pX+(i/(data.length-1))*cW,y:pY+cH-((v-mi)/rg)*cH}));const mkD=pts=>pts.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");const pI=mkP(safeH.map(h=>h.income)),pE=mkP(safeH.map(h=>h.expense)),pS=mkP(savH);return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}><path d={mkD(pI)} fill="none" stroke={C.gn} strokeWidth={2.5}/><path d={mkD(pE)} fill="none" stroke={C.rd} strokeWidth={2.5}/><path d={mkD(pS)} fill="none" stroke={C.ac} strokeWidth={2} strokeDasharray="6 3"/>{pI.map((p,i)=><g key={"i"+i}><circle cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.gn} strokeWidth={2}/><text x={p.x} y={height-2} textAnchor="middle" fill={C.tm} fontSize={9}>{yrs[i]}</text></g>)}{pE.map((p,i)=><circle key={"e"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.rd} strokeWidth={2}/>)}{pS.map((p,i)=><circle key={"s"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.ac} strokeWidth={2}/>)}</svg>};
+  const MLChart=({width=620,height=200})=>{const allV=[...safeH.map(h=>h.income),...safeH.map(h=>h.expense),...savH];if(allV.every(v=>v===0))return<div style={{textAlign:'center',padding:30,color:C.tm,fontSize:12}}>Rellena el histórico de ingresos y gastos arriba</div>;const mx=Math.max(...allV,1),mi=Math.min(...allV,0),rg=mx-mi||1;const pX=50,pY=18,cW=width-pX*2,cH=height-pY*2;const mkP=data=>data.map((v,i)=>({x:pX+(i/(data.length-1))*cW,y:pY+cH-((v-mi)/rg)*cH}));const mkD=pts=>pts.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");const pI=mkP(safeH.map(h=>h.income)),pE=mkP(safeH.map(h=>h.expense)),pS=mkP(savH);return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}><path d={mkD(pI)} fill="none" stroke={C.gn} strokeWidth={2.5}/><path d={mkD(pE)} fill="none" stroke={C.rd} strokeWidth={2.5}/><path d={mkD(pS)} fill="none" stroke={C.ac} strokeWidth={2} strokeDasharray="6 3"/>{pI.map((p,i)=><g key={"i"+i}><circle cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.gn} strokeWidth={2}/><text x={p.x} y={height-2} textAnchor="middle" fill={C.tm} fontSize={9}>{yrs[i]}</text></g>)}{pE.map((p,i)=><circle key={"e"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.rd} strokeWidth={2}/>)}{pS.map((p,i)=><circle key={"s"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.ac} strokeWidth={2}/>)}</svg>};
 
   // --- Pie chart data for current year asset allocation ---
   const curYrIdx=Math.min(nY-1,Math.max(0,new Date().getFullYear()-1-sY));
@@ -961,7 +961,7 @@ function M2(){
           const cx=150,cy=150,r=120;
           let cumAngle=-Math.PI/2;
           const arcs=pieSlices.map(s=>{const angle=(s.value/pieTotal)*2*Math.PI;const startAngle=cumAngle;cumAngle+=angle;const endAngle=cumAngle;const midAngle=(startAngle+endAngle)/2;const largeArc=angle>Math.PI?1:0;const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);const x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);const lx=cx+(r*0.65)*Math.cos(midAngle),ly=cy+(r*0.65)*Math.sin(midAngle);const pct=((s.value/pieTotal)*100).toFixed(1);return{...s,path:pieSlices.length===1?null:`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z`,lx,ly,pct};});
-          return<svg width={300} height={300} style={{display:"block",maxWidth:"100%"}}>
+          return<svg viewBox="0 0 300 300" style={{display:"block",width:"100%",maxWidth:300,height:"auto",margin:"0 auto"}}>
             {arcs.map((a,i)=>a.path?<path key={i} d={a.path} fill={a.color} opacity={0.75}/>:<circle key={i} cx={cx} cy={cy} r={r} fill={a.color} opacity={0.75}/>)}
             {arcs.map((a,i)=><g key={"l"+i}><text x={a.lx} y={a.ly-6} textAnchor="middle" fill={C.w} fontSize={11} fontWeight={700}>{a.label}</text><text x={a.lx} y={a.ly+10} textAnchor="middle" fill={C.w} fontSize={10} {...mn}>{a.pct}%</text></g>)}
           </svg>;
@@ -1030,7 +1030,7 @@ function M2(){
         const pts=fullData.map((v,i)=>({x:pX+(i/(fullData.length-1))*cW,y:pY+cH-((v-mi)/rg)*cH,proj:i>projBase&&projBase>=0}));
         const realPts=pts.filter(p=>!p.proj);const projPts=projBase>=0?pts.filter((_,i)=>i>=projBase):[];
         const mkD=ps=>ps.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");
-        return<svg width={W} height={H} style={{display:"block",maxWidth:"100%"}}>
+        return<svg viewBox={`0 0 ${W} ${H}`} style={{display:"block",width:"100%",height:"auto"}}>
           <defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.ac} stopOpacity=".1"/><stop offset="100%" stopColor={C.ac} stopOpacity="0"/></linearGradient></defs>
           {realPts.length>1&&<><path d={mkD(realPts)+`L${realPts[realPts.length-1].x} ${pY+cH}L${realPts[0].x} ${pY+cH}Z`} fill="url(#pg)"/><path d={mkD(realPts)} fill="none" stroke={C.ac} strokeWidth={2.5} strokeLinecap="round"/></>}
           {projPts.length>1&&<path d={mkD(projPts)} fill="none" stroke={C.pu} strokeWidth={2} strokeDasharray="6 3"/>}
@@ -1077,7 +1077,7 @@ function M3(){
     const pts=data.map((d,i)=>({x:pX+(i/(data.length-1))*cW,y:pY+cH-((d.v-mi)/rg)*cH}));
     const mkD=ps=>ps.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");
     const yLabs=Array.from({length:7},(_,i)=>mi+(mx-mi)*i/6);
-    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+    return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}>
       <defs><linearGradient id="eurGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.ac} stopOpacity=".15"/><stop offset="100%" stopColor={C.ac} stopOpacity="0"/></linearGradient></defs>
       {yLabs.map(v=><g key={v}><line x1={pX} y1={pY+cH-((v-mi)/rg)*cH} x2={width-20} y2={pY+cH-((v-mi)/rg)*cH} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={pY+cH-((v-mi)/rg)*cH+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{v.toFixed(1)}%</text></g>)}
       <path d={mkD(pts)+`L${pts[pts.length-1].x} ${pY+cH}L${pts[0].x} ${pY+cH}Z`} fill="url(#eurGrad)"/>
@@ -1200,7 +1200,7 @@ function M3(){
             const mkArea=(key,col)=>{const line=mkD(yearlyData,key);return line+`L${xP(yearlyData.length-1)} ${pT+cH}L${xP(0)} ${pT+cH}Z`;};
             const yTicks=Array.from({length:5},(_,i)=>maxV*i/4);
             const xStep=Math.max(1,Math.floor(yearlyData.length/15));
-            return<svg width={W} height={H} style={{display:"block",maxWidth:"100%"}}>
+            return<svg viewBox={`0 0 ${W} ${H}`} style={{display:"block",width:"100%",height:"auto"}}>
               {yTicks.map((v,i)=><g key={i}><line x1={pL} y1={yP(v)} x2={W-pR} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pL-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={8} {...mn}>{fmt(Math.round(v/1000))}k</text></g>)}
               <path d={mkArea("cumP")} fill={C.gn} opacity={.15}/>
               <path d={mkArea("cumI")} fill={C.rd} opacity={.1}/>
@@ -1387,7 +1387,7 @@ function M6(){
     const fmtY=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?Math.round(v/1e3)+"k":Math.round(v);
     const yLabs=Array.from({length:6},(_,i)=>allMin+(allMax-allMin)*i/5);
     const mkA=(lo,hi,col,op)=>{const t=bands[hi],b=bands[lo];return<path d={t.map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join("")+b.slice().reverse().map((v,i)=>`L${xP(totY-i)} ${yP(v)}`).join("")+"Z"} fill={col} opacity={op}/>};
-    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+    return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}>
       {yLabs.map(v=><g key={v}><line x1={pX} y1={yP(v)} x2={width-20} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}zł</text></g>)}
       <line x1={xP(accY)} y1={pY} x2={xP(accY)} y2={pY+cH} stroke={C.am} strokeWidth={1.5} strokeDasharray="5 3"/>
       <text x={xP(accY)+4} y={pY+13} fill={C.am} fontSize={10} fontWeight={600}>Jubilación</text>
@@ -1485,7 +1485,7 @@ function M7(){
     const yLabs=Array.from({length:6},(_,i)=>mi+(mx-mi)*i/5);
     const retLine=acumPts.length>0?acumPts[acumPts.length-1]:null;
     const xStep=Math.max(1,Math.floor(chartData.length/15));
-    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+    return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}>
       <defs><linearGradient id="m7g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.gn} stopOpacity=".12"/><stop offset="100%" stopColor={C.gn} stopOpacity="0"/></linearGradient><linearGradient id="m7r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.rd} stopOpacity=".08"/><stop offset="100%" stopColor={C.rd} stopOpacity="0"/></linearGradient></defs>
       {yLabs.map(v=><g key={v}><line x1={pX} y1={pY+cH-((v-mi)/rgY)*cH} x2={width-20} y2={pY+cH-((v-mi)/rgY)*cH} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={pY+cH-((v-mi)/rgY)*cH+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}zł</text></g>)}
       {retLine&&<><line x1={retLine.x} y1={pY} x2={retLine.x} y2={pY+cH} stroke={C.am} strokeWidth={1.5} strokeDasharray="5 3"/><text x={retLine.x+4} y={pY+12} fill={C.am} fontSize={9} fontWeight={600}>Jubilación ({retAge})</text></>}
