@@ -954,30 +954,34 @@ function M2(){
     </div>
 
     {/* Asset Allocation Pie + Liquid vs Illiquid */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:14,marginBottom:16}}>
       <Cd style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
         <ST icon="🥧">Distribución de Activos ({yrs[curYrIdx]})</ST>
         {pieSlices.length>0?(()=>{
-          const cx=150,cy=150,r=120;
+          const cx=180,cy=180,r=130;
           let cumAngle=-Math.PI/2;
           const arcs=pieSlices.map(s=>{const angle=(s.value/pieTotal)*2*Math.PI;const startAngle=cumAngle;cumAngle+=angle;const endAngle=cumAngle;const midAngle=(startAngle+endAngle)/2;const largeArc=angle>Math.PI?1:0;const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);const x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);const lx=cx+(r*0.65)*Math.cos(midAngle),ly=cy+(r*0.65)*Math.sin(midAngle);const pct=((s.value/pieTotal)*100).toFixed(1);return{...s,path:pieSlices.length===1?null:`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z`,lx,ly,pct};});
-          return<svg viewBox="0 0 300 300" style={{display:"block",width:"100%",maxWidth:300,height:"auto",margin:"0 auto"}}>
+          return<svg viewBox="0 0 360 360" style={{display:"block",width:"100%",maxWidth:360,height:"auto",margin:"0 auto"}}>
             {arcs.map((a,i)=>a.path?<path key={i} d={a.path} fill={a.color} opacity={0.75}/>:<circle key={i} cx={cx} cy={cy} r={r} fill={a.color} opacity={0.75}/>)}
-            {arcs.map((a,i)=><g key={"l"+i}><text x={a.lx} y={a.ly-6} textAnchor="middle" fill={C.w} fontSize={11} fontWeight={700}>{a.label}</text><text x={a.lx} y={a.ly+10} textAnchor="middle" fill={C.w} fontSize={10} {...mn}>{a.pct}%</text></g>)}
+            {arcs.map((a,i)=><g key={"l"+i}><text x={a.lx} y={a.ly-8} textAnchor="middle" fill={C.w} fontSize={16} fontWeight={700}>{a.label}</text><text x={a.lx} y={a.ly+12} textAnchor="middle" fill={C.w} fontSize={14} {...mn}>{a.pct}%</text></g>)}
           </svg>;
         })():<div style={{textAlign:"center",padding:30,color:C.tm,fontSize:12}}>Sin datos de activos</div>}
       </Cd>
       <Cd>
         <ST icon="💧">Líquido vs Ilíquido ({yrs[curYrIdx]})</ST>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-          <div style={{padding:10,borderRadius:8,background:C.ad,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Líquido (Efectivo)</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(liqAmt)} zł</div><div style={{fontSize:10,color:C.tm}}>{fP(liqPct)}</div></div>
-          <div style={{padding:10,borderRadius:8,background:"rgba(124,58,237,0.06)",textAlign:"center",borderLeft:`3px solid ${C.pu}`}}><div style={{fontSize:9,color:C.tm}}>Ilíquido (Inv.+Pasivo)</div><div style={{fontSize:16,fontWeight:700,color:C.pu,...mn}}>{fmt(illiqAmt)} zł</div><div style={{fontSize:10,color:C.tm}}>{fP(illiqPct)}</div></div>
+          <div style={{padding:12,borderRadius:8,background:C.ad,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:10,color:C.tm}}>Líquido (Efectivo)</div><div style={{fontSize:18,fontWeight:700,color:C.ac,...mn}}>{fmt(liqAmt)} zł</div><div style={{fontSize:11,color:C.tm,...mn}}>{fP(liqPct)}</div></div>
+          <div style={{padding:12,borderRadius:8,background:"rgba(124,58,237,0.06)",textAlign:"center",borderLeft:`3px solid ${C.pu}`}}><div style={{fontSize:10,color:C.tm}}>Ilíquido (Inv.+Pasivo)</div><div style={{fontSize:18,fontWeight:700,color:C.pu,...mn}}>{fmt(illiqAmt)} zł</div><div style={{fontSize:11,color:C.tm,...mn}}>{fP(illiqPct)}</div></div>
         </div>
-        <div style={{height:22,borderRadius:11,overflow:"hidden",display:"flex",background:C.bg,marginBottom:8}}>
-          <div style={{width:fP(liqPct),background:C.ac,transition:"width .3s",display:"flex",alignItems:"center",justifyContent:"center"}}>{liqPct>0.08&&<span style={{fontSize:9,color:C.w,fontWeight:600}}>{fP(liqPct)}</span>}</div>
-          <div style={{width:fP(illiqPct),background:C.pu,transition:"width .3s",display:"flex",alignItems:"center",justifyContent:"center"}}>{illiqPct>0.08&&<span style={{fontSize:9,color:C.w,fontWeight:600}}>{fP(illiqPct)}</span>}</div>
+        <div style={{position:"relative",height:28,borderRadius:14,overflow:"hidden",display:"flex",background:C.bg,marginBottom:6}}>
+          <div style={{width:fP(liqPct),minWidth:4,background:C.ac,transition:"width .3s"}}></div>
+          <div style={{flex:1,background:C.pu,transition:"width .3s"}}></div>
         </div>
-        <div style={{fontSize:11,color:C.td,lineHeight:1.5,marginTop:8}}>Total activos: <strong style={{...mn}}>{fmt(liqTotal)} zł</strong></div>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,...mn}}>
+          <span style={{color:C.ac}}>{fP(liqPct)} líquido</span>
+          <span style={{color:C.pu}}>{fP(illiqPct)} ilíquido</span>
+        </div>
+        <div style={{fontSize:12,color:C.td,lineHeight:1.5,marginTop:12}}>Total activos: <strong style={{...mn}}>{fmt(liqTotal)} zł</strong></div>
       </Cd>
     </div>
 
