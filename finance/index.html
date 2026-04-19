@@ -198,7 +198,8 @@ function exportToExcel(includeData){
     ["5. Tipos de activo permitidos: efectivo, inversión, pasivo"],
     ["6. En las hojas Hipoteca, Jubilacion MC, Planificador y Otros: NO toques la columna 'Clave', solo edita la columna 'Valor'."],
     ["7. Para campos sí/no, escribe 'si' o 'no' en minúsculas."],
-    ["8. Sube este Excel desde el dashboard con el botón 'Importar Excel'. Sustituirá tus datos actuales."],
+    ["8. La columna Base en Ingresos y Gastos Mensuales representa el importe mensual esperado o típico. Si un mes concreto tiene valor, ese valor sobrescribe el Base para ese mes."],
+    ["9. Sube este Excel desde el dashboard con el botón 'Importar Excel'. Sustituirá tus datos actuales."],
     [""],["Generado:",new Date().toLocaleString("pl-PL")],
   ];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(readme),"README");
@@ -209,9 +210,9 @@ function exportToExcel(includeData){
   if(allYears.size===0)allYears.add(cy);
   const years=[...allYears].sort();
   // Ingresos
-  const incH=["Año","Concepto","Tipo",...MO];const incR=[];
-  if(includeData)years.forEach(y=>{(incHist[y]||[]).forEach(r=>incR.push([y,r.name,r.type||"Otros",...r.amounts]))});
-  if(incR.length===0){incR.push([cy,"Nómina","Laboral",...Array(12).fill(2000)]);incR.push([cy,"Dividendos","Inversión",...Array(12).fill(0)])}
+  const incH=["Año","Concepto","Tipo","Base",...MO];const incR=[];
+  if(includeData)years.forEach(y=>{(incHist[y]||[]).forEach(r=>incR.push([y,r.name,r.type||"Otros",r.base!=null?r.base:"",...r.amounts]))});
+  if(incR.length===0){incR.push([cy,"Nómina","Laboral",2000,...Array(12).fill(2000)]);incR.push([cy,"Dividendos","Inversión",0,...Array(12).fill(0)])}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([incH,...incR]),"Ingresos");
   // Gastos Mensuales
   const meH=["Año","Concepto","Tipo","Base",...MO];const meR=[];
@@ -290,16 +291,20 @@ if(file.size>5*1024*1024)throw new Error("Archivo demasiado grande (max 5MB)");
   const set=(key,val)=>localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(val));
   const readSheet=(name)=>{const sh=wb.Sheets[name];if(!sh)return[];return XLSX.utils.sheet_to_json(sh,{header:1,defval:null}).filter(r=>r&&r.length>0&&r[0]!=null&&r[0]!=="")};
   const summary=[];
-  // Ingresos
+  // Ingresos (retrocompatible: detecta si la col D es "Base" o ya es Ene)
   const incData=readSheet("Ingresos");
   if(incData.length>1){
+    const incHdr=incData[0]||[];
+    const hasIncBase=String(incHdr[3]||"").trim().toLowerCase()==="base";
+    const incMonthStart=hasIncBase?4:3;
     const incHist={};const incMaster=[];const seen=new Set();
     incData.slice(1).forEach(row=>{
       const year=Number(row[0]);const name=String(row[1]||"").trim();const type=String(row[2]||"Otros").trim();
       if(!year||!name)return;
-      const amounts=MO.map((_,i)=>Number(row[3+i])||0);
+      const base=hasIncBase&&row[3]!=null&&row[3]!==""?(Number(row[3])||null):null;
+      const amounts=MO.map((_,i)=>Number(row[incMonthStart+i])||0);
       if(!incHist[year])incHist[year]=[];
-      incHist[year].push({name,type,base:null,amounts});
+      incHist[year].push({name,type,base,amounts});
       const k=name+"|"+type;if(!seen.has(k)){seen.add(k);incMaster.push({name,type})}
     });
     if(Object.keys(incHist).length>0){set("incomeHistory",incHist);set("incRows",incMaster);summary.push("Ingresos: "+Object.values(incHist).reduce((s,a)=>s+a.length,0)+" filas")}
