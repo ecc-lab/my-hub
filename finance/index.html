@@ -410,7 +410,9 @@ function M0(){
   const{income:inc,monthlyExp:me,annualExp:ae,savingsGoal:sg}=useContext(Ctx);
   const[savedHip]=useLocalData("hipScenario",null);
   const tIY=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0);
-  const tEY=me.reduce((s,r)=>s+(r.monthly||0),0)*12+ae.reduce((s,r)=>s+r.annual,0);
+  const tMeY=me.reduce((s,r)=>s+(r.monthly||0),0)*12;
+  const tAeY=ae.reduce((s,r)=>s+r.annual,0);
+  const tEY=tMeY+tAeY;
   const rY=tIY-tEY,sr=tIY>0?rY/tIY:0;
   const bestMonth=MO[MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)-(me.reduce((s,r)=>s+(r.monthly||0),0)+ae.reduce((s,r)=>s+r.annual/12,0))).reduce((best,v,i,a)=>v>a[best]?i:best,0)];
   const[savedMC]=useLocalData("mcGoal",null);
@@ -418,13 +420,117 @@ function M0(){
   const patYrIdx=Math.min(9,Math.max(0,new Date().getFullYear()-1-2023));
   const patNow=assets.reduce((s,a)=>s+(a.values?.[patYrIdx]||0),0)-debts.reduce((s,d)=>s+(d.values?.[patYrIdx]||0),0);
   const patYear=2023+patYrIdx;
+  const patPrevIdx=Math.max(0,patYrIdx-1);
+  const patPrev=assets.reduce((s,a)=>s+(a.values?.[patPrevIdx]||0),0)-debts.reduce((s,d)=>s+(d.values?.[patPrevIdx]||0),0);
+  const patDelta=patNow-patPrev;
+  const patDeltaPct=patPrev!==0?patDelta/Math.abs(patPrev):0;
   const[m7Age]=useLocalData("m7Age",35);const[m7RetAge]=useLocalData("m7RetAge",65);const[m7LifeExp]=useLocalData("m7LifeExp",90);const[m7Need]=useLocalData("m7Need",2000);const[m7Accum]=useLocalData("m7Accum",0);const[m7RetReturn]=useLocalData("m7RetReturn",3);
+
+  // KPI computations
+  const monthlyExpTotal=tEY/12;
+  const liquidAssets=assets.filter(a=>a.type==="efectivo").reduce((s,a)=>s+(a.values?.[patYrIdx]||0),0);
+  const runway=monthlyExpTotal>0?Math.round(liquidAssets/monthlyExpTotal):0;
+  const avgMonthlySavings=rY/12;
+
+  // Waterfall data
+  const FIJO_TYPES=["Vivienda","Suministros","Suscripciones","Deuda"];
+  const gastosFijos=me.filter(r=>FIJO_TYPES.includes(r.type)).reduce((s,r)=>s+(r.monthly||0),0)*12;
+  const gastosVar=tMeY-gastosFijos;
+  const ahorroCF=tIY-gastosFijos-gastosVar-tAeY;
+
+  // Patrimonio timeline by asset class
+  const tEfectivo=PAT_YEARS.map((_,i)=>assets.filter(a=>a.type==="efectivo").reduce((s,a)=>s+(a.values[i]||0),0));
+  const tInversion=PAT_YEARS.map((_,i)=>assets.filter(a=>a.type==="inversión").reduce((s,a)=>s+(a.values[i]||0),0));
+  const tPasivo=PAT_YEARS.map((_,i)=>assets.filter(a=>a.type==="pasivo"||a.type==="otro").reduce((s,a)=>s+(a.values[i]||0),0));
+  const tDebt=PAT_YEARS.map((_,i)=>debts.reduce((s,d)=>s+(d.values[i]||0),0));
+  const netWorth=PAT_YEARS.map((_,i)=>(tEfectivo[i]+tInversion[i]+tPasivo[i])-tDebt[i]);
+
+  // Waterfall SVG
+  const WaterfallChart=({width=900,height=220})=>{
+    const bars=[{label:"Ingresos",value:tIY,color:C.gn},{label:"G. Fijos",value:-gastosFijos,color:C.rd},{label:"G. Variables",value:-gastosVar,color:C.rd},{label:"G. Anuales",value:-tAeY,color:C.rd},{label:"Ahorro",value:ahorroCF,color:C.bl}];
+    const maxAbs=Math.max(...bars.map(b=>Math.abs(b.value)),1);
+    const pL=60,pR=20,pT=24,pB=30,cW=width-pL-pR,cH=height-pT-pB;
+    const bW=Math.min(cW/bars.length-16,100);
+    const mid=pT+cH/2;
+    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+      <line x1={pL} y1={mid} x2={width-pR} y2={mid} stroke={C.bd} strokeWidth={1}/>
+      {bars.map((b,i)=>{const bH=Math.max((Math.abs(b.value)/maxAbs)*(cH/2-8),3);const x=pL+(cW/bars.length)*i+(cW/bars.length-bW)/2;const y=b.value>=0?mid-bH:mid;
+        return<g key={i}>
+          <rect x={x} y={y} width={bW} height={bH} rx={4} fill={b.color} opacity={.7}/>
+          <text x={x+bW/2} y={b.value>=0?y-6:y+bH+14} textAnchor="middle" fill={b.color} fontSize={10} fontWeight={600} {...mn}>{fmt(Math.abs(b.value))} zł</text>
+          <text x={x+bW/2} y={height-6} textAnchor="middle" fill={C.td} fontSize={10}>{b.label}</text>
+        </g>})}
+      {(()=>{let running=0;const connectors=[];bars.forEach((b,i)=>{const prev=running;running+=b.value;if(i<bars.length-1){const x1=pL+(cW/bars.length)*i+(cW/bars.length+bW)/2;const x2=pL+(cW/bars.length)*(i+1)+(cW/bars.length-bW)/2;const yLine=running>=0?mid-(running/maxAbs)*(cH/2-8):mid+(-running/maxAbs)*(cH/2-8);connectors.push(<line key={"c"+i} x1={x1} y1={yLine} x2={x2} y2={yLine} stroke={C.bh} strokeWidth={1} strokeDasharray="3 2"/>)}});return connectors})()}
+    </svg>;
+  };
+
+  // Stacked Area Chart
+  const AreaChart=({width=900,height=240})=>{
+    const stacked=PAT_YEARS.map((_,i)=>[tEfectivo[i],tEfectivo[i]+tInversion[i],tEfectivo[i]+tInversion[i]+tPasivo[i]]);
+    const maxStack=Math.max(...stacked.map(s=>s[2]),1);
+    const minNW=Math.min(...netWorth,0);const maxNW=Math.max(...netWorth,maxStack);
+    const allMax=Math.max(maxStack,maxNW);const allMin=Math.min(minNW,0);
+    const range=allMax-allMin||1;
+    const pL=55,pR=20,pT=16,pB=28,cW=width-pL-pR,cH=height-pT-pB;
+    const xP=i=>pL+(i/(PAT_YEARS.length-1))*cW;
+    const yP=v=>pT+cH-((v-allMin)/range)*cH;
+    const mkArea=(getTop,getBot)=>{const top=PAT_YEARS.map((_,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(getTop(i))}`).join(" ");const bot=[...PAT_YEARS.keys()].reverse().map(i=>`L${xP(i)} ${yP(getBot(i))}`).join(" ");return top+" "+bot+" Z"};
+    const nwLine=PAT_YEARS.map((_,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(netWorth[i])}`).join(" ");
+    const yTicks=Array.from({length:5},(_,i)=>allMin+(range*i/4));
+    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+      {yTicks.map((v,i)=><g key={i}><line x1={pL} y1={yP(v)} x2={width-pR} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pL-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={8} {...mn}>{fmt(Math.round(v/1000))}k</text></g>)}
+      <path d={mkArea(i=>stacked[i][2],()=>0)} fill={C.am} opacity={.15}/>
+      <path d={mkArea(i=>stacked[i][1],i=>stacked[i][0])} fill={C.pu} opacity={.2}/>
+      <path d={mkArea(i=>stacked[i][0],()=>0)} fill={C.ac} opacity={.25}/>
+      <path d={nwLine} fill="none" stroke={C.tx} strokeWidth={2.5} strokeLinecap="round"/>
+      {PAT_YEARS.map((_,i)=><g key={i}>
+        <circle cx={xP(i)} cy={yP(netWorth[i])} r={3} fill={C.w} stroke={C.tx} strokeWidth={2}/>
+        <text x={xP(i)} y={height-6} textAnchor="middle" fill={C.tm} fontSize={9}>{PAT_YEARS[i]}</text>
+        {i%2===0&&<text x={xP(i)} y={yP(netWorth[i])-9} textAnchor="middle" fill={C.td} fontSize={8} {...mn}>{fmt(Math.round(netWorth[i]/1000))}k</text>}
+      </g>)}
+    </svg>;
+  };
 
   return<div style={{animation:"fadeIn .3s"}}>
     <Cd style={{marginBottom:16,background:`linear-gradient(135deg,#e0f2fe,#f0fdf4)`,borderTop:`3px solid ${C.ac}`}}>
       <div style={{display:"flex",alignItems:"center",gap:14}}>
         <div style={{width:56,height:56,borderRadius:14,background:`linear-gradient(135deg,${C.ac},#0284c7)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:28,fontWeight:800,color:C.w}}>V</span></div>
         <div><h2 style={{fontSize:22,fontWeight:700}}>Tu dinero, tus reglas 💪</h2><p style={{fontSize:13,color:C.td}}>Resumen de tu vida financiera. Cada número cuenta una historia.</p></div>
+      </div>
+    </Cd>
+
+    <Cd style={{marginBottom:14}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>📊</span><h3 style={{fontSize:15,fontWeight:600}}>KPIs Clave</h3></div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
+        {[
+          {l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} zł`,c:patNow>=0?C.ac:C.rd},
+          {l:`Δ YoY (${2023+patPrevIdx}-${patYear})`,v:`${patDelta>=0?"+":""}${fmt(patDelta)} zł (${patDelta>=0?"+":""}${(patDeltaPct*100).toFixed(1)}%)`,c:patDelta>=0?C.gn:C.rd},
+          {l:"Tasa de Ahorro YTD",v:fP(sr),c:sr>=.2?C.gn:sr>=.1?C.am:C.rd},
+          {l:"Runway (meses)",v:`${fmt(runway)} m`,c:runway>=12?C.gn:runway>=6?C.am:C.rd},
+          {l:"Ahorro mensual prom.",v:`${fmt(Math.round(avgMonthlySavings))} zł`,c:avgMonthlySavings>=0?C.gn:C.rd}
+        ].map((x,i)=>
+          <div key={i} style={{padding:12,borderRadius:10,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm,marginBottom:3}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn}}>{x.v}</div></div>)}
+      </div>
+    </Cd>
+
+    <Cd style={{marginBottom:14,display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <ST icon="🏗️" sub="Desglose del flujo de caja anual">Cash Flow Waterfall</ST>
+      <WaterfallChart/>
+      <div style={{display:"flex",gap:14,marginTop:8,fontSize:11}}>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:10,background:C.gn,opacity:.7,display:"inline-block",borderRadius:2}}></span>Ingresos</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:10,background:C.rd,opacity:.7,display:"inline-block",borderRadius:2}}></span>Gastos</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:10,background:C.bl,opacity:.7,display:"inline-block",borderRadius:2}}></span>Ahorro</span>
+      </div>
+    </Cd>
+
+    <Cd style={{marginBottom:14,display:"flex",flexDirection:"column",alignItems:"center"}}>
+      <ST icon="📈" sub="Evolución por clase de activo (2023-2032)">Patrimonio por Clase de Activo</ST>
+      <AreaChart/>
+      <div style={{display:"flex",gap:14,marginTop:8,fontSize:11,flexWrap:"wrap"}}>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:10,background:C.ac,opacity:.4,display:"inline-block",borderRadius:2}}></span>Efectivo</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:10,background:C.pu,opacity:.35,display:"inline-block",borderRadius:2}}></span>Inversión</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:10,background:C.am,opacity:.25,display:"inline-block",borderRadius:2}}></span>Pasivo/Otro</span>
+        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:18,height:3,background:C.tx,display:"inline-block"}}></span>Patrimonio Neto</span>
       </div>
     </Cd>
 
