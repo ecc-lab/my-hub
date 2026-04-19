@@ -47,7 +47,7 @@ var _financeCloudReady=false;
 const{useState,useMemo,useEffect,useCallback,useRef,createContext,useContext}=React;
 const C={bg:"#f1f5f9",sf:"#ffffff",sa:"#f8fafc",bd:"#e2e8f0",bh:"#cbd5e1",ac:"#0ea5e9",ad:"rgba(14,165,233,0.08)",ag:"rgba(14,165,233,0.2)",gn:"#16a34a",gd:"rgba(22,163,74,0.08)",gb:"rgba(22,163,74,0.25)",rd:"#dc2626",rdd:"rgba(220,38,38,0.08)",rb:"rgba(220,38,38,0.25)",am:"#d97706",amd:"rgba(217,119,6,0.08)",bl:"#2563eb",bld:"rgba(37,99,235,0.08)",blb:"rgba(37,99,235,0.25)",tx:"#1e293b",td:"#475569",tm:"#94a3b8",w:"#fff",pu:"#7c3aed"};
 const MO=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-const fmt=(n,d=0)=>{if(n==null||isNaN(n))return"0";return Number(n).toLocaleString("es-ES",{minimumFractionDigits:d,maximumFractionDigits:d})};
+const fmt=(n,d=0)=>{if(n==null||isNaN(n))return"0";return Number(n).toLocaleString("pl-PL",{minimumFractionDigits:d,maximumFractionDigits:d})};
 const fP=(n,d=1)=>{if(n==null||isNaN(n))return"0%";return(Number(n)*100).toFixed(d)+"%"};
 const mn={fontFamily:"'JetBrains Mono',monospace"};
 const STORAGE_PREFIX="vdb_";
@@ -120,9 +120,9 @@ function Onboarding({onFinish}){
   const[data,setData]=useState({income:0,rent:0,savings:0});
   const steps=[
     {title:"¡Bienvenido a VDB Finance! 🎉",desc:"En 30 segundos configuramos tu perfil. Si ya tienes datos, puedes saltar esto y usar Importar Excel desde el dashboard.",field:null},
-    {title:"¿Cuánto cobras al mes? 💰",desc:"Tu nómina neta mensual.",field:"income",label:"Nómina mensual neta (€)"},
-    {title:"¿Cuánto pagas de alquiler/hipoteca? 🏠",desc:"Tu gasto fijo más grande. Si no tienes, pon 0.",field:"rent",label:"Alquiler o hipoteca (€/mes)"},
-    {title:"¿Cuánto tienes ahorrado? 🏦",desc:"Una estimación vale.",field:"savings",label:"Ahorro total aproximado (€)"},
+    {title:"¿Cuánto cobras al mes? 💰",desc:"Tu nómina neta mensual.",field:"income",label:"Nómina mensual neta (zł)"},
+    {title:"¿Cuánto pagas de alquiler/hipoteca? 🏠",desc:"Tu gasto fijo más grande. Si no tienes, pon 0.",field:"rent",label:"Alquiler o hipoteca (zł/mes)"},
+    {title:"¿Cuánto tienes ahorrado? 🏦",desc:"Una estimación vale.",field:"savings",label:"Ahorro total aproximado (zł)"},
     {title:"¡Todo listo! 🚀",desc:"Ya tienes lo básico. Desde el dashboard puedes importar un Excel completo si quieres rellenarlo todo de golpe.",field:null},
   ];
   const s=steps[step];
@@ -161,7 +161,7 @@ const DualChart=({data,rates,goal,labels,width=620,height=180})=>{
         <text x={pad+i*(bW+3)+bW/2} y={v>=0?y-4:y+h+10} textAnchor="middle" fill={v>=0?C.gn:C.rd} fontSize={9} {...mn}>{fmt(v)}</text></g>})}
     <line x1={pad} y1={mid} x2={width-rPad} y2={mid} stroke={C.bd} strokeWidth={1}/>
     {goal>0&&<><line x1={pad} y1={mid-(goal/mx)*(mid-18)} x2={width-rPad} y2={mid-(goal/mx)*(mid-18)} stroke={C.am} strokeWidth={1} strokeDasharray="4 3"/>
-      <text x={width-rPad+4} y={mid-(goal/mx)*(mid-18)+4} fill={C.am} fontSize={8} {...mn}>{fmt(goal)}€</text></>}
+      <text x={width-rPad+4} y={mid-(goal/mx)*(mid-18)+4} fill={C.am} fontSize={8} {...mn}>{fmt(goal)}zł</text></>}
     {rates&&rates.length>0&&<>{rates.map((r,i)=>{
       const x=pad+i*(bW+3)+bW/2;const y2=mid-(Math.min(Math.max(r,-1),1))*(mid-18);
       const nx=i<rates.length-1?pad+(i+1)*(bW+3)+bW/2:x;const ny=i<rates.length-1?mid-(Math.min(Math.max(rates[i+1],-1),1))*(mid-18):y2;
@@ -199,7 +199,7 @@ function exportToExcel(includeData){
     ["6. En las hojas Hipoteca, Jubilacion MC, Planificador y Otros: NO toques la columna 'Clave', solo edita la columna 'Valor'."],
     ["7. Para campos sí/no, escribe 'si' o 'no' en minúsculas."],
     ["8. Sube este Excel desde el dashboard con el botón 'Importar Excel'. Sustituirá tus datos actuales."],
-    [""],["Generado:",new Date().toLocaleString("es-ES")],
+    [""],["Generado:",new Date().toLocaleString("pl-PL")],
   ];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(readme),"README");
   const incHist=get("incomeHistory",{});
@@ -219,7 +219,7 @@ function exportToExcel(includeData){
   if(meR.length===0){meR.push([cy,"Alquiler","Vivienda",800,...Array(12).fill("")]);meR.push([cy,"Luz","Suministros",50,...Array(12).fill("")])}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([meH,...meR]),"Gastos Mensuales");
   // Gastos Anuales
-  const aeH=["Año","Concepto","Tipo","€/año"];const aeR=[];
+  const aeH=["Año","Concepto","Tipo","zł/año"];const aeR=[];
   if(includeData)years.forEach(y=>{(aeHist[y]||[]).forEach(r=>aeR.push([y,r.name,r.type||"Otros",r.annual||0]))});
   if(aeR.length===0)aeR.push([cy,"Seguros","Otros",500]);
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([aeH,...aeR]),"Gastos Anuales");
@@ -433,7 +433,7 @@ function M0(){
     <Cd style={{marginBottom:14}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>💰</span><h3 style={{fontSize:15,fontWeight:600}}>Ingresos y Gastos</h3></div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
-        {[{l:"Ingresos/año",v:`${fmt(tIY)} €`,c:C.gn},{l:"Gastos/año",v:`${fmt(tEY)} €`,c:C.rd},{l:"Ahorro/año",v:`${fmt(rY)} €`,c:rY>=0?C.gn:C.rd},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am},{l:"Obj. Mensual",v:`${fmt(sg)} €`,c:C.am},{l:"Mejor mes",v:bestMonth,c:C.bl}].map((x,i)=>
+        {[{l:"Ingresos/año",v:`${fmt(tIY)} zł`,c:C.gn},{l:"Gastos/año",v:`${fmt(tEY)} zł`,c:C.rd},{l:"Ahorro/año",v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am},{l:"Obj. Mensual",v:`${fmt(sg)} zł`,c:C.am},{l:"Mejor mes",v:bestMonth,c:C.bl}].map((x,i)=>
           <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div></div>)}
       </div>
     </Cd>
@@ -441,7 +441,7 @@ function M0(){
     <Cd style={{marginBottom:14}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>📊</span><h3 style={{fontSize:15,fontWeight:600}}>Patrimonio</h3></div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
-        {[{l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} €`,c:patNow>=0?C.ac:C.rd},{l:"Ahorro Anual",v:`${fmt(rY)} €`,c:rY>=0?C.gn:C.rd},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am}].map((x,i)=>
+        {[{l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} zł`,c:patNow>=0?C.ac:C.rd},{l:"Ahorro Anual",v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am}].map((x,i)=>
           <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div></div>)}
       </div>
     </Cd>
@@ -450,7 +450,7 @@ function M0(){
       <Cd>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:18}}>🏛</span><h3 style={{fontSize:14,fontWeight:600}}>Hipoteca</h3></div>
         {savedHip?<><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(100px,1fr))",gap:6}}>
-          {[{l:"Importe",v:`${fmt(savedHip.amt)}€`,c:C.ac},{l:"Cuota",v:`${fmt(savedHip.cuota)}€/mes`,c:C.am},{l:"Ratio",v:`${savedHip.ratio}%`,c:Number(savedHip.ratio)<=35?C.gn:C.rd}].map((x,i)=>
+          {[{l:"Importe",v:`${fmt(savedHip.amt)}zł`,c:C.ac},{l:"Cuota",v:`${fmt(savedHip.cuota)}zł/mes`,c:C.am},{l:"Ratio",v:`${savedHip.ratio}%`,c:Number(savedHip.ratio)<=35?C.gn:C.rd}].map((x,i)=>
             <div key={i} style={{padding:6,borderRadius:6,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:8,color:C.tm}}>{x.l}</div><div style={{fontSize:13,fontWeight:700,color:x.c,...mn}}>{x.v}</div></div>)}
         </div><p style={{fontSize:9,color:C.tm,marginTop:4}}>TIN {savedHip.tin}%, {savedHip.yrs}a — {savedHip.date}</p></>
         :<p style={{fontSize:12,color:C.td}}>Ve a Hipoteca, configura y guarda tu escenario.</p>}
@@ -473,7 +473,7 @@ function M0(){
         const needGr=(()=>{for(let g=0;g<=25;g+=0.1){const rate=g/100;const fv=patNow*Math.pow(1+rate,yrsToR)+(m7Accum>0&&rate>0?m7Accum*(Math.pow(1+rate,yrsToR)-1)/rate:m7Accum*yrsToR);if(fv>=tgtPat)return g}return 99})();
         const totalGap=Math.max(0,tgtPat-patNow);const annIncNeeded=yrsToR>0?totalGap/yrsToR:totalGap;
         return m7Need>0?<><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
-          {[{l:`Necesitas a los ${m7RetAge}`,v:`${fmt(Math.round(tgtPat))} €`,c:C.ac},{l:"Crecimiento anual nec.",v:needGr>=99?"∞":needGr.toFixed(1)+"%",c:needGr<=5?C.gn:needGr<=8?C.am:C.rd},{l:"Ahorro anual nec.",v:`${fmt(Math.round(annIncNeeded))} €`,c:C.bl},{l:"Tu acumulación actual",v:`${fmt(m7Accum)} €/año`,c:m7Accum>=annIncNeeded?C.gn:C.am}].map((x,i)=>
+          {[{l:`Necesitas a los ${m7RetAge}`,v:`${fmt(Math.round(tgtPat))} zł`,c:C.ac},{l:"Crecimiento anual nec.",v:needGr>=99?"∞":needGr.toFixed(1)+"%",c:needGr<=5?C.gn:needGr<=8?C.am:C.rd},{l:"Ahorro anual nec.",v:`${fmt(Math.round(annIncNeeded))} zł`,c:C.bl},{l:"Tu acumulación actual",v:`${fmt(m7Accum)} zł/año`,c:m7Accum>=annIncNeeded?C.gn:C.am}].map((x,i)=>
             <div key={i} style={{padding:8,borderRadius:6,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:8,color:C.tm}}>{x.l}</div><div style={{fontSize:14,fontWeight:700,color:x.c,...mn}}>{x.v}</div></div>)}
         </div></>
         :<p style={{fontSize:12,color:C.td}}>Ve a Planificador y configura tus datos.</p>
@@ -520,9 +520,9 @@ function M1(){
         <div style={{fontSize:22,marginBottom:3}}>🎯</div>
         <div style={{fontSize:11,color:C.tm,marginBottom:6}}>Objetivo Ahorro Mensual</div>
         <input type="number" value={sg} onChange={e=>sSG(Number(e.target.value)||0)} style={{width:100,textAlign:"center",fontSize:16,fontWeight:700,color:C.am,background:"transparent",border:`2px solid ${C.am}`,borderRadius:8,padding:"6px"}}/>
-        <div style={{fontSize:10,color:C.tm,marginTop:4}}>€ / mes</div>
+        <div style={{fontSize:10,color:C.tm,marginTop:4}}>zł / mes</div>
       </Cd>
-      {[{l:"Ingresos Anuales",v:`${fmt(tIY)} €`,c:C.gn,i:"📈"},{l:"Gastos Anuales",v:`${fmt(tEY)} €`,c:C.rd,i:"📉"},{l:"Resultado Anual",v:`${fmt(rY)} €`,c:rY>=0?C.gn:C.rd,i:"💰"},{l:"Tasa de Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am,i:"📊"}].map((x,i)=>
+      {[{l:"Ingresos Anuales",v:`${fmt(tIY)} zł`,c:C.gn,i:"📈"},{l:"Gastos Anuales",v:`${fmt(tEY)} zł`,c:C.rd,i:"📉"},{l:"Resultado Anual",v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd,i:"💰"},{l:"Tasa de Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am,i:"📊"}].map((x,i)=>
         <Cd key={i} style={{textAlign:"center",borderTop:`3px solid ${x.c}`,padding:14}}><div style={{fontSize:22,marginBottom:3}}>{x.i}</div><div style={{fontSize:11,color:C.tm,marginBottom:4}}>{x.l}</div><div style={{fontSize:20,fontWeight:700,color:x.c,...mn}}>{x.v}</div></Cd>)}
     </div>
 
@@ -592,7 +592,7 @@ function M1(){
 
     <Cd style={{marginBottom:16,overflowX:"auto"}}>
       <ST icon="📅" right={<Bt active={showAeD} onClick={()=>setAeD(!showAeD)}>{showAeD?"Resumen":"Mes a mes"}</Bt>}>Gastos Anuales</ST>
-      {!showAeD?<table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,width:30}}></th><th style={{...th,textAlign:"left",width:120}}>Concepto</th><th style={{...th,textAlign:"center",width:72}}>Tipo</th><th style={{...th,color:C.ac,width:85}}>€/año</th><th style={th}>€/mes</th><th style={{width:28}}></th></tr></thead><tbody>
+      {!showAeD?<table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,width:30}}></th><th style={{...th,textAlign:"left",width:120}}>Concepto</th><th style={{...th,textAlign:"center",width:72}}>Tipo</th><th style={{...th,color:C.ac,width:85}}>zł/año</th><th style={th}>zł/mes</th><th style={{width:28}}></th></tr></thead><tbody>
         {safeAe.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dA.onStart(e,idx)} onDragOver={dA.onOver} onDrop={e=>dA.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}>
           <td style={{padding:"2px",textAlign:"center"}}><DH/></td>
           <td style={{padding:"3px 6px"}}><input type="text" value={r.name} onChange={e=>syncAeMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:12}}/></td>
@@ -770,13 +770,13 @@ function M3(){
     <Cd style={{marginBottom:16}}>
       <ST icon="⚙️">Parámetros Hipoteca</ST>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:14}}>
-        <div><Lb>Precio vivienda (€)</Lb><input type="number" value={propPrice} onChange={e=>sPropPrice(Number(e.target.value)||0)}/></div>
-        <div><Lb>Entrada (%)</Lb><input type="number" value={dpPct} onChange={e=>sDpPct(Number(e.target.value)||0)} step="5"/><div style={{fontSize:10,color:C.am,fontWeight:600,marginTop:3,...mn}}>{fmt(entrada)} €</div></div>
-        <div><Lb>Importe hipoteca (€) <span style={{color:C.ac,fontSize:10}}>auto</span></Lb><div style={{padding:"8px",borderRadius:7,background:C.ad,border:`1px solid ${C.ac}40`,textAlign:"right",...mn,fontSize:14,fontWeight:700,color:C.ac}}>{fmt(amt)} €</div></div>
+        <div><Lb>Precio vivienda (zł)</Lb><input type="number" value={propPrice} onChange={e=>sPropPrice(Number(e.target.value)||0)}/></div>
+        <div><Lb>Entrada (%)</Lb><input type="number" value={dpPct} onChange={e=>sDpPct(Number(e.target.value)||0)} step="5"/><div style={{fontSize:10,color:C.am,fontWeight:600,marginTop:3,...mn}}>{fmt(entrada)} zł</div></div>
+        <div><Lb>Importe hipoteca (zł) <span style={{color:C.ac,fontSize:10}}>auto</span></Lb><div style={{padding:"8px",borderRadius:7,background:C.ad,border:`1px solid ${C.ac}40`,textAlign:"right",...mn,fontSize:14,fontWeight:700,color:C.ac}}>{fmt(amt)} zł</div></div>
         <div><Lb>TIN (%)</Lb><input type="number" value={tin} onChange={e=>sTin(Number(e.target.value)||0)} step="0.01"/></div>
         <div><Lb>Plazo (años)</Lb><input type="number" value={yrs} onChange={e=>sYrs(Number(e.target.value)||0)}/></div>
-        <div><Lb>Cuota Obj. Mín (€)</Lb><input type="number" value={tMin} onChange={e=>sTMin(Number(e.target.value)||0)}/></div>
-        <div><Lb>Cuota Obj. Máx (€)</Lb><input type="number" value={tMax} onChange={e=>sTMax(Number(e.target.value)||0)}/></div>
+        <div><Lb>Cuota Obj. Mín (zł)</Lb><input type="number" value={tMin} onChange={e=>sTMin(Number(e.target.value)||0)}/></div>
+        <div><Lb>Cuota Obj. Máx (zł)</Lb><input type="number" value={tMax} onChange={e=>sTMax(Number(e.target.value)||0)}/></div>
       </div>
       <Pill title="¿Qué es el TIN y el Euríbor?">El TIN es el interés que pagas. En hipotecas variables = Euríbor + diferencial. El Euríbor sube/baja según la política del BCE.</Pill>
       <Pill title="Regla de oro: cuota &lt; 35% de tus ingresos">Cuanto menor sea ese %, menos vulnerable eres ante imprevistos. Una cuota del 25% te da mucho más colchón.</Pill>
@@ -793,7 +793,7 @@ function M3(){
       <EuriborChart/>
     </Cd>
 
-    <Cd style={{overflowX:"auto"}}><ST icon="📐">Matriz Cuota Mensual</ST><table style={{borderCollapse:"collapse",fontSize:11}}><thead><tr><th style={{padding:"6px 8px",color:C.ac,fontWeight:600,textAlign:"left",position:"sticky",left:0,background:C.sf,zIndex:2,minWidth:80}}>€\TIN%</th>{rates.map(r=><th key={r} style={{padding:"5px",color:Math.abs(r-tin)<rStep/2?C.bl:C.tm,fontWeight:Math.abs(r-tin)<rStep/2?700:400,textAlign:"right",minWidth:52,background:Math.abs(r-tin)<rStep/2?C.bld:"transparent"}}>{r.toFixed(2)}</th>)}</tr></thead><tbody>{matrix.map((row,ri)=><tr key={ri}><td style={{padding:"5px 8px",fontWeight:600,color:amounts[ri]===amt?C.bl:C.tx,position:"sticky",left:0,background:amounts[ri]===amt?C.bld:C.sf,zIndex:1,...mn,fontSize:12}}>{fmt(amounts[ri])}</td>{row.map((v,ci)=>{const col=cc(v,rates[ci],amounts[ri]);return<td key={ci} style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:11,background:col.bg,color:col.t}}>{fmt(v,0)}</td>})}</tr>)}</tbody></table></Cd>
+    <Cd style={{overflowX:"auto"}}><ST icon="📐">Matriz Cuota Mensual</ST><table style={{borderCollapse:"collapse",fontSize:11}}><thead><tr><th style={{padding:"6px 8px",color:C.ac,fontWeight:600,textAlign:"left",position:"sticky",left:0,background:C.sf,zIndex:2,minWidth:80}}>zł\TIN%</th>{rates.map(r=><th key={r} style={{padding:"5px",color:Math.abs(r-tin)<rStep/2?C.bl:C.tm,fontWeight:Math.abs(r-tin)<rStep/2?700:400,textAlign:"right",minWidth:52,background:Math.abs(r-tin)<rStep/2?C.bld:"transparent"}}>{r.toFixed(2)}</th>)}</tr></thead><tbody>{matrix.map((row,ri)=><tr key={ri}><td style={{padding:"5px 8px",fontWeight:600,color:amounts[ri]===amt?C.bl:C.tx,position:"sticky",left:0,background:amounts[ri]===amt?C.bld:C.sf,zIndex:1,...mn,fontSize:12}}>{fmt(amounts[ri])}</td>{row.map((v,ci)=>{const col=cc(v,rates[ci],amounts[ri]);return<td key={ci} style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:11,background:col.bg,color:col.t}}>{fmt(v,0)}</td>})}</tr>)}</tbody></table></Cd>
 
     <Cd style={{marginTop:16}}>
       <ST icon="🏦">¿Me dará el banco la hipoteca?</ST>
@@ -802,20 +802,20 @@ function M3(){
         const maxProperty=dpPct>0?maxHip/(1-dpPct/100):maxHip;const entradaNec=maxProperty-maxHip;
         return<div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:14}}>
-          <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Ingreso mensual</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(avgMon)} €</div></div>
-          <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.am}`}}><div style={{fontSize:9,color:C.tm}}>Tu cuota</div><div style={{fontSize:16,fontWeight:700,color:C.am,...mn}}>{fmt(cuota)} €</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Ingreso mensual</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(avgMon)} zł</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.am}`}}><div style={{fontSize:9,color:C.tm}}>Tu cuota</div><div style={{fontSize:16,fontWeight:700,color:C.am,...mn}}>{fmt(cuota)} zł</div></div>
           <div style={{padding:10,borderRadius:8,background:ok?C.gd:C.rdd,borderLeft:`3px solid ${ok?C.gn:C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Ratio</div><div style={{fontSize:16,fontWeight:700,color:ok?C.gn:C.rd,...mn}}>{pct}%</div></div>
-          <div style={{padding:10,borderRadius:8,background:C.rdd,borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Total intereses</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(Math.round(cuota*yrs*12-amt))} €</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.rdd,borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Total intereses</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(Math.round(cuota*yrs*12-amt))} zł</div></div>
         </div>
         <div style={{padding:14,borderRadius:10,background:"linear-gradient(135deg,#e0f2fe,#f0fdf4)",border:`1px solid ${C.ac}30`,marginBottom:12}}>
           <div style={{fontSize:13,fontWeight:600,color:C.tx,marginBottom:10}}>💰 ¿Cuánto podrías comprar?</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
-            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Hipoteca máxima</div><div style={{fontSize:18,fontWeight:700,color:C.ac,...mn}}>{fmt(maxHip)} €</div></div>
-            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Precio máx. vivienda</div><div style={{fontSize:18,fontWeight:700,color:C.gn,...mn}}>{fmt(maxProperty)} €</div></div>
-            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Entrada necesaria</div><div style={{fontSize:18,fontWeight:700,color:C.am,...mn}}>{fmt(entradaNec)} €</div></div>
+            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Hipoteca máxima</div><div style={{fontSize:18,fontWeight:700,color:C.ac,...mn}}>{fmt(maxHip)} zł</div></div>
+            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Precio máx. vivienda</div><div style={{fontSize:18,fontWeight:700,color:C.gn,...mn}}>{fmt(maxProperty)} zł</div></div>
+            <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Entrada necesaria</div><div style={{fontSize:18,fontWeight:700,color:C.am,...mn}}>{fmt(entradaNec)} zł</div></div>
           </div>
         </div>
-        <Bt onClick={()=>sSavedHip({date:new Date().toLocaleDateString("es-ES"),propPrice,dpPct,amt,tin,yrs,cuota:Math.round(cuota),ratio:pct,maxHip:Math.round(maxHip),maxProp:Math.round(maxProperty)})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
+        <Bt onClick={()=>sSavedHip({date:new Date().toLocaleDateString("pl-PL"),propPrice,dpPct,amt,tin,yrs,cuota:Math.round(cuota),ratio:pct,maxHip:Math.round(maxHip),maxProp:Math.round(maxProperty)})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
         {savedHip&&<span style={{fontSize:11,color:C.pu,marginLeft:10}}>Guardado: {savedHip.date}</span>}
       </div>})()}
     </Cd>
@@ -841,12 +841,12 @@ function M4(){
     <Cd style={{marginBottom:16}}>
       <ST icon="⚙️">Datos de Partida</ST>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:14}}>
-        <div><Lb>Ingreso Anual (€)</Lb><input type="number" value={aI} onChange={e=>sAI(Number(e.target.value)||0)}/></div>
-        <div><Lb>Gasto Anual (€)</Lb><input type="number" value={aE} onChange={e=>sAE(Number(e.target.value)||0)}/></div>
-        <div><Lb>Patrimonio Inicial (€)</Lb><input type="number" value={iP} onChange={e=>sIP(Number(e.target.value)||0)}/></div>
+        <div><Lb>Ingreso Anual (zł)</Lb><input type="number" value={aI} onChange={e=>sAI(Number(e.target.value)||0)}/></div>
+        <div><Lb>Gasto Anual (zł)</Lb><input type="number" value={aE} onChange={e=>sAE(Number(e.target.value)||0)}/></div>
+        <div><Lb>Patrimonio Inicial (zł)</Lb><input type="number" value={iP} onChange={e=>sIP(Number(e.target.value)||0)}/></div>
         <div><Lb>Rendimiento Medio (%)</Lb><input type="number" value={aR} onChange={e=>sAR(Number(e.target.value)||0)}/></div>
       </div>
-      <div style={{display:"flex",gap:12,marginTop:14,flexWrap:"wrap"}}><Bg value={`Ahorro: ${fmt(sav)} €/año`} type={sav>0?"positive":"negative"}/><Bg value={`Tasa: ${fP(sr)}`} type={sr>=.2?"positive":"warning"}/>{goY&&<Bg value={`🏆 Libertad año ${goY.y}`} type="positive"/>}</div>
+      <div style={{display:"flex",gap:12,marginTop:14,flexWrap:"wrap"}}><Bg value={`Ahorro: ${fmt(sav)} zł/año`} type={sav>0?"positive":"negative"}/><Bg value={`Tasa: ${fP(sr)}`} type={sr>=.2?"positive":"warning"}/>{goY&&<Bg value={`🏆 Libertad año ${goY.y}`} type="positive"/>}</div>
       <Pill title="El poder del interés compuesto">Einstein lo llamó la 8ª maravilla del mundo. Tiempo × rendimiento = magia.</Pill>
     </Cd>
     <Cd style={{marginBottom:16}}><ST icon="🏆">Tasa de Ahorro vs Años</ST>
@@ -913,7 +913,7 @@ function M6(){
     const yLabs=Array.from({length:6},(_,i)=>allMin+(allMax-allMin)*i/5);
     const mkA=(lo,hi,col,op)=>{const t=bands[hi],b=bands[lo];return<path d={t.map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join("")+b.slice().reverse().map((v,i)=>`L${xP(totY-i)} ${yP(v)}`).join("")+"Z"} fill={col} opacity={op}/>};
     return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
-      {yLabs.map(v=><g key={v}><line x1={pX} y1={yP(v)} x2={width-20} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}€</text></g>)}
+      {yLabs.map(v=><g key={v}><line x1={pX} y1={yP(v)} x2={width-20} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}zł</text></g>)}
       <line x1={xP(accY)} y1={pY} x2={xP(accY)} y2={pY+cH} stroke={C.am} strokeWidth={1.5} strokeDasharray="5 3"/>
       <text x={xP(accY)+4} y={pY+13} fill={C.am} fontSize={10} fontWeight={600}>Jubilación</text>
       {mkA(10,90,"#0ea5e9",.06)}{mkA(25,75,"#0ea5e9",.12)}
@@ -932,9 +932,9 @@ function M6(){
         <div><Lb>Edad Actual</Lb><input type="number" value={age} onChange={e=>sAge(Number(e.target.value)||0)}/></div>
         <div><Lb>Edad Jubilación</Lb><input type="number" value={retAge} onChange={e=>sRet(Number(e.target.value)||0)}/></div>
         <div><Lb>Esperanza de Vida</Lb><input type="number" value={lifeExp} onChange={e=>sLife(Number(e.target.value)||0)}/></div>
-        <div><Lb>Patrimonio Actual (€)</Lb><input type="number" value={initP} onChange={e=>sInit(Number(e.target.value)||0)}/></div>
-        <div><Lb>Aportación Mensual (€)</Lb><input type="number" value={mContr} onChange={e=>sMC(Number(e.target.value)||0)}/></div>
-        <div><Lb>Retirada Mensual Jub. (€)</Lb><input type="number" value={mWith} onChange={e=>sMW(Number(e.target.value)||0)}/></div>
+        <div><Lb>Patrimonio Actual (zł)</Lb><input type="number" value={initP} onChange={e=>sInit(Number(e.target.value)||0)}/></div>
+        <div><Lb>Aportación Mensual (zł)</Lb><input type="number" value={mContr} onChange={e=>sMC(Number(e.target.value)||0)}/></div>
+        <div><Lb>Retirada Mensual Jub. (zł)</Lb><input type="number" value={mWith} onChange={e=>sMW(Number(e.target.value)||0)}/></div>
         <div><Lb>Rendimiento Medio (%)</Lb><input type="number" value={meanR} onChange={e=>sMR(Number(e.target.value)||0)} step="0.1"/></div>
         <div><Lb>Volatilidad (%)</Lb><input type="number" value={vol} onChange={e=>sVol(Number(e.target.value)||0)} step="0.1"/></div>
         <div><Lb>Nº Simulaciones</Lb><input type="number" value={nSims} onChange={e=>sNS(Math.min(1000,Math.max(50,Number(e.target.value)||100)))}/></div>
@@ -950,19 +950,19 @@ function M6(){
         {events.map((ev,i)=><div key={i} style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
           <input type="text" value={ev.name} onChange={e=>updEv(i,"name",e.target.value)} style={{width:140,fontSize:12}}/>
           <div style={{display:"flex",alignItems:"center",gap:4}}><Lb>Edad</Lb><input type="number" value={ev.age} onChange={e=>updEv(i,"age",e.target.value)} style={{width:55}}/></div>
-          <div style={{display:"flex",alignItems:"center",gap:4}}><Lb>€</Lb><input type="number" value={ev.amount} onChange={e=>updEv(i,"amount",e.target.value)} style={{width:80}}/></div>
+          <div style={{display:"flex",alignItems:"center",gap:4}}><Lb>zł</Lb><input type="number" value={ev.amount} onChange={e=>updEv(i,"amount",e.target.value)} style={{width:80}}/></div>
           <Xb onClick={()=>delEv(i)}/>
         </div>)}
       </div>
       <div style={{marginTop:18,display:"flex",gap:10,flexWrap:"wrap"}}>
         <PB onClick={run} disabled={running}>{running?"⏳ Simulando...":"🎲 Simular Jubilación"}</PB>
-        {res&&<Bt onClick={()=>setSG({date:new Date().toLocaleDateString("es-ES"),retMed:res.retMed,surv:res.surv,mContr,mWith,age,retAge,lifeExp,meanR,vol})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar Objetivo</Bt>}
+        {res&&<Bt onClick={()=>setSG({date:new Date().toLocaleDateString("pl-PL"),retMed:res.retMed,surv:res.surv,mContr,mWith,age,retAge,lifeExp,meanR,vol})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar Objetivo</Bt>}
         {savedGoal&&<span style={{fontSize:11,color:C.pu,alignSelf:"center"}}>Guardado: {savedGoal.date}</span>}
       </div>
     </Cd>
     {res?<>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:12,marginBottom:16}}>
-        {[{l:`A los ${retAge}`,v:`${fmt(res.retMed)} €`,c:C.ac,s:"Mediana"},{l:"Pesimista (P10)",v:`${fmt(res.retP10)} €`,c:C.rd,s:"Percentil 10"},{l:"Optimista (P90)",v:`${fmt(res.retP90)} €`,c:C.gn,s:"Percentil 90"},{l:"Supervivencia",v:`${res.surv}%`,c:Number(res.surv)>=90?C.gn:C.am,s:`${nSims-res.ruin}/${nSims}`},{l:`A los ${lifeExp}`,v:`${fmt(res.finalMed)} €`,c:res.finalMed>0?C.gn:C.rd,s:"Mediana"}].map((x,i)=><Cd key={i} style={{textAlign:"center",borderTop:`3px solid ${x.c}`,padding:14}}><div style={{fontSize:10,color:C.tm}}>{x.l}</div><div style={{fontSize:18,fontWeight:700,color:x.c,...mn,marginTop:4}}>{x.v}</div><div style={{fontSize:9,color:C.tm,marginTop:2}}>{x.s}</div></Cd>)}
+        {[{l:`A los ${retAge}`,v:`${fmt(res.retMed)} zł`,c:C.ac,s:"Mediana"},{l:"Pesimista (P10)",v:`${fmt(res.retP10)} zł`,c:C.rd,s:"Percentil 10"},{l:"Optimista (P90)",v:`${fmt(res.retP90)} zł`,c:C.gn,s:"Percentil 90"},{l:"Supervivencia",v:`${res.surv}%`,c:Number(res.surv)>=90?C.gn:C.am,s:`${nSims-res.ruin}/${nSims}`},{l:`A los ${lifeExp}`,v:`${fmt(res.finalMed)} zł`,c:res.finalMed>0?C.gn:C.rd,s:"Mediana"}].map((x,i)=><Cd key={i} style={{textAlign:"center",borderTop:`3px solid ${x.c}`,padding:14}}><div style={{fontSize:10,color:C.tm}}>{x.l}</div><div style={{fontSize:18,fontWeight:700,color:x.c,...mn,marginTop:4}}>{x.v}</div><div style={{fontSize:9,color:C.tm,marginTop:2}}>{x.s}</div></Cd>)}
       </div>
       <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center"}}>
         <ST icon="📈">Proyección ({nSims} simulaciones)</ST>
@@ -1012,7 +1012,7 @@ function M7(){
     const xStep=Math.max(1,Math.floor(chartData.length/15));
     return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
       <defs><linearGradient id="m7g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.gn} stopOpacity=".12"/><stop offset="100%" stopColor={C.gn} stopOpacity="0"/></linearGradient><linearGradient id="m7r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={C.rd} stopOpacity=".08"/><stop offset="100%" stopColor={C.rd} stopOpacity="0"/></linearGradient></defs>
-      {yLabs.map(v=><g key={v}><line x1={pX} y1={pY+cH-((v-mi)/rgY)*cH} x2={width-20} y2={pY+cH-((v-mi)/rgY)*cH} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={pY+cH-((v-mi)/rgY)*cH+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}€</text></g>)}
+      {yLabs.map(v=><g key={v}><line x1={pX} y1={pY+cH-((v-mi)/rgY)*cH} x2={width-20} y2={pY+cH-((v-mi)/rgY)*cH} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={pY+cH-((v-mi)/rgY)*cH+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}zł</text></g>)}
       {retLine&&<><line x1={retLine.x} y1={pY} x2={retLine.x} y2={pY+cH} stroke={C.am} strokeWidth={1.5} strokeDasharray="5 3"/><text x={retLine.x+4} y={pY+12} fill={C.am} fontSize={9} fontWeight={600}>Jubilación ({retAge})</text></>}
       <line x1={pX} y1={pY+cH-((targetPat-mi)/rgY)*cH} x2={width-20} y2={pY+cH-((targetPat-mi)/rgY)*cH} stroke={C.ac} strokeWidth={1} strokeDasharray="6 3" opacity={.5}/>
       {acumPts.length>1&&<><path d={mkD(acumPts)+`L${acumPts[acumPts.length-1].x} ${pY+cH}L${acumPts[0].x} ${pY+cH}Z`} fill="url(#m7g)"/><path d={mkD(acumPts)} fill="none" stroke={C.gn} strokeWidth={2.5}/></>}
@@ -1036,9 +1036,9 @@ function M7(){
         <div><Lb>Edad Actual</Lb><input type="number" value={age} onChange={e=>sAge(Number(e.target.value)||0)}/></div>
         <div><Lb>Edad Jubilación</Lb><input type="number" value={retAge} onChange={e=>sRetAge(Number(e.target.value)||0)}/></div>
         <div><Lb>Esperanza de Vida</Lb><input type="number" value={lifeExp} onChange={e=>sLifeExp(Number(e.target.value)||0)}/></div>
-        <div><Lb>Patrimonio Actual (€)</Lb><input type="number" value={currentPat} onChange={e=>sCP(Number(e.target.value)||0)}/></div>
-        <div><Lb>Acumulación Anual (€)</Lb><input type="number" value={annualAccum} onChange={e=>sAA(Number(e.target.value)||0)}/></div>
-        <div><Lb>Gasto Mensual Jub. (€)</Lb><input type="number" value={monthlyNeed} onChange={e=>sMN(Number(e.target.value)||0)}/></div>
+        <div><Lb>Patrimonio Actual (zł)</Lb><input type="number" value={currentPat} onChange={e=>sCP(Number(e.target.value)||0)}/></div>
+        <div><Lb>Acumulación Anual (zł)</Lb><input type="number" value={annualAccum} onChange={e=>sAA(Number(e.target.value)||0)}/></div>
+        <div><Lb>Gasto Mensual Jub. (zł)</Lb><input type="number" value={monthlyNeed} onChange={e=>sMN(Number(e.target.value)||0)}/></div>
         <div><Lb>Rendimiento Jub. (%)</Lb><input type="number" value={retReturn} onChange={e=>sRR(Number(e.target.value)||0)} step="0.5"/></div>
       </div>
       <div style={{marginTop:10}}><button onClick={loadFromData} style={{padding:"6px 14px",borderRadius:7,border:`1px solid ${C.ac}`,background:C.ad,color:C.ac,fontSize:11,cursor:"pointer",fontFamily:"'Inter',sans-serif",fontWeight:600}}>🔄 Cargar desde mis datos</button></div>
@@ -1048,14 +1048,14 @@ function M7(){
         {adjInf&&<input type="number" value={infRate} onChange={e=>{e.stopPropagation();sInfR(Number(e.target.value)||0)}} onClick={e=>e.stopPropagation()} step="0.5" style={{width:60,fontSize:12}}/>}
       </div>
       <div style={{marginTop:14}}>
-        <Bt onClick={()=>setSavedPlan({date:new Date().toLocaleDateString("es-ES"),targetPat:Math.round(targetPat),neededGrowth})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
+        <Bt onClick={()=>setSavedPlan({date:new Date().toLocaleDateString("pl-PL"),targetPat:Math.round(targetPat),neededGrowth})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
         {savedPlan&&<span style={{fontSize:11,color:C.pu,marginLeft:10}}>Guardado: {savedPlan.date}</span>}
       </div>
     </Cd>
 
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,marginBottom:16}}>
-      <Cd style={{textAlign:"center",borderTop:`3px solid ${C.ac}`,padding:14}}><div style={{fontSize:20}}>🏦</div><div style={{fontSize:10,color:C.tm}}>Necesitas a los {retAge}</div><div style={{fontSize:20,fontWeight:700,color:C.ac,...mn}}>{fmt(Math.round(targetPat))} €</div></Cd>
-      <Cd style={{textAlign:"center",borderTop:`3px solid ${C.bl}`,padding:14}}><div style={{fontSize:20}}>📈</div><div style={{fontSize:10,color:C.tm}}>Aumento anual nec.</div><div style={{fontSize:20,fontWeight:700,color:C.bl,...mn}}>{fmt(Math.round(annualIncNeeded))} €</div></Cd>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${C.ac}`,padding:14}}><div style={{fontSize:20}}>🏦</div><div style={{fontSize:10,color:C.tm}}>Necesitas a los {retAge}</div><div style={{fontSize:20,fontWeight:700,color:C.ac,...mn}}>{fmt(Math.round(targetPat))} zł</div></Cd>
+      <Cd style={{textAlign:"center",borderTop:`3px solid ${C.bl}`,padding:14}}><div style={{fontSize:20}}>📈</div><div style={{fontSize:10,color:C.tm}}>Aumento anual nec.</div><div style={{fontSize:20,fontWeight:700,color:C.bl,...mn}}>{fmt(Math.round(annualIncNeeded))} zł</div></Cd>
       <Cd style={{textAlign:"center",borderTop:`3px solid ${onTrack?C.gn:C.am}`,padding:14}}><div style={{fontSize:20}}>🎯</div><div style={{fontSize:10,color:C.tm}}>Tu ritmo</div><div style={{fontSize:20,fontWeight:700,color:onTrack?C.gn:C.am,...mn}}>{(pctCovered*100).toFixed(0)}%</div></Cd>
       <Cd style={{textAlign:"center",borderTop:`3px solid ${neededGrowth<=5?C.gn:neededGrowth<=8?C.am:C.rd}`,padding:14}}><div style={{fontSize:20}}>📊</div><div style={{fontSize:10,color:C.tm}}>Crecimiento nec.</div><div style={{fontSize:20,fontWeight:700,color:neededGrowth<=5?C.gn:neededGrowth<=8?C.am:C.rd,...mn}}>{neededGrowth>=99?"∞":neededGrowth.toFixed(1)+"%"}</div></Cd>
     </div>
