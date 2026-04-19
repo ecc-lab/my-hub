@@ -413,7 +413,7 @@ function MisDatosCard(){
 }
 
 function M0(){
-  const{income:inc,monthlyExp:me,annualExp:ae,savingsGoal:sg}=useContext(Ctx);
+  const{income:inc,monthlyExp:me,annualExp:ae,savingsGoal:sg,selYear,setYear,YEARS}=useContext(Ctx);
   const[savedHip]=useLocalData("hipScenario",null);
   const tIY=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0);
   const safeMe0=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
@@ -504,28 +504,32 @@ function M0(){
 
   return<div style={{animation:"fadeIn .3s"}}>
     <Cd style={{marginBottom:16,background:`linear-gradient(135deg,#e0f2fe,#f0fdf4)`,borderTop:`3px solid ${C.ac}`}}>
-      <div style={{display:"flex",alignItems:"center",gap:14}}>
+      <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
         <div style={{width:56,height:56,borderRadius:14,background:`linear-gradient(135deg,${C.ac},#0284c7)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:28,fontWeight:800,color:C.w}}>V</span></div>
         <div><h2 style={{fontSize:22,fontWeight:700}}>Tu dinero, tus reglas 💪</h2><p style={{fontSize:13,color:C.td}}>Resumen de tu vida financiera. Cada número cuenta una historia.</p></div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"10px 14px",borderRadius:10,background:"rgba(255,255,255,.6)",border:`1px solid ${C.bd}`}}>
+        <span style={{fontSize:13,fontWeight:600,color:C.td}}>📅 Año:</span>
+        {YEARS.map(y=><Bt key={y} active={selYear===y} onClick={()=>setYear(y)} style={{padding:"5px 14px",fontSize:12,fontWeight:selYear===y?700:400}}>{y}</Bt>)}
       </div>
     </Cd>
 
     <Cd style={{marginBottom:14}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>📊</span><h3 style={{fontSize:15,fontWeight:600}}>KPIs Clave</h3></div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>📊</span><h3 style={{fontSize:15,fontWeight:600}}>KPIs Clave — {selYear}</h3></div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
         {[
-          {l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} zł`,c:patNow>=0?C.ac:C.rd},
-          {l:`Δ YoY (${2023+patPrevIdx}-${patYear})`,v:`${patDelta>=0?"+":""}${fmt(patDelta)} zł (${patDelta>=0?"+":""}${(patDeltaPct*100).toFixed(1)}%)`,c:patDelta>=0?C.gn:C.rd},
-          {l:"Tasa de Ahorro YTD",v:fP(sr),c:sr>=.2?C.gn:sr>=.1?C.am:C.rd},
-          {l:"Runway (meses)",v:`${fmt(runway)} m`,c:runway>=12?C.gn:runway>=6?C.am:C.rd},
-          {l:"Ahorro mensual prom.",v:`${fmt(Math.round(avgMonthlySavings))} zł`,c:avgMonthlySavings>=0?C.gn:C.rd}
+          {l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} zł`,c:patNow>=0?C.ac:C.rd,s:"Activos − Deudas"},
+          {l:`Δ YoY (${2023+patPrevIdx}→${patYear})`,v:`${patDelta>=0?"+":""}${fmt(patDelta)} zł (${patDelta>=0?"+":""}${(patDeltaPct*100).toFixed(1)}%)`,c:patDelta>=0?C.gn:C.rd,s:"Patrimonio"},
+          {l:`Tasa de Ahorro ${selYear}`,v:fP(sr),c:sr>=.2?C.gn:sr>=.1?C.am:C.rd,s:`Ahorro / Ingresos`},
+          {l:`Runway`,v:`${fmt(runway)} m`,c:runway>=12?C.gn:runway>=6?C.am:C.rd,s:`Efectivo / Gasto mensual`},
+          {l:`Ahorro mensual ${selYear}`,v:`${fmt(Math.round(avgMonthlySavings))} zł`,c:avgMonthlySavings>=0?C.gn:C.rd,s:`${fmt(rY)} zł/año ÷ 12`}
         ].map((x,i)=>
-          <div key={i} style={{padding:12,borderRadius:10,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm,marginBottom:3}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn}}>{x.v}</div></div>)}
+          <div key={i} style={{padding:12,borderRadius:10,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm,marginBottom:3}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn}}>{x.v}</div>{x.s&&<div style={{fontSize:8,color:C.bh,marginTop:2}}>{x.s}</div>}</div>)}
       </div>
     </Cd>
 
     <Cd style={{marginBottom:14,display:"flex",flexDirection:"column",alignItems:"center"}}>
-      <ST icon="🏗️" sub="Desglose del flujo de caja anual">Cash Flow Waterfall</ST>
+      <ST icon="🏗️" sub={`Desglose del flujo de caja — ${selYear}`}>Cash Flow Waterfall</ST>
       <WaterfallChart/>
       <div style={{display:"flex",gap:14,marginTop:8,fontSize:11}}>
         <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:10,background:C.gn,opacity:.7,display:"inline-block",borderRadius:2}}></span>Ingresos</span>
@@ -548,18 +552,18 @@ function M0(){
     <MisDatosCard/>
 
     <Cd style={{marginBottom:14}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>💰</span><h3 style={{fontSize:15,fontWeight:600}}>Ingresos y Gastos</h3></div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>💰</span><h3 style={{fontSize:15,fontWeight:600}}>Ingresos y Gastos — {selYear}</h3></div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
-        {[{l:"Ingresos/año",v:`${fmt(tIY)} zł`,c:C.gn},{l:"Gastos/año",v:`${fmt(tEY)} zł`,c:C.rd},{l:"Ahorro/año",v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am},{l:"Obj. Mensual",v:`${fmt(sg)} zł`,c:C.am},{l:"Mejor mes",v:bestMonth,c:C.bl}].map((x,i)=>
-          <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div></div>)}
+        {[{l:`Ingresos ${selYear}`,v:`${fmt(tIY)} zł`,c:C.gn,s:`${inc.length} fuentes`},{l:`Gastos ${selYear}`,v:`${fmt(tEY)} zł`,c:C.rd,s:`Mensuales: ${fmt(tMeY)} + Anuales: ${fmt(tAeY)}`},{l:`Ahorro ${selYear}`,v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd,s:`${fmt(tIY)} − ${fmt(tEY)}`},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am},{l:"Obj. Mensual",v:`${fmt(sg)} zł`,c:C.am},{l:"Mejor mes",v:bestMonth,c:C.bl}].map((x,i)=>
+          <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div>{x.s&&<div style={{fontSize:8,color:C.bh,marginTop:2}}>{x.s}</div>}</div>)}
       </div>
     </Cd>
 
     <Cd style={{marginBottom:14}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>📊</span><h3 style={{fontSize:15,fontWeight:600}}>Patrimonio</h3></div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
-        {[{l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} zł`,c:patNow>=0?C.ac:C.rd},{l:"Ahorro Anual",v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am}].map((x,i)=>
-          <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div></div>)}
+        {[{l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} zł`,c:patNow>=0?C.ac:C.rd,s:"Activos − Deudas"},{l:`Ahorro ${selYear}`,v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd,s:`Ingresos − Gastos`},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am}].map((x,i)=>
+          <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div>{x.s&&<div style={{fontSize:8,color:C.bh,marginTop:2}}>{x.s}</div>}</div>)}
       </div>
     </Cd>
 
