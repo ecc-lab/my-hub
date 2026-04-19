@@ -724,6 +724,187 @@ function M1(){
   </div>;
 }
 
+function M1b(){
+  const{monthlyExp:me,annualExp:ae,selYear,meHist,aeHist}=useContext(Ctx);
+  const FIJO=["Vivienda","Suministros","Suscripciones","Deuda"];
+  const safeMe=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
+  const val=(r,m)=>r.real[m]!=null?r.real[m]:r.monthly;
+
+  // --- Heatmap data by type x month ---
+  const heatByType=useMemo(()=>{
+    const map={};EXP_TYPES.forEach(t=>map[t]=Array(12).fill(0));
+    safeMe.forEach(r=>{const t=r.type||"Otros";MO.forEach((_,m)=>{map[t][m]+=val(r,m)})});
+    return map;
+  },[safeMe]);
+  const heatRowTotals=useMemo(()=>{const o={};EXP_TYPES.forEach(t=>o[t]=heatByType[t].reduce((a,b)=>a+b,0));return o},[heatByType]);
+  const heatColTotals=useMemo(()=>MO.map((_,m)=>EXP_TYPES.reduce((s,t)=>s+heatByType[t][m],0)),[heatByType]);
+  const heatMax=useMemo(()=>Math.max(...EXP_TYPES.flatMap(t=>heatByType[t]),1),[heatByType]);
+  const heatClr=(v)=>{const r=Math.min(v/heatMax,1);const red=Math.round(220*r);const grn=Math.round(255*(1-r*0.7));return`rgb(${Math.max(red,240-Math.round(r*60))},${grn},${Math.round(240-r*100)})`};
+
+  // --- Fijos vs Variables ---
+  const fijosM=MO.map((_,m)=>safeMe.filter(r=>FIJO.includes(r.type)).reduce((s,r)=>s+val(r,m),0));
+  const varsM=MO.map((_,m)=>safeMe.filter(r=>!FIJO.includes(r.type)).reduce((s,r)=>s+val(r,m),0));
+  const totalFijo=fijosM.reduce((a,b)=>a+b,0);
+  const totalVar=varsM.reduce((a,b)=>a+b,0);
+  const totalAll=totalFijo+totalVar;
+  const pctFijo=totalAll>0?totalFijo/totalAll:0;
+  const pctVar=totalAll>0?totalVar/totalAll:0;
+
+  // --- MoM ---
+  const lastMonth=useMemo(()=>{for(let m=11;m>=0;m--){const has=safeMe.some(r=>r.real[m]!=null)||safeMe.some(r=>r.monthly>0);if(has)return m}return new Date().getMonth()},[safeMe]);
+  const prevMonth=lastMonth>0?lastMonth-1:null;
+  const momData=useMemo(()=>{
+    if(prevMonth==null)return[];
+    return EXP_TYPES.map(t=>{
+      const cur=safeMe.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+val(r,lastMonth),0);
+      const prev=safeMe.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+val(r,prevMonth),0);
+      const delta=cur-prev;const pct=prev>0?delta/prev:cur>0?1:0;
+      return{type:t,cur,prev,delta,pct};
+    }).filter(d=>d.cur>0||d.prev>0);
+  },[safeMe,lastMonth,prevMonth]);
+  const momBadge=(pct)=>{if(pct<=-0.001)return{c:C.gn,bg:C.gd,l:"Baja"};if(pct>0.10)return{c:C.rd,bg:C.rdd,l:"Sube"};return{c:C.am,bg:C.amd,l:"Estable"}};
+
+  // --- YoY ---
+  const prevYear=selYear-1;
+  const prevMeRaw=meHist?.[prevYear]||[];
+  const prevAeRaw=aeHist?.[prevYear]||[];
+  const yoyData=useMemo(()=>{
+    return EXP_TYPES.map(t=>{
+      const curMe=safeMe.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+MO.reduce((ss,_,m)=>ss+val(r,m),0),0);
+      const curAe=ae.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+(r.annual||0),0);
+      const cur=curMe+curAe;
+      const pMe=prevMeRaw.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>{const rl=r.real||Array(12).fill(null);return s+MO.reduce((ss,_,m)=>ss+(rl[m]!=null?rl[m]:(r.monthly||0)),0)},0);
+      const pAe=prevAeRaw.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+(r.annual||0),0);
+      const prev=pMe+pAe;
+      const delta=cur-prev;const pct=prev>0?delta/prev:cur>0?1:0;
+      return{type:t,cur,prev,delta,pct};
+    }).filter(d=>d.cur>0||d.prev>0);
+  },[safeMe,ae,prevMeRaw,prevAeRaw]);
+
+  // --- Recurrentes ---
+  const recurrentes=useMemo(()=>safeMe.filter(r=>r.monthly>0).map(r=>({name:r.name,type:r.type||"Otros",monthly:r.monthly,annual:r.monthly*12})),[safeMe]);
+  const recTotalM=recurrentes.reduce((s,r)=>s+r.monthly,0);
+  const recTotalY=recurrentes.reduce((s,r)=>s+r.annual,0);
+
+  // --- FV line chart ---
+  const FVChart=({width=700,height=160})=>{
+    const allV=[...fijosM,...varsM];const mx=Math.max(...allV,1);
+    const pL=45,pR=10,pT=12,pB=24,cW=width-pL-pR,cH=height-pT-pB;
+    const xP=i=>pL+(i/11)*cW;const yP=v=>pT+cH-(v/mx)*cH;
+    const mkD=d=>d.map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join(" ");
+    return<svg width={width} height={height} style={{display:"block",maxWidth:"100%"}}>
+      {[0,.25,.5,.75,1].map(f=>{const v=mx*f;return<g key={f}><line x1={pL} y1={yP(v)} x2={width-pR} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pL-4} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={8} {...mn}>{fmt(Math.round(v))}</text></g>})}
+      <path d={mkD(fijosM)} fill="none" stroke={C.rd} strokeWidth={2}/>
+      <path d={mkD(varsM)} fill="none" stroke={C.am} strokeWidth={2} strokeDasharray="6 3"/>
+      {MO.map((_,i)=><g key={i}><circle cx={xP(i)} cy={yP(fijosM[i])} r={2.5} fill={C.w} stroke={C.rd} strokeWidth={1.5}/><circle cx={xP(i)} cy={yP(varsM[i])} r={2.5} fill={C.w} stroke={C.am} strokeWidth={1.5}/><text x={xP(i)} y={height-4} textAnchor="middle" fill={C.tm} fontSize={9}>{MO[i]}</text></g>)}
+    </svg>;
+  };
+
+  return<div style={{animation:"fadeIn .3s"}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+      <strong style={{color:C.ac}}>📉 Radiografía de tus gastos.</strong> Heatmap por categoría, fijos vs variables, comparativas mensuales y anuales, y detección de recurrentes.
+    </div>
+
+    {/* A) Heatmap */}
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}>
+      <ST icon="🗺️">Heatmap: Mes x Categoría</ST>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+        <thead><tr><th style={{...th,textAlign:"left",position:"sticky",left:0,background:C.sf,minWidth:100}}>Categoría</th>{MO.map(m=><th key={m} style={{...th,minWidth:48}}>{m}</th>)}<th style={{...th,color:C.ac,minWidth:60}}>TOTAL</th></tr></thead>
+        <tbody>
+          {EXP_TYPES.filter(t=>heatRowTotals[t]>0).map(t=><tr key={t}>
+            <td style={{padding:"4px 6px",fontWeight:600,fontSize:11,position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}>{t}</td>
+            {heatByType[t].map((v,m)=><td key={m} style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:10,background:v>0?heatClr(v):"transparent",color:v>0?C.tx:C.tm,borderRadius:2}}>{v>0?fmt(v):""}</td>)}
+            <td style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:11,fontWeight:700,color:C.rd}}>{fmt(heatRowTotals[t])}</td>
+          </tr>)}
+          <tr style={{borderTop:`2px solid ${C.bd}`}}>
+            <td style={{padding:"6px",fontWeight:700,position:"sticky",left:0,background:C.sf}}>TOTAL</td>
+            {heatColTotals.map((v,m)=><td key={m} style={{padding:"4px 4px",textAlign:"right",...mn,fontSize:11,fontWeight:700,color:C.rd}}>{fmt(v)}</td>)}
+            <td style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.rd}}>{fmt(heatColTotals.reduce((a,b)=>a+b,0))}</td>
+          </tr>
+        </tbody>
+      </table>
+    </Cd>
+
+    {/* B) Fijos vs Variables */}
+    <Cd style={{marginBottom:16}}>
+      <ST icon="⚖️">Fijos vs Variables</ST>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
+        <div style={{padding:10,borderRadius:8,background:C.rdd,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Fijos</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(totalFijo)} zł</div><div style={{fontSize:10,color:C.tm}}>{fP(pctFijo)}</div></div>
+        <div style={{padding:10,borderRadius:8,background:C.amd,textAlign:"center",borderLeft:`3px solid ${C.am}`}}><div style={{fontSize:9,color:C.tm}}>Variables</div><div style={{fontSize:16,fontWeight:700,color:C.am,...mn}}>{fmt(totalVar)} zł</div><div style={{fontSize:10,color:C.tm}}>{fP(pctVar)}</div></div>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Total</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(totalAll)} zł</div></div>
+      </div>
+      <div style={{height:18,borderRadius:9,overflow:"hidden",display:"flex",marginBottom:14}}>
+        <div style={{width:fP(pctFijo),background:C.rd,transition:"width .3s"}}></div>
+        <div style={{width:fP(pctVar),background:C.am,transition:"width .3s"}}></div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <FVChart/>
+        <div style={{display:"flex",gap:14,marginTop:8,fontSize:11}}>
+          <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:3,background:C.rd,display:"inline-block"}}></span>Fijos</span>
+          <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:14,height:2,borderTop:`2px dashed ${C.am}`,display:"inline-block"}}></span><span style={{color:C.am}}>Variables</span></span>
+        </div>
+      </div>
+    </Cd>
+
+    {/* C) MoM */}
+    <Cd style={{marginBottom:16}}>
+      <ST icon="📅" sub={prevMonth!=null?`${MO[prevMonth]} → ${MO[lastMonth]}`:""}>{`Comparador MoM (${selYear})`}</ST>
+      {momData.length>0?<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+        <thead><tr><th style={{...th,textAlign:"left"}}>Categoría</th><th style={th}>{MO[prevMonth]}</th><th style={th}>{MO[lastMonth]}</th><th style={th}>Δ</th><th style={th}>%</th><th style={th}>Estado</th></tr></thead>
+        <tbody>{momData.map(d=>{const b=momBadge(d.pct);return<tr key={d.type} style={{borderBottom:`1px solid ${C.bg}`}}>
+          <td style={{padding:"5px 6px",fontWeight:600}}>{d.type}</td>
+          <td style={{padding:"5px 4px",textAlign:"right",...mn}}>{fmt(d.prev)}</td>
+          <td style={{padding:"5px 4px",textAlign:"right",...mn}}>{fmt(d.cur)}</td>
+          <td style={{padding:"5px 4px",textAlign:"right",...mn,color:d.delta>0?C.rd:C.gn}}>{d.delta>0?"+":""}{fmt(d.delta)}</td>
+          <td style={{padding:"5px 4px",textAlign:"right",...mn,color:d.pct>0?C.rd:C.gn}}>{d.pct>0?"+":""}{(d.pct*100).toFixed(1)}%</td>
+          <td style={{padding:"4px"}}><span style={{display:"inline-block",padding:"3px 8px",borderRadius:5,fontSize:10,fontWeight:600,color:b.c,background:b.bg}}>{b.l}</span></td>
+        </tr>})}</tbody>
+      </table>:<div style={{textAlign:"center",padding:20,color:C.tm,fontSize:12}}>No hay datos de meses anteriores para comparar.</div>}
+    </Cd>
+
+    {/* D) YoY */}
+    <Cd style={{marginBottom:16}}>
+      <ST icon="📊" sub={`${prevYear} → ${selYear}`}>Comparador YoY</ST>
+      {yoyData.length>0?<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+        <thead><tr><th style={{...th,textAlign:"left"}}>Categoría</th><th style={th}>{prevYear}</th><th style={th}>{selYear}</th><th style={th}>Δ</th><th style={th}>%</th><th style={th}>Estado</th></tr></thead>
+        <tbody>{yoyData.map(d=>{const b=momBadge(d.pct);return<tr key={d.type} style={{borderBottom:`1px solid ${C.bg}`}}>
+          <td style={{padding:"5px 6px",fontWeight:600}}>{d.type}</td>
+          <td style={{padding:"5px 4px",textAlign:"right",...mn}}>{fmt(d.prev)}</td>
+          <td style={{padding:"5px 4px",textAlign:"right",...mn}}>{fmt(d.cur)}</td>
+          <td style={{padding:"5px 4px",textAlign:"right",...mn,color:d.delta>0?C.rd:C.gn}}>{d.delta>0?"+":""}{fmt(d.delta)}</td>
+          <td style={{padding:"5px 4px",textAlign:"right",...mn,color:d.pct>0?C.rd:C.gn}}>{d.pct>0?"+":""}{(d.pct*100).toFixed(1)}%</td>
+          <td style={{padding:"4px"}}><span style={{display:"inline-block",padding:"3px 8px",borderRadius:5,fontSize:10,fontWeight:600,color:b.c,background:b.bg}}>{b.l}</span></td>
+        </tr>})}</tbody>
+      </table>:<div style={{textAlign:"center",padding:20,color:C.tm,fontSize:12}}>No hay datos del año {prevYear} para comparar.</div>}
+    </Cd>
+
+    {/* E) Recurrentes */}
+    <Cd style={{marginBottom:16}}>
+      <ST icon="🔁" sub="Gastos con base mensual > 0">Detector de Recurrentes</ST>
+      {recurrentes.length>0?<>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+          <thead><tr><th style={{...th,textAlign:"left"}}>Concepto</th><th style={{...th,textAlign:"left"}}>Tipo</th><th style={th}>zł/mes</th><th style={th}>zł/año</th></tr></thead>
+          <tbody>{recurrentes.map((r,i)=><tr key={i} style={{borderBottom:`1px solid ${C.bg}`}}>
+            <td style={{padding:"5px 6px",fontWeight:500}}>{r.name}</td>
+            <td style={{padding:"5px 6px",color:C.td,fontSize:11}}>{r.type}</td>
+            <td style={{padding:"5px 4px",textAlign:"right",...mn}}>{fmt(r.monthly)}</td>
+            <td style={{padding:"5px 4px",textAlign:"right",...mn}}>{fmt(r.annual)}</td>
+          </tr>)}
+          <tr style={{borderTop:`2px solid ${C.bd}`}}>
+            <td style={{padding:"8px 6px",fontWeight:700}} colSpan={2}>TOTAL RECURRENTE</td>
+            <td style={{padding:"8px 4px",textAlign:"right",...mn,fontWeight:700,color:C.rd}}>{fmt(recTotalM)}</td>
+            <td style={{padding:"8px 4px",textAlign:"right",...mn,fontWeight:700,color:C.rd}}>{fmt(recTotalY)}</td>
+          </tr></tbody>
+        </table>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:12}}>
+          <div style={{padding:10,borderRadius:8,background:C.rdd,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Burn mensual</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(recTotalM)} zł</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.rdd,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Burn anual</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(recTotalY)} zł</div></div>
+        </div>
+      </>:<div style={{textAlign:"center",padding:20,color:C.tm,fontSize:12}}>No se detectan gastos recurrentes (base mensual = 0 en todos).</div>}
+    </Cd>
+  </div>;
+}
+
 function M2(){
   const[assets,sAs]=useLocalData("assets",D_AS);const[debts,sDb]=useLocalData("debts",D_DB);
   const dAs=useDrag(assets,sAs);const dDb=useDrag(debts,sDb);
@@ -1247,8 +1428,8 @@ function App(){
 
   const ctx={income,setIncome:sI,monthlyExp:me,setMonthlyExp:sM,annualExp:ae,setAnnualExp:sA,savingsGoal:sg,setSavingsGoal:sSG,selYear,setYear,YEARS,copyYear,incHist,meHist,aeHist,addIncRow,delIncRow,addMeRow,delMeRow,addAeRow,delAeRow,syncIncMeta,syncMeMeta,syncAeMeta,reorderInc,reorderMe,reorderAe};
 
-  const TABS=[{id:"m0",l:"Dashboard",i:"🏠"},{id:"m1",l:"Ingresos",i:"💰"},{id:"m2",l:"Patrimonio",i:"📊"},{id:"m3",l:"Hipoteca",i:"🏛"},{id:"m4",l:"Libertad Fin.",i:"🏆"},{id:"m6",l:"Jubilación",i:"🎲"},{id:"m7",l:"Planificador",i:"🎯"}];
-  const render=()=>{switch(tab){case"m0":return<M0/>;case"m1":return<M1/>;case"m2":return<M2/>;case"m3":return<M3/>;case"m4":return<M4/>;case"m6":return<M6/>;case"m7":return<M7/>;default:return<M0/>}};
+  const TABS=[{id:"m0",l:"Dashboard",i:"🏠"},{id:"m1",l:"Ingresos",i:"💰"},{id:"m1b",l:"Gastos",i:"📉"},{id:"m2",l:"Patrimonio",i:"📊"},{id:"m3",l:"Hipoteca",i:"🏛"},{id:"m4",l:"Libertad Fin.",i:"🏆"},{id:"m6",l:"Jubilación",i:"🎲"},{id:"m7",l:"Planificador",i:"🎯"}];
+  const render=()=>{switch(tab){case"m0":return<M0/>;case"m1":return<M1/>;case"m1b":return<M1b/>;case"m2":return<M2/>;case"m3":return<M3/>;case"m4":return<M4/>;case"m6":return<M6/>;case"m7":return<M7/>;default:return<M0/>}};
 
   return<><style>{CSS}</style><Ctx.Provider value={ctx}>
     {!onboarded&&<Onboarding onFinish={finishOnboarding}/>}
