@@ -220,9 +220,9 @@ function exportToExcel(includeData){
   if(meR.length===0){meR.push([cy,"Alquiler","Vivienda",800,...Array(12).fill("")]);meR.push([cy,"Luz","Suministros",50,...Array(12).fill("")])}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([meH,...meR]),"Gastos Mensuales");
   // Gastos Anuales
-  const aeH=["Año","Concepto","Tipo","zł/año"];const aeR=[];
-  if(includeData)years.forEach(y=>{(aeHist[y]||[]).forEach(r=>aeR.push([y,r.name,r.type||"Otros",r.annual||0]))});
-  if(aeR.length===0)aeR.push([cy,"Seguros","Otros",500]);
+  const aeH=["Año","Concepto","Tipo","zł/año",...MO];const aeR=[];
+  if(includeData)years.forEach(y=>{(aeHist[y]||[]).forEach(r=>{const rl=r.real||Array(12).fill(null);aeR.push([y,r.name,r.type||"Otros",r.annual||0,...rl.map(v=>v!=null?v:"")])})});
+  if(aeR.length===0)aeR.push([cy,"Seguros","Otros",500,...Array(12).fill("")]);
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([aeH,...aeR]),"Gastos Anuales");
   // Histórico Patrimonio
   const fh=get("finHistory",[]);const fhR=[["Año","Ingresos","Gastos"]];
@@ -332,8 +332,9 @@ if(file.size>5*1024*1024)throw new Error("Archivo demasiado grande (max 5MB)");
       const year=Number(row[0]);const name=String(row[1]||"").trim();const type=String(row[2]||"Otros").trim();
       if(!year||!name)return;
       const annual=Number(row[3])||0;
+      const aeReal=MO.map((_,i)=>{const v=row[4+i];return v!=null&&v!==""?Number(v)||0:null});
       if(!aeHist[year])aeHist[year]=[];
-      aeHist[year].push({name,type,annual,real:Array(12).fill(null)});
+      aeHist[year].push({name,type,annual,real:aeReal});
       const k=name+"|"+type;if(!seen.has(k)){seen.add(k);aeMaster.push({name,type})}
     });
     if(Object.keys(aeHist).length>0){set("aeHistory",aeHist);set("aeRows",aeMaster);summary.push("Gastos Anuales: "+Object.values(aeHist).reduce((s,a)=>s+a.length,0)+" filas")}
@@ -416,13 +417,15 @@ function M0(){
   const[savedHip]=useLocalData("hipScenario",null);
   const tIY=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0);
   const safeMe0=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
+  const safeAe0=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const tMeM0=MO.map((_,m)=>safeMe0.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0));
+  const tAeM0=MO.map((_,m)=>safeAe0.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0));
   const tMeY=tMeM0.reduce((a,b)=>a+b,0);
-  const tAeY=ae.reduce((s,r)=>s+r.annual,0);
+  const tAeY=tAeM0.reduce((a,b)=>a+b,0);
   const tEY=tMeY+tAeY;
   const rY=tIY-tEY,sr=tIY>0?rY/tIY:0;
   const incM0=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0));
-  const bestMonth=MO[tMeM0.map((meM,m)=>incM0[m]-meM-tAeY/12).reduce((best,v,i,a)=>v>a[best]?i:best,0)];
+  const bestMonth=MO[MO.map((_,m)=>incM0[m]-tMeM0[m]-tAeM0[m]).reduce((best,v,i,a)=>v>a[best]?i:best,0)];
   const[savedMC]=useLocalData("mcGoal",null);
   const[assets]=useLocalData("assets",D_AS);const[debts]=useLocalData("debts",D_DB);
   const patYrIdx=Math.min(9,Math.max(0,new Date().getFullYear()-2023));
@@ -608,9 +611,9 @@ function M1(){
 
   const tIM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0));
   const tMeM=MO.map((_,m)=>safeMe.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0));
-  const tAeM=MO.map(()=>ae.reduce((s,r)=>s+r.annual/12,0));
+  const tAeM=MO.map((_,m)=>safeAe.reduce((s,r)=>{const v=r.real&&r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0));
   const rM=MO.map((_,m)=>tIM[m]-tMeM[m]-tAeM[m]);
-  const tIY=tIM.reduce((a,b)=>a+b,0),tMeY=tMeM.reduce((a,b)=>a+b,0),tAeY=ae.reduce((a,b)=>a+b.annual,0),tEY=tMeY+tAeY,rY=tIY-tEY;
+  const tIY=tIM.reduce((a,b)=>a+b,0),tMeY=tMeM.reduce((a,b)=>a+b,0),tAeY=tAeM.reduce((a,b)=>a+b,0),tEY=tMeY+tAeY,rY=tIY-tEY;
   const sr=tIY>0?rY/tIY:0;
   const srM=MO.map((_,m)=>tIM[m]>0?rM[m]/tIM[m]:0);
 
@@ -1275,7 +1278,8 @@ function M4(){
   const{income:inc,monthlyExp:me,annualExp:ae}=useContext(Ctx);
   const autoI=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0);
   const safeMe4=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
-  const autoE=MO.map((_,m)=>safeMe4.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0)).reduce((a,b)=>a+b,0)+ae.reduce((s,r)=>s+r.annual,0);
+  const safeAe4=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
+  const autoE=MO.map((_,m)=>safeMe4.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0)).reduce((a,b)=>a+b,0)+MO.map((_,m)=>safeAe4.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
   const[aI,sAI]=useLocalData("gI",autoI);const[aE,sAE]=useLocalData("gE",autoE);
   const[iP,sIP]=useLocalData("gP",0);const[aR,sAR]=useLocalData("gR",5);
   useEffect(()=>{if(autoI>0)sAI(autoI)},[autoI]);
@@ -1353,8 +1357,10 @@ function M4(){
 function M6(){
   const{income:inc,monthlyExp:me,annualExp:ae}=useContext(Ctx);
   const safeMe6=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
+  const safeAe6=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const totalMeY6=MO.map((_,m)=>safeMe6.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0)).reduce((a,b)=>a+b,0);
-  const autoSavM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0)/12-(totalMeY6/12+ae.reduce((s,r)=>s+r.annual/12,0));
+  const totalAeY6=MO.map((_,m)=>safeAe6.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
+  const autoSavM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0)/12-((totalMeY6+totalAeY6)/12);
   const[savedGoal,setSG]=useLocalData("mcGoal",null);
   const[age,sAge]=useLocalData("mcAge",35);const[retAge,sRet]=useLocalData("mcRetAge",65);const[lifeExp,sLife]=useLocalData("mcLifeExp",90);
   const[assets2026]=useLocalData("assets",D_AS);const[debts2026]=useLocalData("debts",D_DB);
@@ -1473,8 +1479,10 @@ function M7(){
   const[assets2]=useLocalData("assets",D_AS);const[debts2]=useLocalData("debts",D_DB);
   const autoPat=useMemo(()=>{for(let i=9;i>=0;i--){const tA=assets2.reduce((s,a)=>s+(a.values?.[i]||0),0);const tD=debts2.reduce((s,d)=>s+(d.values?.[i]||0),0);if(tA-tD>0)return tA-tD}return 0},[assets2,debts2]);
   const safeMe7=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
+  const safeAe7=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const totalMeY7=MO.map((_,m)=>safeMe7.reduce((s,rr)=>{const v=rr.real[m]!=null?rr.real[m]:rr.monthly;return s+v},0)).reduce((a,b)=>a+b,0);
-  const autoSavM=MO.map((_,m)=>inc.reduce((s,rr)=>s+(rr.amounts[m]||0),0)).reduce((a,b)=>a+b,0)/12-(totalMeY7/12+ae.reduce((s,rr)=>s+rr.annual/12,0));
+  const totalAeY7=MO.map((_,m)=>safeAe7.reduce((s,rr)=>{const v=rr.real[m]!=null?rr.real[m]:rr.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
+  const autoSavM=MO.map((_,m)=>inc.reduce((s,rr)=>s+(rr.amounts[m]||0),0)).reduce((a,b)=>a+b,0)/12-((totalMeY7+totalAeY7)/12);
   const loadFromData=()=>{if(autoPat>0)sCP(autoPat);if(autoSavM>0)sAA(Math.round(autoSavM*12))};
 
   const yrsToRet=Math.max(0,retAge-age);const yrsInRet=Math.max(0,lifeExp-retAge);
