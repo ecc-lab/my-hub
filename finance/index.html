@@ -379,6 +379,36 @@ if(file.size>5*1024*1024)throw new Error("Archivo demasiado grande (max 5MB)");
   return summary;
 }
 
+async function importFromJSON(file){
+  if(file.size>5*1024*1024)throw new Error("Archivo demasiado grande (max 5MB)");
+  const text=await file.text();const j=JSON.parse(text);
+  const set=(key,val)=>localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(val));
+  const curYrIdx=Math.max(0,Math.min(9,new Date().getFullYear()-2023));
+  const summary=[];
+  const oldAssets=JSON.parse(localStorage.getItem(STORAGE_PREFIX+"assets")||"null")||D_AS;
+  const oldDebts=JSON.parse(localStorage.getItem(STORAGE_PREFIX+"debts")||"null")||D_DB;
+  const newAssets=[...oldAssets.map(a=>({...a,values:[...a.values]}))];
+  const newDebts=[...oldDebts.map(d=>({...d,values:[...d.values]}))];
+  const findOrAdd=(arr,name,type)=>{let r=arr.find(a=>a.name.toLowerCase()===name.toLowerCase());if(!r){r={name,type:type||"efectivo",values:Array(10).fill(0)};arr.push(r)}return r};
+  const findOrAddDebt=(arr,name)=>{let r=arr.find(d=>d.name.toLowerCase()===name.toLowerCase());if(!r){r={name,values:Array(10).fill(0)};arr.push(r)}return r};
+  const al=j.activos_liquidos||{};const ai=j.activos_inversion_no_duplicar_con_liquido||{};const aim=j.activos_inmobiliarios||{};const pas=j.pasivos||{};
+  let count=0;
+  if(al.efectivo_ing_total!=null){findOrAdd(newAssets,"Efectivo ING","efectivo").values[curYrIdx]=Number(al.efectivo_ing_total)||0;count++}
+  if(al.revolut_externa!=null){findOrAdd(newAssets,"Revolut","efectivo").values[curYrIdx]=Number(al.revolut_externa)||0;count++}
+  if(al.ib_total!=null){findOrAdd(newAssets,"Interactive Brokers","inversión").values[curYrIdx]=Number(al.ib_total)||0;count++}
+  if(al.efectivo_ib_pln!=null&&al.ib_total==null){findOrAdd(newAssets,"Interactive Brokers","inversión").values[curYrIdx]=Number(al.efectivo_ib_pln)||0;count++}
+  if(ai.ppk_orona!=null){findOrAdd(newAssets,"PPK Orona","inversión").values[curYrIdx]=Number(ai.ppk_orona)||0;count++}
+  if(aim){Object.entries(aim).forEach(([k,v])=>{if(v&&typeof v==="object"&&v.valor_mercado_estimado!=null){const name=k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());findOrAdd(newAssets,name,"inversión").values[curYrIdx]=Number(v.valor_mercado_estimado)||0;count++}
+    else if(v&&typeof v==="object"&&v.valor_compra!=null){const name=k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());findOrAdd(newAssets,name,"inversión").values[curYrIdx]=Number(v.valor_compra)||0;count++}})}
+  if(pas.hipoteca_ing!=null){findOrAddDebt(newDebts,"Hipoteca ING").values[curYrIdx]=Math.abs(Number(pas.hipoteca_ing)||0);count++}
+  if(pas.prestamo_alior_tv!=null){findOrAddDebt(newDebts,"Préstamo Alior").values[curYrIdx]=Math.abs(Number(pas.prestamo_alior_tv)||0);count++}
+  Object.entries(pas).forEach(([k,v])=>{if(k==="hipoteca_ing"||k==="prestamo_alior_tv")return;if(v!=null&&typeof v==="number"){findOrAddDebt(newDebts,k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase())).values[curYrIdx]=Math.abs(v);count++}});
+  if(count>0){set("assets",newAssets);set("debts",newDebts);summary.push(`${count} campos de patrimonio actualizados para ${2023+curYrIdx}`)}
+  if(j.patrimonio_neto_estimado_pln!=null){summary.push(`Patrimonio Neto verificado: ${Number(j.patrimonio_neto_estimado_pln).toLocaleString("pl-PL")} zł`)}
+  set("onboarded",true);
+  return summary;
+}
+
 function wipeAllData(){
   if(!confirm("¿BORRAR TODOS tus datos? Esta acción NO se puede deshacer."))return;
   if(!confirm("Última oportunidad. Pulsa OK SOLO si tienes una copia de seguridad. ¿Borrar definitivamente?"))return;
@@ -388,7 +418,7 @@ function wipeAllData(){
 
 // === Mis Datos card (used in M0) ===
 function MisDatosCard(){
-  const[msg,setMsg]=useState("");const fileRef=useRef(null);
+  const[msg,setMsg]=useState("");const fileRef=useRef(null);const jsonRef=useRef(null);
   const handleImport=async(e)=>{
     const file=e.target.files?.[0];if(!file)return;
     try{
@@ -398,12 +428,23 @@ function MisDatosCard(){
     }catch(err){setMsg("❌ Error: "+err.message);setTimeout(()=>setMsg(""),6000)}
     e.target.value="";
   };
+  const handleJsonImport=async(e)=>{
+    const file=e.target.files?.[0];if(!file)return;
+    try{
+      const summary=await importFromJSON(file);
+      if(summary.length===0){setMsg("⚠️ JSON leído pero no se encontraron campos de patrimonio válidos.");setTimeout(()=>setMsg(""),6000)}
+      else{setMsg("✅ "+summary.join(" · ")+". Recargando...");setTimeout(()=>location.reload(),1500)}
+    }catch(err){setMsg("❌ Error JSON: "+err.message);setTimeout(()=>setMsg(""),6000)}
+    e.target.value="";
+  };
   return<Cd style={{marginBottom:16,borderTop:`3px solid ${C.ac}`,background:`linear-gradient(135deg,#f0f9ff,#ffffff)`}}>
     <ST icon="📁" sub="Importa todos tus datos desde Excel, exporta una copia de seguridad o empieza de cero">Mis Datos</ST>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10,marginBottom:msg?12:0}}>
       <button onClick={()=>exportToExcel(false)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.gn}`,background:C.gd,color:C.gn,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📥 Descargar plantilla<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel vacío con la estructura</div></button>
       <button onClick={()=>fileRef.current?.click()} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.ac}`,background:C.ad,color:C.ac,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📤 Importar Excel<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Sustituye tus datos actuales</div></button>
       <input type="file" ref={fileRef} accept=".xlsx,.xls" onChange={handleImport} style={{display:"none"}}/>
+      <button onClick={()=>jsonRef.current?.click()} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.pu}`,background:"rgba(124,58,237,0.06)",color:C.pu,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📋 Importar JSON<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Patrimonio desde JSON maestro</div></button>
+      <input type="file" ref={jsonRef} accept=".json" onChange={handleJsonImport} style={{display:"none"}}/>
       <button onClick={()=>exportToExcel(true)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.bl}`,background:C.bld,color:C.bl,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>💾 Backup ahora<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel con TODOS tus datos</div></button>
       <button onClick={wipeAllData} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.rd}`,background:C.rdd,color:C.rd,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>🗑️ Borrar todo<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Empezar de cero</div></button>
     </div>
@@ -415,7 +456,9 @@ function MisDatosCard(){
 function M0(){
   const{income:inc,monthlyExp:me,annualExp:ae,savingsGoal:sg,selYear,setYear,YEARS}=useContext(Ctx);
   const[savedHip]=useLocalData("hipScenario",null);
-  const tIY=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0);
+  const incVal=(r,m)=>r.amounts[m]||r.base||0;
+  const tIM0=MO.map((_,m)=>inc.reduce((s,r)=>s+incVal(r,m),0));
+  const tIY=tIM0.reduce((a,b)=>a+b,0);
   const safeMe0=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe0=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const tMeM0=MO.map((_,m)=>safeMe0.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0));
@@ -424,8 +467,7 @@ function M0(){
   const tAeY=tAeM0.reduce((a,b)=>a+b,0);
   const tEY=tMeY+tAeY;
   const rY=tIY-tEY,sr=tIY>0?rY/tIY:0;
-  const incM0=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0));
-  const bestMonth=MO[MO.map((_,m)=>incM0[m]-tMeM0[m]-tAeM0[m]).reduce((best,v,i,a)=>v>a[best]?i:best,0)];
+  const bestMonth=MO[MO.map((_,m)=>tIM0[m]-tMeM0[m]-tAeM0[m]).reduce((best,v,i,a)=>v>a[best]?i:best,0)];
   const[savedMC]=useLocalData("mcGoal",null);
   const[assets]=useLocalData("assets",D_AS);const[debts]=useLocalData("debts",D_DB);
   const patYrIdx=Math.min(9,Math.max(0,new Date().getFullYear()-2023));
@@ -613,7 +655,8 @@ function M1(){
   const safeMe=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
 
-  const tIM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0));
+  const incVal1=(r,m)=>r.amounts[m]||r.base||0;
+  const tIM=MO.map((_,m)=>inc.reduce((s,r)=>s+incVal1(r,m),0));
   const tMeM=MO.map((_,m)=>safeMe.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0));
   const tAeM=MO.map((_,m)=>safeAe.reduce((s,r)=>{const v=r.real&&r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0));
   const rM=MO.map((_,m)=>tIM[m]-tMeM[m]-tAeM[m]);
@@ -677,7 +720,7 @@ function M1(){
           <td style={{padding:"1px"}}><select value={r.type||"Otros"} onChange={e=>syncIncMeta(idx,"type",e.target.value)} style={{fontSize:9,padding:"4px 2px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:"100%"}}>{INC_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></td>
           <td style={{padding:"1px"}}><input type="number" value={r.base!=null?r.base:""} placeholder="—" onChange={e=>{const v=Number(e.target.value)||0;const n=[...inc];n[idx]={...n[idx],base:v,amounts:Array(12).fill(v)};sI(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
           {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><input type="number" value={r.amounts[m]||""} onChange={e=>{const n=[...inc];n[idx]={...n[idx],amounts:[...n[idx].amounts]};n[idx].amounts[m]=Number(e.target.value)||0;sI(n)}} style={{width:"100%",padding:"5px 3px"}}/></td>)}
-          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.gn}}>{fmt(r.amounts.reduce((a,b)=>a+b,0))}</td>
+          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.gn}}>{fmt(MO.reduce((s,_,m)=>s+(r.amounts[m]||r.base||0),0))}</td>
           <td><Xb onClick={()=>delIncRow(idx)}/></td>
         </tr>)}
         <tr style={{borderTop:`2px solid ${C.bd}`}}><td></td><td style={{padding:"8px 4px",fontWeight:700}}>TOTAL</td><td></td><td></td>{tIM.map((v,i)=><td key={i} style={{padding:"8px 2px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(v)}</td>)}<td style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(tIY)}</td><td></td></tr>
@@ -1149,7 +1192,7 @@ function M3(){
 
     <Cd style={{marginTop:16}}>
       <ST icon="🏦">¿Me dará el banco la hipoteca?</ST>
-      {(()=>{const{income:inc}=allCtx;const tIMon=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0));const avgMon=tIMon.reduce((a,b)=>a+b,0)/12;const cuota=calc(amt,tin,yrs,ppy);const ratio=avgMon>0?cuota/avgMon:0;const pct=(ratio*100).toFixed(1);const ok=ratio<=0.35;
+      {(()=>{const{income:inc}=allCtx;const tIMon=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||r.base||0),0));const avgMon=tIMon.reduce((a,b)=>a+b,0)/12;const cuota=calc(amt,tin,yrs,ppy);const ratio=avgMon>0?cuota/avgMon:0;const pct=(ratio*100).toFixed(1);const ok=ratio<=0.35;
         const maxCuota=avgMon*0.35;const ri2=tin/100/ppy;const np2=yrs*ppy;const maxHip=ri2>0?maxCuota*(Math.pow(1+ri2,np2)-1)/(ri2*Math.pow(1+ri2,np2)):maxCuota*np2;
         const maxProperty=dpPct>0?maxHip/(1-dpPct/100):maxHip;const entradaNec=maxProperty-maxHip;
         return<div>
@@ -1280,7 +1323,7 @@ function M3(){
 
 function M4(){
   const{income:inc,monthlyExp:me,annualExp:ae}=useContext(Ctx);
-  const autoI=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0);
+  const autoI=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||r.base||0),0)).reduce((a,b)=>a+b,0);
   const safeMe4=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe4=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const autoE=MO.map((_,m)=>safeMe4.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0)).reduce((a,b)=>a+b,0)+MO.map((_,m)=>safeAe4.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
@@ -1364,7 +1407,7 @@ function M6(){
   const safeAe6=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const totalMeY6=MO.map((_,m)=>safeMe6.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0)).reduce((a,b)=>a+b,0);
   const totalAeY6=MO.map((_,m)=>safeAe6.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
-  const autoSavM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||0),0)).reduce((a,b)=>a+b,0)/12-((totalMeY6+totalAeY6)/12);
+  const autoSavM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||r.base||0),0)).reduce((a,b)=>a+b,0)/12-((totalMeY6+totalAeY6)/12);
   const[savedGoal,setSG]=useLocalData("mcGoal",null);
   const[age,sAge]=useLocalData("mcAge",35);const[retAge,sRet]=useLocalData("mcRetAge",65);const[lifeExp,sLife]=useLocalData("mcLifeExp",90);
   const[assets2026]=useLocalData("assets",D_AS);const[debts2026]=useLocalData("debts",D_DB);
@@ -1486,7 +1529,7 @@ function M7(){
   const safeAe7=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const totalMeY7=MO.map((_,m)=>safeMe7.reduce((s,rr)=>{const v=rr.real[m]!=null?rr.real[m]:rr.monthly;return s+v},0)).reduce((a,b)=>a+b,0);
   const totalAeY7=MO.map((_,m)=>safeAe7.reduce((s,rr)=>{const v=rr.real[m]!=null?rr.real[m]:rr.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
-  const autoSavM=MO.map((_,m)=>inc.reduce((s,rr)=>s+(rr.amounts[m]||0),0)).reduce((a,b)=>a+b,0)/12-((totalMeY7+totalAeY7)/12);
+  const autoSavM=MO.map((_,m)=>inc.reduce((s,rr)=>s+(rr.amounts[m]||rr.base||0),0)).reduce((a,b)=>a+b,0)/12-((totalMeY7+totalAeY7)/12);
   const loadFromData=()=>{if(autoPat>0)sCP(autoPat);if(autoSavM>0)sAA(Math.round(autoSavM*12))};
 
   const yrsToRet=Math.max(0,retAge-age);const yrsInRet=Math.max(0,lifeExp-retAge);
