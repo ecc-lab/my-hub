@@ -766,7 +766,7 @@ function M0(){
 
   // Stacked Area Chart
   const AreaChart=({width=900,height=240})=>{
-    const stacked=PAT_YEARS.map((_,i)=>[tEfectivo[i],tEfectivo[i]+tInversion[i],tEfectivo[i]+tInversion[i]+tPasivo[i]]);
+    const stacked=PAT_YEARS.map((_,i)=>[tEfectivo[i],tEfectivo[i]+tInversion[i],tEfectivo[i]+tInversion[i]+tPasivo[i]+tOther[i]]);
     const maxStack=Math.max(...stacked.map(s=>s[2]),1);
     const minNW=Math.min(...netWorth,0);const maxNW=Math.max(...netWorth,maxStack);
     const allMax=Math.max(maxStack,maxNW);const allMin=Math.min(minNW,0);
