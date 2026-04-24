@@ -6,12 +6,54 @@
   <title>VDB Finance — Mi Planificador Financiero Personal</title>
   <meta name="description" content="Planificador financiero personal: presupuesto, patrimonio, hipoteca, libertad financiera y jubilación.">
   <meta name="robots" content="noindex, nofollow, noarchive">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230ea5e9'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='20' font-weight='800' font-family='sans-serif'>V</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2316a34a'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='20' font-weight='800' font-family='sans-serif'>V</text></svg>">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" crossorigin="anonymous"></script>
 </head>
+<!-- Theme: apply before paint to avoid flash -->
+<script>
+(function(){try{var t=localStorage.getItem('vdb_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}})();
+</script>
+<style>
+:root{
+  --c-bg:#f1f5f9;--c-sf:#ffffff;--c-sa:#f8fafc;--c-bd:#e2e8f0;--c-bh:#cbd5e1;
+  --c-tx:#1e293b;--c-td:#475569;--c-tm:#94a3b8;
+  --c-ac:#0ea5e9;--c-gn:#16a34a;--c-rd:#dc2626;--c-am:#d97706;--c-bl:#2563eb;--c-pu:#7c3aed;
+}
+[data-theme="dark"]{
+  --c-bg:#0b1220;--c-sf:#111a2e;--c-sa:#0f172a;--c-bd:#1e293b;--c-bh:#334155;
+  --c-tx:#e5edf7;--c-td:#aab8cc;--c-tm:#7a8699;
+  --c-ac:#38bdf8;--c-gn:#22c55e;--c-rd:#f87171;--c-am:#fbbf24;--c-bl:#60a5fa;--c-pu:#a78bfa;
+}
+html,body{background:var(--c-bg);color:var(--c-tx);}
+[data-theme="dark"] body{background:var(--c-bg)!important;}
+[data-theme="dark"] header{background:var(--c-sf)!important;border-color:var(--c-bd)!important;}
+[data-theme="dark"] main{color:var(--c-tx);}
+[data-theme="dark"] footer{background:var(--c-sf)!important;border-color:var(--c-bd)!important;color:var(--c-tm)!important;}
+[data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{
+  background:var(--c-sa)!important;color:var(--c-tx)!important;border-color:var(--c-bd)!important;
+}
+[data-theme="dark"] [style*="background: rgb(255, 255, 255)"],
+[data-theme="dark"] [style*="background:#fff"],
+[data-theme="dark"] [style*="background: #fff"],
+[data-theme="dark"] [style*="background:#ffffff"]{background:var(--c-sf)!important;}
+[data-theme="dark"] [style*="background: rgb(248, 250, 252)"],
+[data-theme="dark"] [style*="background:#f8fafc"]{background:var(--c-sa)!important;}
+[data-theme="dark"] [style*="color: rgb(30, 41, 59)"],
+[data-theme="dark"] [style*="color:#1e293b"]{color:var(--c-tx)!important;}
+/* Toast container */
+.vdb-toasts{position:fixed;top:14px;right:14px;z-index:10000;display:flex;flex-direction:column;gap:8px;max-width:380px;pointer-events:none;}
+.vdb-toast{pointer-events:auto;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;
+  box-shadow:0 6px 24px rgba(0,0,0,.15);display:flex;align-items:center;gap:10px;animation:vdbSlideIn .25s;background:var(--c-sf);color:var(--c-tx);border:1px solid var(--c-bd);}
+.vdb-toast.ok{border-left:3px solid var(--c-gn);}
+.vdb-toast.err{border-left:3px solid var(--c-rd);}
+.vdb-toast.info{border-left:3px solid var(--c-ac);}
+.vdb-toast button{background:transparent;border:none;color:var(--c-ac);cursor:pointer;font-weight:600;font-size:12px;padding:4px 8px;border-radius:4px;}
+.vdb-toast button:hover{background:rgba(14,165,233,0.1);}
+@keyframes vdbSlideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+</style>
 <body>
 <div id="root"></div>
 
@@ -19,24 +61,34 @@
 <script>
 var _financeCloudEP='/api/data/finance%3Adefault';
 var _financeCloudReady=false;
+// Global save indicator store (used by React <SaveIndicator/>)
+window._vdbSaveStore={pending:false,lastAt:null,lastErr:null,listeners:[],
+  sub:function(fn){this.listeners.push(fn);return()=>{this.listeners=this.listeners.filter(f=>f!==fn)}},
+  emit:function(){this.listeners.forEach(f=>f(this))},
+  start:function(){this.pending=true;this.lastErr=null;this.emit()},
+  done:function(err){this.pending=false;if(err)this.lastErr=err;else this.lastAt=Date.now();this.emit()}};
+// Keys that must NEVER be synced to cloud (device-local only)
+window._vdbLocalOnly=['vdb_theme'];
 (function(){
   var PREFIX='vdb_';
   var _o=localStorage.setItem.bind(localStorage),_t=null;
   localStorage.setItem=function(k,v){_o(k,v);
-    if(_financeCloudReady&&typeof k==='string'&&k.indexOf(PREFIX)===0){
+    if(_financeCloudReady&&typeof k==='string'&&k.indexOf(PREFIX)===0&&window._vdbLocalOnly.indexOf(k)===-1){
       clearTimeout(_t);_t=setTimeout(function(){
         var snap={};
         for(var i=0;i<localStorage.length;i++){
           var key=localStorage.key(i);
-          if(key.indexOf(PREFIX)===0){
+          if(key.indexOf(PREFIX)===0&&window._vdbLocalOnly.indexOf(key)===-1){
             try{snap[key]=JSON.parse(localStorage.getItem(key))}
             catch(e){snap[key]=localStorage.getItem(key)}
           }
         }
+        window._vdbSaveStore.start();
         fetch(_financeCloudEP,{method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify(snap)}).then(function(r){
-            if(!r.ok)console.warn('[cloud] sync failed',r.status);
-          }).catch(function(e){console.warn('[cloud] sync error',e)});
+            if(!r.ok){window._vdbSaveStore.done('HTTP '+r.status);console.warn('[cloud] sync failed',r.status)}
+            else window._vdbSaveStore.done(null);
+          }).catch(function(e){window._vdbSaveStore.done(String(e));console.warn('[cloud] sync error',e)});
       },800);
     }
   };
@@ -100,9 +152,89 @@ function useLocalData(key,def){
   const save=useCallback(v=>{
     sD(v);
     try{localStorage.setItem(STORAGE_PREFIX+key,JSON.stringify(v))}
-    catch(e){if(e.name==='QuotaExceededError')alert('Almacenamiento lleno. Haz un Backup y borra datos antiguos.');else console.error("Error guardando "+key+":",e)}
+    catch(e){if(e.name==='QuotaExceededError'){if(typeof toast!=='undefined')toast.err('Almacenamiento lleno. Haz un Backup y borra datos antiguos.');else console.error('Quota exceeded')}else console.error("Error guardando "+key+":",e)}
   },[key]);
   return[d,save];
+}
+
+// === useTheme: persisted in localStorage (NOT synced to cloud) ===
+function useTheme(){
+  const[theme,setT]=useState(()=>{try{return localStorage.getItem("vdb_theme")||"light"}catch(e){return"light"}});
+  useEffect(()=>{document.documentElement.setAttribute("data-theme",theme);try{localStorage.setItem("vdb_theme",theme)}catch(e){}},[theme]);
+  return[theme,()=>setT(t=>t==="dark"?"light":"dark")];
+}
+
+// === Ni: numeric input with pl-PL formatting ===
+function Ni({value,onChange,placeholder,dec=0,allowNeg=true,min,max,style,...rest}){
+  const[focus,setFocus]=useState(false);
+  const[raw,setRaw]=useState("");
+  const num=value==null||value===""?null:Number(value);
+  const outOfRange=num!=null&&((min!=null&&num<min)||(max!=null&&num>max));
+  const display=focus?raw:(num==null||isNaN(num)?"":num.toLocaleString("pl-PL",{minimumFractionDigits:dec,maximumFractionDigits:Math.max(dec,2)}));
+  const onFocus=e=>{setFocus(true);setRaw(num==null||isNaN(num)?"":String(num).replace(".",","));setTimeout(()=>e.target.select(),0)};
+  const onBlur=()=>setFocus(false);
+  const onCh=e=>{const s=e.target.value;setRaw(s);const cleaned=s.replace(/\s/g,"").replace(/\./g,"").replace(",",".");const allowed=allowNeg?/^-?\d*\.?\d*$/:/^\d*\.?\d*$/;if(cleaned===""||cleaned==="-"){onChange({target:{value:""}});return}if(!allowed.test(cleaned))return;onChange({target:{value:cleaned}})};
+  return<input type="text" inputMode="decimal" value={display} placeholder={placeholder} onChange={onCh} onFocus={onFocus} onBlur={onBlur} title={outOfRange?`Fuera de rango ${min??"-∞"}..${max??"+∞"}`:undefined} style={{...(style||{}),...(outOfRange?{borderColor:"#dc2626"}:{})}} {...rest}/>;
+}
+
+// === Toast system ===
+const toastStore={items:[],listeners:[],
+  sub(fn){this.listeners.push(fn);return()=>{this.listeners=this.listeners.filter(f=>f!==fn)}},
+  emit(){this.listeners.forEach(f=>f([...this.items]))},
+  push(t){const id=Date.now()+Math.random();this.items.push({...t,id});this.emit();if(t.duration!==0)setTimeout(()=>this.remove(id),t.duration||4000);return id},
+  remove(id){this.items=this.items.filter(i=>i.id!==id);this.emit()}};
+const toast={
+  ok:(msg,opts)=>toastStore.push({kind:"ok",msg,...opts}),
+  err:(msg,opts)=>toastStore.push({kind:"err",msg,duration:6000,...opts}),
+  info:(msg,opts)=>toastStore.push({kind:"info",msg,...opts}),
+  undoable:(msg,onUndo,opts={})=>toastStore.push({kind:"info",msg,duration:opts.duration||7000,action:{label:opts.label||"Deshacer",fn:onUndo}})
+};
+function Toasts(){
+  const[items,setItems]=useState([]);
+  useEffect(()=>toastStore.sub(setItems),[]);
+  return<div className="vdb-toasts">{items.map(t=><div key={t.id} className={"vdb-toast "+t.kind}>
+    <span style={{flex:1}}>{t.msg}</span>
+    {t.action&&<button onClick={()=>{t.action.fn();toastStore.remove(t.id)}}>{t.action.label}</button>}
+    <button onClick={()=>toastStore.remove(t.id)} title="Cerrar" style={{opacity:0.5}}>✕</button>
+  </div>)}</div>;
+}
+
+// === SaveIndicator ===
+function useSaveStatus(){
+  const[s,setS]=useState({pending:window._vdbSaveStore.pending,lastAt:window._vdbSaveStore.lastAt,lastErr:window._vdbSaveStore.lastErr});
+  useEffect(()=>window._vdbSaveStore.sub(st=>setS({pending:st.pending,lastAt:st.lastAt,lastErr:st.lastErr})),[]);
+  return s;
+}
+function SaveIndicator(){
+  const s=useSaveStatus();
+  const[,force]=useState(0);
+  useEffect(()=>{const t=setInterval(()=>force(v=>v+1),30000);return()=>clearInterval(t)},[]);
+  const relative=(t)=>{if(!t)return"";const d=Math.floor((Date.now()-t)/1000);if(d<5)return"ahora";if(d<60)return`hace ${d}s`;if(d<3600)return`hace ${Math.floor(d/60)}m`;return`hace ${Math.floor(d/3600)}h`};
+  if(s.lastErr)return<span style={{fontSize:10,color:C.rd,display:"flex",alignItems:"center",gap:5}} title={s.lastErr}><span>●</span>Error al guardar</span>;
+  if(s.pending)return<span style={{fontSize:10,color:C.am,display:"flex",alignItems:"center",gap:5}}><span>●</span>Guardando…</span>;
+  if(s.lastAt)return<span style={{fontSize:10,color:C.gn,display:"flex",alignItems:"center",gap:5}}><span>●</span>Guardado {relative(s.lastAt)}</span>;
+  return<span style={{fontSize:10,color:C.tm,display:"flex",alignItems:"center",gap:5}}><span>●</span>Cloud</span>;
+}
+
+// === ErrorBoundary ===
+class ErrorBoundary extends React.Component{
+  constructor(p){super(p);this.state={err:null}}
+  static getDerivedStateFromError(err){return{err}}
+  componentDidCatch(err,info){console.error("[ErrorBoundary]",err,info)}
+  reset(){this.setState({err:null})}
+  render(){if(!this.state.err)return this.props.children;
+    return<div style={{minHeight:"100vh",padding:40,display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}>
+      <div style={{maxWidth:520,padding:28,background:C.sf,borderRadius:14,border:`1px solid ${C.rd}`,boxShadow:"0 6px 24px rgba(0,0,0,.1)"}}>
+        <div style={{fontSize:32,marginBottom:10}}>⚠️</div>
+        <h2 style={{fontSize:18,fontWeight:700,marginBottom:6}}>Algo se rompió</h2>
+        <p style={{fontSize:13,color:C.td,marginBottom:14,lineHeight:1.6}}>Ha ocurrido un error y el módulo no pudo renderizarse. Tus datos están a salvo.</p>
+        <div style={{display:"flex",gap:10,marginBottom:12}}>
+          <button onClick={()=>this.reset()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:C.ac,color:C.w,fontWeight:600,cursor:"pointer"}}>Reintentar</button>
+          <button onClick={()=>location.reload()} style={{padding:"8px 16px",borderRadius:8,border:`1px solid ${C.bd}`,background:"transparent",cursor:"pointer"}}>Recargar</button>
+        </div>
+        <details style={{fontSize:11,color:C.tm}}><summary style={{cursor:"pointer"}}>Detalle técnico</summary><pre style={{marginTop:8,padding:10,background:C.sa,borderRadius:6,overflowX:"auto",fontSize:10}}>{String(this.state.err?.stack||this.state.err)}</pre></details>
+      </div>
+    </div>}
 }
 
 const Cd=({children,style:s})=><div style={{background:C.sf,border:`1px solid ${C.bd}`,borderRadius:14,padding:20,boxShadow:"0 1px 4px rgba(0,0,0,.04)",...s}}>{children}</div>;
@@ -122,6 +254,14 @@ const Pill=({title,children})=>{const[open,setOpen]=useState(false);return<div s
 function Onboarding({onFinish}){
   const[step,setStep]=useState(0);
   const[data,setData]=useState({income:0,rent:0,savings:0});
+  useEffect(()=>{
+    const onKey=(e)=>{
+      if(e.key==="Enter"){e.preventDefault();if(step<4)setStep(s=>s+1);else onFinish(data)}
+      else if(e.key==="Escape"&&step>0){e.preventDefault();setStep(s=>s-1)}
+    };
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[step,data,onFinish]);
   const steps=[
     {title:"¡Bienvenido a VDB Finance! 🎉",desc:"En 30 segundos configuramos tu perfil. Si ya tienes datos, puedes saltar esto y usar Importar Excel desde el dashboard.",field:null},
     {title:"¿Cuánto cobras al mes? 💰",desc:"Tu nómina neta mensual.",field:"income",label:"Nómina mensual neta (zł)"},
@@ -452,28 +592,28 @@ function wipeAllData(){
 
 // === Mis Datos card (used in M0) ===
 function MisDatosCard(){
-  const[msg,setMsg]=useState("");const fileRef=useRef(null);const jsonRef=useRef(null);
+  const fileRef=useRef(null);const jsonRef=useRef(null);
   const handleImport=async(e)=>{
     const file=e.target.files?.[0];if(!file)return;
     try{
       const summary=await importFromExcel(file);
-      if(summary.length===0){setMsg("⚠️ Excel leído pero no se encontró ningún dato válido. ¿Has usado la plantilla correcta?");setTimeout(()=>setMsg(""),6000)}
-      else{setMsg("✅ Importado correctamente: "+summary.join(" · ")+". Recargando...");setTimeout(()=>location.reload(),1500)}
-    }catch(err){setMsg("❌ Error: "+err.message);setTimeout(()=>setMsg(""),6000)}
+      if(summary.length===0)toast.err("Excel leído pero no se encontró ningún dato válido. ¿Has usado la plantilla correcta?");
+      else{toast.ok("Importado: "+summary.join(" · ")+". Recargando...");setTimeout(()=>location.reload(),1500)}
+    }catch(err){toast.err("Error: "+err.message)}
     e.target.value="";
   };
   const handleJsonImport=async(e)=>{
     const file=e.target.files?.[0];if(!file)return;
     try{
       const summary=await importFromJSON(file);
-      if(summary.length===0){setMsg("⚠️ JSON leído pero no se encontraron campos de patrimonio válidos.");setTimeout(()=>setMsg(""),6000)}
-      else{setMsg("✅ "+summary.join(" · ")+". Recargando...");setTimeout(()=>location.reload(),1500)}
-    }catch(err){setMsg("❌ Error JSON: "+err.message);setTimeout(()=>setMsg(""),6000)}
+      if(summary.length===0)toast.err("JSON leído pero no se encontraron campos de patrimonio válidos.");
+      else{toast.ok(summary.join(" · ")+". Recargando...");setTimeout(()=>location.reload(),1500)}
+    }catch(err){toast.err("Error JSON: "+err.message)}
     e.target.value="";
   };
   return<Cd style={{marginBottom:16,borderTop:`3px solid ${C.ac}`,background:`linear-gradient(135deg,#f0f9ff,#ffffff)`}}>
     <ST icon="📁" sub="Importa todos tus datos desde Excel, exporta una copia de seguridad o empieza de cero">Mis Datos</ST>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10,marginBottom:msg?12:0}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}>
       <button onClick={()=>exportToExcel(false)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.gn}`,background:C.gd,color:C.gn,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📥 Descargar plantilla<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel vacío con la estructura</div></button>
       <button onClick={()=>fileRef.current?.click()} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.ac}`,background:C.ad,color:C.ac,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📤 Importar Excel<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Sustituye tus datos actuales</div></button>
       <input type="file" ref={fileRef} accept=".xlsx,.xls" onChange={handleImport} style={{display:"none"}}/>
@@ -482,7 +622,6 @@ function MisDatosCard(){
       <button onClick={()=>exportToExcel(true)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.bl}`,background:C.bld,color:C.bl,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>💾 Backup ahora<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel con TODOS tus datos</div></button>
       <button onClick={wipeAllData} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.rd}`,background:C.rdd,color:C.rd,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>🗑️ Borrar todo<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Empezar de cero</div></button>
     </div>
-    {msg&&<div style={{padding:"10px 12px",borderRadius:8,background:msg.startsWith("✅")?C.gd:msg.startsWith("⚠️")?C.amd:C.rdd,color:msg.startsWith("✅")?C.gn:msg.startsWith("⚠️")?C.am:C.rd,fontSize:12,fontWeight:600}}>{msg}</div>}
     <Pill title="¿Dónde se guardan mis datos?">Tus datos se guardan únicamente en el navegador de este ordenador (localStorage), no salen a ningún servidor. Esto significa: solo tú los ves, pero también que <strong>si limpias la caché del navegador o cambias de ordenador, se pierden</strong>. Por eso es importante usar el botón <strong>Backup</strong> de vez en cuando para tener una copia en Excel fuera del navegador.</Pill>
   </Cd>;
 }
@@ -580,7 +719,7 @@ function M0(){
   return<div style={{animation:"fadeIn .3s"}}>
     <Cd style={{marginBottom:16,background:`linear-gradient(135deg,#e0f2fe,#f0fdf4)`,borderTop:`3px solid ${C.ac}`}}>
       <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
-        <div style={{width:56,height:56,borderRadius:14,background:`linear-gradient(135deg,${C.ac},#0284c7)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:28,fontWeight:800,color:C.w}}>V</span></div>
+        <div style={{width:56,height:56,borderRadius:14,background:`linear-gradient(135deg,${C.gn},#15803d)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:28,fontWeight:800,color:C.w}}>V</span></div>
         <div><h2 style={{fontSize:22,fontWeight:700}}>Tu dinero, tus reglas 💪</h2><p style={{fontSize:13,color:C.td}}>Resumen de tu vida financiera. Cada número cuenta una historia.</p></div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"10px 14px",borderRadius:10,background:"rgba(255,255,255,.6)",border:`1px solid ${C.bd}`}}>
@@ -775,8 +914,8 @@ function M1(){
           <td style={{padding:"2px",textAlign:"center"}}><DH/></td>
           <td style={{padding:"2px 4px"}}><input type="text" value={r.name} onChange={e=>syncIncMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:"100%"}}/></td>
           <td style={{padding:"1px"}}><select value={r.type||"Otros"} onChange={e=>syncIncMeta(idx,"type",e.target.value)} style={{fontSize:9,padding:"4px 2px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:"100%"}}>{INC_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></td>
-          <td style={{padding:"1px"}}><input type="number" value={r.base!=null?r.base:""} placeholder="—" onChange={e=>{const v=Number(e.target.value)||0;const n=[...inc];n[idx]={...n[idx],base:v,amounts:Array(12).fill(v)};sI(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
-          {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><input type="number" value={r.amounts?.[m]!=null?r.amounts[m]:""} onChange={e=>{const n=[...inc];n[idx]={...n[idx],amounts:[...n[idx].amounts]};n[idx].amounts[m]=e.target.value===""?null:Number(e.target.value);sI(n)}} style={{width:"100%",padding:"5px 3px"}}/></td>)}
+          <td style={{padding:"1px"}}><Ni value={r.base!=null?r.base:""} placeholder="—" onChange={e=>{const v=e.target.value===""?null:Number(e.target.value);const n=[...inc];n[idx]={...n[idx],base:v,amounts:Array(12).fill(v??0)};sI(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
+          {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><Ni value={r.amounts?.[m]!=null?r.amounts[m]:""} onChange={e=>{const n=[...inc];n[idx]={...n[idx],amounts:[...n[idx].amounts]};n[idx].amounts[m]=e.target.value===""?null:Number(e.target.value);sI(n)}} style={{width:"100%",padding:"5px 3px"}}/></td>)}
           <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.gn}}>{fmt(MO.reduce((s,_,m)=>s+valInc(r,m),0))}</td>
           <td><Xb onClick={()=>delIncRow(idx)}/></td>
         </tr>)}
@@ -799,8 +938,8 @@ function M1(){
           <td style={{padding:"2px",textAlign:"center"}}><DH/></td>
           <td style={{padding:"2px 4px"}}><input type="text" value={r.name} onChange={e=>syncMeMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:"100%"}}/></td>
           <td style={{padding:"1px"}}><select value={r.type||"Otros"} onChange={e=>syncMeMeta(idx,"type",e.target.value)} style={{fontSize:9,padding:"4px 2px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:"100%"}}>{EXP_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></td>
-          <td style={{padding:"1px"}}><input type="number" value={r.monthly||""} onChange={e=>{const n=[...safeMe];const v=Number(e.target.value)||0;n[idx]={...n[idx],monthly:v,real:Array(12).fill(null)};sM(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
-          {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><input type="number" placeholder={r.monthly} value={real[m]!=null?real[m]:""} onChange={e=>{const n=[...safeMe];const nr=[...(n[idx].real||Array(12).fill(null))];nr[m]=e.target.value===""?null:Number(e.target.value)||0;n[idx]={...n[idx],real:nr};sM(n)}} style={{width:"100%",fontSize:12,padding:"5px 3px"}}/></td>)}
+          <td style={{padding:"1px"}}><Ni value={r.monthly||""} onChange={e=>{const n=[...safeMe];const v=Number(e.target.value)||0;n[idx]={...n[idx],monthly:v,real:Array(12).fill(null)};sM(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
+          {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><Ni placeholder={String(r.monthly||"")} value={real[m]!=null?real[m]:""} onChange={e=>{const n=[...safeMe];const nr=[...(n[idx].real||Array(12).fill(null))];nr[m]=e.target.value===""?null:Number(e.target.value)||0;n[idx]={...n[idx],real:nr};sM(n)}} style={{width:"100%",fontSize:12,padding:"5px 3px"}}/></td>)}
           <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.rd}}>{fmt(MO.reduce((s,_,m)=>s+valMe(r,m),0))}</td>
           <td><Xb onClick={()=>delMeRow(idx)}/></td>
         </tr>})}
@@ -1815,11 +1954,11 @@ function App(){
   const sSG=v=>sSGH({...sgHist,[selYear]:v});
 
   const addIncRow=(row)=>{sIncRows([...incRows,{name:row.name,type:row.type||"Otros"}]);const h={...incHist};YEARS.forEach(y=>{const arr=h[y]||[];h[y]=[...arr,{name:row.name,type:row.type,base:0,amounts:y===selYear?row.amounts:Array(12).fill(0)}]});sIH(h)};
-  const delIncRow=(idx)=>{sIncRows(incRows.filter((_,i)=>i!==idx));const h={...incHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sIH(h)};
+  const delIncRow=(idx)=>{const removedMeta=incRows[idx];const removedData={};YEARS.forEach(y=>{if(incHist[y]?.[idx])removedData[y]=incHist[y][idx]});sIncRows(incRows.filter((_,i)=>i!==idx));const h={...incHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sIH(h);toast.undoable(`"${removedMeta?.name||"Ingreso"}" eliminado`,()=>{const nr=[...incRows];nr.splice(idx,0,removedMeta);sIncRows(nr);const hh={...incHist};YEARS.forEach(y=>{if(hh[y]){const arr=[...hh[y]];arr.splice(idx,0,removedData[y]||{name:removedMeta.name,type:removedMeta.type,base:null,amounts:Array(12).fill(0)});hh[y]=arr}});sIH(hh)})};
   const addMeRow=(row)=>{sMeRows([...meRows,{name:row.name,type:row.type||"Otros"}]);const h={...meHist};YEARS.forEach(y=>{const arr=h[y]||[];h[y]=[...arr,{name:row.name,type:row.type,monthly:y===selYear?row.monthly:0,real:Array(12).fill(null)}]});sMH(h)};
-  const delMeRow=(idx)=>{sMeRows(meRows.filter((_,i)=>i!==idx));const h={...meHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sMH(h)};
+  const delMeRow=(idx)=>{const removedMeta=meRows[idx];const removedData={};YEARS.forEach(y=>{if(meHist[y]?.[idx])removedData[y]=meHist[y][idx]});sMeRows(meRows.filter((_,i)=>i!==idx));const h={...meHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sMH(h);toast.undoable(`"${removedMeta?.name||"Gasto"}" eliminado`,()=>{const nr=[...meRows];nr.splice(idx,0,removedMeta);sMeRows(nr);const hh={...meHist};YEARS.forEach(y=>{if(hh[y]){const arr=[...hh[y]];arr.splice(idx,0,removedData[y]||{name:removedMeta.name,type:removedMeta.type,monthly:0,real:Array(12).fill(null)});hh[y]=arr}});sMH(hh)})};
   const addAeRow=(row)=>{sAeRows([...aeRows,{name:row.name,type:row.type||"Otros"}]);const h={...aeHist};YEARS.forEach(y=>{const arr=h[y]||[];h[y]=[...arr,{name:row.name,type:row.type,annual:y===selYear?row.annual:0}]});sAH(h)};
-  const delAeRow=(idx)=>{sAeRows(aeRows.filter((_,i)=>i!==idx));const h={...aeHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sAH(h)};
+  const delAeRow=(idx)=>{const removedMeta=aeRows[idx];const removedData={};YEARS.forEach(y=>{if(aeHist[y]?.[idx])removedData[y]=aeHist[y][idx]});sAeRows(aeRows.filter((_,i)=>i!==idx));const h={...aeHist};YEARS.forEach(y=>{if(h[y])h[y]=h[y].filter((_,i)=>i!==idx)});sAH(h);toast.undoable(`"${removedMeta?.name||"Gasto anual"}" eliminado`,()=>{const nr=[...aeRows];nr.splice(idx,0,removedMeta);sAeRows(nr);const hh={...aeHist};YEARS.forEach(y=>{if(hh[y]){const arr=[...hh[y]];arr.splice(idx,0,removedData[y]||{name:removedMeta.name,type:removedMeta.type,annual:0,real:Array(12).fill(null)});hh[y]=arr}});sAH(hh)})};
   const syncIncMeta=(idx,field,val)=>{const nr=[...incRows];nr[idx]={...nr[idx],[field]:val};sIncRows(nr);const h={...incHist};YEARS.forEach(y=>{if(h[y]&&h[y][idx])h[y]=[...h[y]].map((r,i)=>i===idx?{...r,[field]:val}:r)});sIH(h)};
   const syncMeMeta=(idx,field,val)=>{const nr=[...meRows];nr[idx]={...nr[idx],[field]:val};sMeRows(nr);const h={...meHist};YEARS.forEach(y=>{if(h[y]&&h[y][idx])h[y]=[...h[y]].map((r,i)=>i===idx?{...r,[field]:val}:r)});sMH(h)};
   const syncAeMeta=(idx,field,val)=>{const nr=[...aeRows];nr[idx]={...nr[idx],[field]:val};sAeRows(nr);const h={...aeHist};YEARS.forEach(y=>{if(h[y]&&h[y][idx])h[y]=[...h[y]].map((r,i)=>i===idx?{...r,[field]:val}:r)});sAH(h)};
@@ -1851,16 +1990,32 @@ function App(){
 
   const ctx={income,setIncome:sI,monthlyExp:me,setMonthlyExp:sM,annualExp:ae,setAnnualExp:sA,savingsGoal:sg,setSavingsGoal:sSG,selYear,setYear,YEARS,copyYear,incHist,meHist,aeHist,addIncRow,delIncRow,addMeRow,delMeRow,addAeRow,delAeRow,syncIncMeta,syncMeMeta,syncAeMeta,reorderInc,reorderMe,reorderAe};
 
+  const[theme,toggleTheme]=useTheme();
+
   const TABS=[{id:"m0",l:"Dashboard",i:"🏠"},{id:"m1",l:"Ingresos",i:"💰"},{id:"m1b",l:"Gastos",i:"📉"},{id:"m2",l:"Patrimonio",i:"📊"},{id:"m3",l:"Hipoteca",i:"🏛"},{id:"m4",l:"Libertad Fin.",i:"🏆"},{id:"m6",l:"Jubilación",i:"🎲"},{id:"m7",l:"Planificador",i:"🎯"},{id:"m8",l:"Salud",i:"🩺"}];
   const render=()=>{switch(tab){case"m0":return<M0/>;case"m1":return<M1/>;case"m1b":return<M1b/>;case"m2":return<M2/>;case"m3":return<M3/>;case"m4":return<M4/>;case"m6":return<M6/>;case"m7":return<M7/>;case"m8":return<M8/>;default:return<M0/>}};
 
-  return<><style>{CSS}</style><Ctx.Provider value={ctx}>
+  // Alt+1..9 tab shortcuts
+  useEffect(()=>{
+    const onKey=(e)=>{
+      if(!e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
+      const t=e.target;if(t&&(t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT"))return;
+      const d=parseInt(e.key,10);if(d>=1&&d<=9&&TABS[d-1]){e.preventDefault();sTab(TABS[d-1].id)}
+    };
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[]);
+
+  return<><style>{CSS}</style><Toasts/><Ctx.Provider value={ctx}>
     {!onboarded&&<Onboarding onFinish={finishOnboarding}/>}
     <div style={{minHeight:"100vh",background:C.bg}}>
       <header style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 20px",borderBottom:`1px solid ${C.bd}`,background:C.w,position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 3px rgba(0,0,0,.04)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}><a href="../" style={{fontSize:11,color:C.tm,textDecoration:"none",padding:"4px 8px",borderRadius:6,border:`1px solid ${C.bd}`,marginRight:6}} onMouseOver={e=>e.target.style.color=C.ac} onMouseOut={e=>e.target.style.color=C.tm}>← Hub</a><div style={{display:"flex",alignItems:"center",justifyContent:"center",width:34,height:34,borderRadius:9,background:`linear-gradient(135deg,${C.ac},#0284c7)`}}><span style={{fontSize:15,fontWeight:800,color:C.w}}>V</span></div><span style={{fontSize:15,fontWeight:700}}>VDB</span><span style={{fontSize:15,color:C.td}}>Finance</span></div>
-        <nav style={{display:"flex",gap:4,flexWrap:"wrap"}}>{TABS.map(t=><Bt key={t.id} active={tab===t.id} onClick={()=>sTab(t.id)}><span style={{marginRight:4}}>{t.i}</span><span className="tab-label">{t.l}</span></Bt>)}</nav>
-        <div style={{fontSize:10,color:C.tm,display:"flex",alignItems:"center",gap:5}}><span style={{color:C.gn}}>●</span>Cloud</div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}><a href="../" style={{fontSize:11,color:C.tm,textDecoration:"none",padding:"4px 8px",borderRadius:6,border:`1px solid ${C.bd}`,marginRight:6}} onMouseOver={e=>e.target.style.color=C.ac} onMouseOut={e=>e.target.style.color=C.tm}>← Hub</a><div style={{display:"flex",alignItems:"center",justifyContent:"center",width:34,height:34,borderRadius:9,background:`linear-gradient(135deg,${C.gn},#15803d)`}}><span style={{fontSize:15,fontWeight:800,color:C.w}}>V</span></div><span style={{fontSize:15,fontWeight:700}}>VDB</span><span style={{fontSize:15,color:C.td}}>Finance</span></div>
+        <nav style={{display:"flex",gap:4,flexWrap:"wrap"}}>{TABS.map((t,i)=><Bt key={t.id} active={tab===t.id} onClick={()=>sTab(t.id)} style={{position:"relative"}} title={`${t.l} • Alt+${i+1}`}><span style={{marginRight:4}}>{t.i}</span><span className="tab-label">{t.l}</span></Bt>)}</nav>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <button onClick={toggleTheme} title={theme==="dark"?"Tema claro":"Tema oscuro"} style={{background:"transparent",border:`1px solid ${C.bd}`,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:13}}>{theme==="dark"?"☀️":"🌙"}</button>
+          <SaveIndicator/>
+        </div>
       </header>
       <main style={{maxWidth:1440,margin:"0 auto",padding:"18px 16px"}}>{render()}</main>
       <footer style={{textAlign:"center",padding:16,borderTop:`1px solid ${C.bd}`,color:C.tm,fontSize:10,marginTop:28,background:C.w}}>VDB Finance © {new Date().getFullYear()} — Datos guardados solo en tu navegador</footer>
@@ -1881,7 +2036,7 @@ function App(){
     }
   } catch(e) { console.warn('[cloud] load failed, using local', e); }
   _financeCloudReady = true;
-  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  ReactDOM.createRoot(document.getElementById("root")).render(<ErrorBoundary><App/></ErrorBoundary>);
 })();
 </script>
 </body>
