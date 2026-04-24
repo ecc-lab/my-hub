@@ -701,7 +701,7 @@ function MisDatosCard(){
 
 // === FinancialReading: diagnóstico narrativo del dashboard ===
 function FinancialReading(p){
-  const{patNow,patDelta,patDeltaPct,tIY,tEY,rY,sr,avgMonthlySavings,tMeY,tAeY,gastosFijos,liquidAssets,runway,monthlyExpTotal,selYear,m7Age,m7RetAge,m7Need,m7Accum,m7RetReturn}=p;
+  const{patNow,patPrev,patDelta,patDeltaPct,tIY,tEY,rY,sr,avgMonthlySavings,tMeY,tAeY,gastosFijos,liquidAssets,runway,monthlyExpTotal,selYear,patYear,m7Age,m7RetAge,m7Need,m7Accum,m7RetReturn,classDeltas,assets,debts,patYrIdx,patPrevIdx}=p;
   // --- Overall health score 0-7 ---
   let score=0;
   if(patNow>0)score+=2;else if(patNow<0)score-=1;
@@ -718,8 +718,35 @@ function FinancialReading(p){
   else if(sr>=0.2)strengths.push({t:"Tasa de ahorro saludable",d:`Ahorras ${fP(sr)}, el objetivo clásico del 20%. Base sólida para construir patrimonio a largo plazo.`});
   if(runway>=12)strengths.push({t:"Fondo de emergencia sólido",d:`Tienes ${runway} meses de gasto cubierto en efectivo. Si pierdes ingresos mañana, tienes más de un año de margen sin tocar inversiones.`});
   else if(runway>=6)strengths.push({t:"Fondo de emergencia aceptable",d:`${runway} meses de gasto en efectivo. Cumples el mínimo recomendado (6 meses).`});
-  if(patDelta>0&&patDeltaPct>=0.1)strengths.push({t:"Patrimonio creciendo fuerte",d:`+${fP(patDeltaPct)} YoY (${fmt(patDelta)} zł). Por encima del 10% anual — interés compuesto trabajando a tu favor.`});
-  else if(patDelta>0)strengths.push({t:"Patrimonio en positivo",d:`+${fmt(patDelta)} zł YoY. Vas hacia arriba, aunque hay margen para acelerar.`});
+  // --- Patrimonio growth decomposition ---
+  const patGrowthDetail=(()=>{
+    if(!classDeltas||classDeltas.length===0||patDelta===0)return"";
+    const parts=classDeltas.map(c=>({name:c.name,delta:c.now-c.prev})).filter(c=>c.delta!==0).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+    if(parts.length===0)return"";
+    const drivers=parts.map(c=>`${c.name} ${c.delta>=0?"+":""}${fmt(c.delta)} zł`).join(", ");
+    const topDriver=parts[0];
+    let insight="";
+    if(topDriver.name==="Efectivo"&&topDriver.delta>0)insight=" Tu crecimiento viene del ahorro en efectivo — sólido pero sin rentabilidad. Considera mover excedente a inversión.";
+    else if(topDriver.name==="Inversión"&&topDriver.delta>0)insight=" Las inversiones son el motor principal del crecimiento. Si es revalorización, asegura que es realista; si es aportación nueva, sigue ese ritmo.";
+    else if(topDriver.name==="Deudas"&&topDriver.delta>0)insight=" La reducción de deuda impulsa tu patrimonio — cada cuota pagada es patrimonio ganado.";
+    else if(topDriver.name==="Deudas"&&topDriver.delta<0)insight=" El aumento de deuda está erosionando tu patrimonio. Revisa si es deuda buena (inversión/vivienda) o mala (consumo).";
+    else if(topDriver.name==="Efectivo"&&topDriver.delta<0)insight=" Has gastado efectivo. Si fue para invertir → bien. Si fue por gasto → revisar.";
+    else if(topDriver.name==="Inversión"&&topDriver.delta<0)insight=" Tus inversiones han perdido valor. Si es mercado, paciencia. Si es retirada, evalúa la necesidad.";
+    return` Composición del cambio: ${drivers}.${insight}`;
+  })();
+  // --- Top movers: individual assets/debts that moved most ---
+  const topMovers=(()=>{
+    if(!assets||!debts||patYrIdx<=0)return"";
+    const movers=[];
+    assets.forEach(a=>{const now=a.values?.[patYrIdx]||0;const prev=a.values?.[patPrevIdx]||0;const d=now-prev;if(d!==0)movers.push({name:a.name,delta:d,type:"activo"})});
+    debts.forEach(d=>{const now=d.values?.[patYrIdx]||0;const prev=d.values?.[patPrevIdx]||0;const dd=prev-now;if(dd!==0)movers.push({name:d.name,delta:dd,type:"deuda"})});
+    movers.sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+    const top3=movers.slice(0,3);
+    if(top3.length===0)return"";
+    return" Principales movimientos: "+top3.map(m=>`${m.name} ${m.delta>=0?"+":""}${fmt(m.delta)} zł`).join(", ")+".";
+  })();
+  if(patDelta>0&&patDeltaPct>=0.1)strengths.push({t:"Patrimonio creciendo fuerte",d:`+${fP(patDeltaPct)} YoY (+${fmt(patDelta)} zł).${patGrowthDetail}${topMovers}`});
+  else if(patDelta>0)strengths.push({t:"Patrimonio en positivo",d:`+${fmt(patDelta)} zł YoY.${patGrowthDetail}${topMovers}`});
   if(patNow>0&&tIY>0&&gastosFijos/tIY<0.5)strengths.push({t:"Gastos fijos controlados",d:`Fijos son ${fP(gastosFijos/tIY)} de tus ingresos (<50%). Tienes flexibilidad: si baja el ingreso, puedes aguantar sin tocar fijos.`});
   if(avgMonthlySavings>=1000)strengths.push({t:"Ahorro mensual fuerte",d:`${fmt(Math.round(avgMonthlySavings))} zł al mes. Si inviertes esto al 7% anual, en 20 años acumulas ~${fmt(Math.round(avgMonthlySavings*12*((Math.pow(1.07,20)-1)/0.07)/1000))}k zł.`});
   // --- Weaknesses ---
@@ -730,7 +757,7 @@ function FinancialReading(p){
   if(runway<3)weaknesses.push({t:"Sin fondo de emergencia",d:`Solo ${runway} meses de efectivo. Un imprevisto (avería coche, reparación casa, mes sin ingresos) te forzará a vender inversiones o endeudarte. Crítico construir 3-6 meses antes de nada más.`});
   else if(runway<6)weaknesses.push({t:"Fondo de emergencia insuficiente",d:`${runway} meses cubiertos. Por debajo del mínimo estándar (6 meses). Sube el colchón antes de aumentar inversión a largo plazo.`});
   if(patNow<0)weaknesses.push({t:"Patrimonio neto negativo",d:`Tus deudas superan tus activos en ${fmt(Math.abs(patNow))} zł. Prioridad: pagar deuda cara (tarjetas, préstamos consumo) antes que cualquier inversión que rinda menos que el interés que pagas.`});
-  if(patDelta<0)weaknesses.push({t:"Patrimonio retrocediendo",d:`Has perdido ${fmt(Math.abs(patDelta))} zł (${fP(patDeltaPct)}) respecto al año anterior. Hay que entender por qué: ¿caída de activos, más deuda, o gasto puntual grande?`});
+  if(patDelta<0)weaknesses.push({t:"Patrimonio retrocediendo",d:`Has perdido ${fmt(Math.abs(patDelta))} zł (${fP(Math.abs(patDeltaPct))}) respecto al año anterior.${patGrowthDetail}${topMovers}`});
   if(tIY>0&&gastosFijos/tIY>0.6)weaknesses.push({t:"Gastos fijos demasiado altos",d:`${fP(gastosFijos/tIY)} de tus ingresos van a fijos. Poca flexibilidad si baja el ingreso. Atacar los dos más grandes: vivienda y suscripciones/servicios.`});
   if(tMeY>0&&(tMeY-gastosFijos)>gastosFijos)weaknesses.push({t:"Variables descontrolados",d:`Tus gastos variables (${fmt(tMeY-gastosFijos)}) superan a los fijos (${fmt(gastosFijos)}). Revisa la pestaña Gastos > Heatmap para ver qué categorías (ocio, restaurantes, compras) disparan cada mes.`});
   // --- Strategic actions ---
@@ -825,6 +852,16 @@ function M0(){
   const tDebt=PAT_YEARS.map(y=>{const i=yearToIdx(y);return debts.reduce((s,d)=>s+(d.values?.[i]||0),0)});
   const netWorth=PAT_YEARS.map((_,i)=>(tEfectivo[i]+tInversion[i]+tPasivo[i]+tOther[i])-tDebt[i]);
 
+  // Per-class deltas for FinancialReading breakdown
+  const patPos=PAT_YEARS.indexOf(patYear);
+  const patPrevPos=PAT_YEARS.indexOf(patYear-1);
+  const classDeltas=patPos>=0&&patPrevPos>=0?[
+    {name:"Efectivo",now:tEfectivo[patPos],prev:tEfectivo[patPrevPos]},
+    {name:"Inversión",now:tInversion[patPos],prev:tInversion[patPrevPos]},
+    {name:"Pasivo/Otro",now:(tPasivo[patPos]||0)+(tOther[patPos]||0),prev:(tPasivo[patPrevPos]||0)+(tOther[patPrevPos]||0)},
+    {name:"Deudas",now:-tDebt[patPos],prev:-tDebt[patPrevPos]},
+  ]:[];
+
   // Waterfall SVG
   const WaterfallChart=({width=900,height=220})=>{
     const bars=[{label:"Ingresos",value:tIY,color:C.gn},{label:"G. Fijos",value:-gastosFijos,color:C.rd},{label:"G. Variables",value:-gastosVar,color:C.rd},{label:"G. Anuales",value:-tAeY,color:C.rd},{label:"Ahorro",value:ahorroCF,color:C.bl}];
@@ -898,12 +935,13 @@ function M0(){
     </Cd>
 
     <FinancialReading
-      patNow={patNow} patDelta={patDelta} patDeltaPct={patDeltaPct}
+      patNow={patNow} patPrev={patPrev} patDelta={patDelta} patDeltaPct={patDeltaPct}
       tIY={tIY} tEY={tEY} rY={rY} sr={sr} avgMonthlySavings={avgMonthlySavings}
       tMeY={tMeY} tAeY={tAeY} gastosFijos={gastosFijos}
       liquidAssets={liquidAssets} runway={runway} monthlyExpTotal={monthlyExpTotal}
-      selYear={selYear}
+      selYear={selYear} patYear={patYear}
       m7Age={m7Age} m7RetAge={m7RetAge} m7Need={m7Need} m7Accum={m7Accum} m7RetReturn={m7RetReturn}
+      classDeltas={classDeltas} assets={assets} debts={debts} patYrIdx={patYrIdx} patPrevIdx={patPrevIdx}
     />
 
     <Cd style={{marginBottom:14,display:"flex",flexDirection:"column",alignItems:"center"}}>
