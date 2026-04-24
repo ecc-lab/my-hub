@@ -177,7 +177,19 @@ const DualChart=({data,rates,goal,labels,width=620,height=180})=>{
 
 // === Defaults ===
 const INC_TYPES=["Laboral","Inversión","Alquiler","Seguro","Dividendos","Otros"];
-const EXP_TYPES=["Vivienda","Suministros","Suscripciones","Ocio","Salud","Vehículo","Alimentación","Restaurantes","Deuda","Vacaciones","Mascotas","Hijos","Cuidado Personal","Ropa","Regalos","Otros"];
+// Expense types carry an isFijo flag. Stored in localStorage under vdb_expTypes for user edits.
+const EXP_TYPES_DEFAULT=[
+  {name:"Vivienda",isFijo:true},{name:"Suministros",isFijo:true},{name:"Suscripciones",isFijo:true},
+  {name:"Deuda",isFijo:true},{name:"Seguros",isFijo:true},
+  {name:"Ocio",isFijo:false},{name:"Salud",isFijo:false},{name:"Vehículo",isFijo:false},
+  {name:"Alimentación",isFijo:false},{name:"Restaurantes",isFijo:false},{name:"Vacaciones",isFijo:false},
+  {name:"Mascotas",isFijo:false},{name:"Hijos",isFijo:false},{name:"Cuidado Personal",isFijo:false},
+  {name:"Ropa",isFijo:false},{name:"Regalos",isFijo:false},{name:"Otros",isFijo:false}
+];
+const getExpTypes=()=>{try{const s=localStorage.getItem("vdb_expTypes");if(s){const p=JSON.parse(s);if(Array.isArray(p)&&p.every(t=>t&&t.name))return p}}catch(e){}return EXP_TYPES_DEFAULT};
+// Back-compat: EXP_TYPES still usable as string array where needed (selects read .name)
+const EXP_TYPES=getExpTypes().map(t=>t.name);
+const getFijoTypes=(expTypes)=>expTypes.filter(t=>t.isFijo).map(t=>t.name);
 const D_I=[{name:"Nómina",type:"Laboral",amounts:Array(12).fill(2000)},{name:"Intereses y Dividendos",type:"Inversión",amounts:Array(12).fill(0)},{name:"Alquileres",type:"Alquiler",amounts:Array(12).fill(0)}];
 const D_M=[{name:"Alquiler",type:"Vivienda",monthly:1000,real:Array(12).fill(null)},{name:"Agua",type:"Suministros",monthly:20,real:Array(12).fill(null)},{name:"Luz",type:"Suministros",monthly:50,real:Array(12).fill(null)},{name:"Calefacción",type:"Suministros",monthly:70,real:Array(12).fill(null)},{name:"Netflix",type:"Suscripciones",monthly:12,real:Array(12).fill(null)},{name:"Gimnasio",type:"Suscripciones",monthly:40,real:Array(12).fill(null)},{name:"Ocio",type:"Ocio",monthly:100,real:Array(12).fill(null)},{name:"Hipoteca",type:"Vivienda",monthly:0,real:Array(12).fill(null)},{name:"Cuota deudas",type:"Deuda",monthly:100,real:Array(12).fill(null)}];
 const D_A=[{name:"Seguros",type:"Otros",annual:500},{name:"Rev. Vehículo",type:"Vehículo",annual:300},{name:"Viajes",type:"Vacaciones",annual:1000},{name:"Regalos",type:"Regalos",annual:100},{name:"Estudios",type:"Otros",annual:500}];
@@ -507,7 +519,7 @@ function M0(){
   const avgMonthlySavings=rY/12;
 
   // Waterfall data
-  const FIJO_TYPES=["Vivienda","Suministros","Suscripciones","Deuda"];
+  const FIJO_TYPES=getFijoTypes(getExpTypes());
   const gastosFijos=MO.map((_,m)=>safeMe0.filter(r=>FIJO_TYPES.includes(r.type)).reduce((s,r)=>s+valMe(r,m),0)).reduce((a,b)=>a+b,0);
   const gastosVar=tMeY-gastosFijos;
   const ahorroCF=tIY-gastosFijos-gastosVar-tAeY;
@@ -658,10 +670,41 @@ function M0(){
   </div>;
 }
 
+function CategoriesEditor({onClose,meRows,aeRows}){
+  const[types,setTypes]=useState(getExpTypes());
+  const[newName,setNewName]=useState("");
+  const save=()=>{try{localStorage.setItem("vdb_expTypes",JSON.stringify(types));location.reload()}catch(e){alert("Error: "+e.message)}};
+  const useCount=(name)=>[...(meRows||[]),...(aeRows||[])].filter(r=>(r.type||"Otros")===name).length;
+  const toggleFijo=(i)=>{const n=[...types];n[i]={...n[i],isFijo:!n[i].isFijo};setTypes(n)};
+  const remove=(i)=>{const name=types[i].name;if(name==="Otros")return alert("No se puede borrar Otros");const c=useCount(name);if(c>0)return alert(`No se puede borrar "${name}": ${c} fila(s) la usan. Reasígnalas primero.`);setTypes(types.filter((_,j)=>j!==i))};
+  const add=()=>{const n=newName.trim();if(!n)return;if(types.some(t=>t.name.toLowerCase()===n.toLowerCase()))return alert("Ya existe");setTypes([...types,{name:n,isFijo:false}]);setNewName("")};
+  return<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}} onClick={onClose}>
+    <div style={{width:"95%",maxWidth:560,maxHeight:"90vh",overflowY:"auto",background:C.w,borderRadius:14,padding:20}} onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><h3 style={{fontSize:16,fontWeight:700}}>🏷️ Categorías de Gasto</h3><button onClick={onClose} style={{background:"none",border:"none",fontSize:18,cursor:"pointer",color:C.tm}}>✕</button></div>
+      <p style={{fontSize:11,color:C.tm,marginBottom:12}}>Marca 🔒 Fijo para categorías que cuentan como gasto fijo en Waterfall (M0) y Fijos vs Variables (M1b).</p>
+      <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:14}}>
+        <thead><tr><th style={{...th,textAlign:"left"}}>Nombre</th><th style={th}>Fijo</th><th style={th}>Uso</th><th></th></tr></thead>
+        <tbody>{types.map((t,i)=>{const c=useCount(t.name);return<tr key={i} style={{borderBottom:`1px solid ${C.bg}`}}>
+          <td style={{padding:"5px 6px",fontWeight:500}}>{t.name}</td>
+          <td style={{padding:"5px",textAlign:"center"}}><button onClick={()=>toggleFijo(i)} style={{background:t.isFijo?C.rdd:"transparent",color:t.isFijo?C.rd:C.tm,border:`1px solid ${t.isFijo?C.rd:C.bd}`,borderRadius:5,padding:"3px 9px",cursor:"pointer",fontSize:11,fontWeight:600}}>{t.isFijo?"🔒 Fijo":"Variable"}</button></td>
+          <td style={{padding:"5px 6px",textAlign:"right",...mn,color:c>0?C.ac:C.tm}}>{c}</td>
+          <td style={{padding:"5px"}}>{t.name!=="Otros"&&<Xb onClick={()=>remove(i)}/>}</td>
+        </tr>})}</tbody>
+      </table>
+      <div style={{display:"flex",gap:6,marginBottom:14}}>
+        <input type="text" value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Nueva categoría" style={{flex:1,padding:"7px 10px",borderRadius:6,border:`1px solid ${C.bd}`,fontSize:12}} onKeyDown={e=>e.key==="Enter"&&add()}/>
+        <Bt onClick={add}>+ Añadir</Bt>
+      </div>
+      <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}><Bt onClick={onClose}>Cancelar</Bt><PB onClick={save} style={{padding:"8px 16px",fontSize:13}}>Guardar y recargar</PB></div>
+    </div>
+  </div>;
+}
+
 function M1(){
   const{income:inc,setIncome:sI,monthlyExp:me,setMonthlyExp:sM,annualExp:ae,setAnnualExp:sA,savingsGoal:sg,setSavingsGoal:sSG,selYear,setYear,YEARS,copyYear,addIncRow,delIncRow,addMeRow,delMeRow,addAeRow,delAeRow,incHist,meHist,aeHist,syncIncMeta,syncMeMeta,syncAeMeta,reorderInc,reorderMe,reorderAe}=useContext(Ctx);
   const[showAeD,setAeD]=useState(false);
   const[showCopy,setShowCopy]=useState(false);
+  const[showCats,setShowCats]=useState(false);
   const dragRef=React.useRef(null);
   const mkDrag=(reorderFn)=>({onStart:(e,i)=>{dragRef.current=i;e.dataTransfer.effectAllowed="move"},onOver:e=>e.preventDefault(),onDrop:(e,i)=>{if(dragRef.current===null||dragRef.current===i)return;reorderFn(dragRef.current,i);dragRef.current=null}});
   const dI=mkDrag(reorderInc);const dM=mkDrag(reorderMe);const dA=mkDrag(reorderAe);
@@ -685,6 +728,8 @@ function M1(){
       <span style={{fontSize:12,fontWeight:600,color:C.td,marginRight:4}}>📅 Año:</span>
       {YEARS.map(y=><Bt key={y} active={selYear===y} onClick={()=>setYear(y)} style={{padding:"6px 16px",fontSize:13,fontWeight:selYear===y?700:400}}>{y}</Bt>)}
       <button onClick={()=>setShowCopy(!showCopy)} style={{padding:"6px 10px",borderRadius:7,border:`1px solid ${C.bd}`,background:"transparent",color:C.tm,fontSize:11,cursor:"pointer",marginLeft:8}}>📋 Copiar año</button>
+      <button onClick={()=>setShowCats(true)} style={{padding:"6px 10px",borderRadius:7,border:`1px solid ${C.bd}`,background:"transparent",color:C.tm,fontSize:11,cursor:"pointer"}}>🏷️ Categorías</button>
+      {showCats&&<CategoriesEditor onClose={()=>setShowCats(false)} meRows={me} aeRows={ae}/>}
       {showCopy&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"4px 8px",background:C.sa,borderRadius:6,border:`1px solid ${C.bd}`}}>
         <span style={{fontSize:11,color:C.td}}>Copiar {selYear} a:</span>
         {YEARS.filter(y=>y!==selYear).map(y=><button key={y} onClick={()=>{copyYear(selYear,y);setShowCopy(false)}} style={{padding:"3px 10px",borderRadius:5,border:`1px solid ${C.ac}`,background:C.ad,color:C.ac,fontSize:11,cursor:"pointer"}}>{y}</button>)}
@@ -796,20 +841,23 @@ function M1(){
 
 function M1b(){
   const{monthlyExp:me,annualExp:ae,selYear,meHist,aeHist}=useContext(Ctx);
-  const FIJO=["Vivienda","Suministros","Suscripciones","Deuda"];
+  const FIJO=getFijoTypes(getExpTypes());
   const safeMe=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const val=(r,m)=>valMe(r,m);
 
-  // --- Heatmap data by type x month ---
+  // --- Heatmap data by type x month (includes annual expenses pro-rated or real[m]) ---
+  const safeAeH=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const heatByType=useMemo(()=>{
     const map={};EXP_TYPES.forEach(t=>map[t]=Array(12).fill(0));
-    safeMe.forEach(r=>{const t=r.type||"Otros";MO.forEach((_,m)=>{map[t][m]+=val(r,m)})});
+    safeMe.forEach(r=>{const t=r.type||"Otros";if(!map[t])map[t]=Array(12).fill(0);MO.forEach((_,m)=>{map[t][m]+=valMe(r,m)})});
+    safeAeH.forEach(r=>{const t=r.type||"Otros";if(!map[t])map[t]=Array(12).fill(0);MO.forEach((_,m)=>{map[t][m]+=valAe(r,m)})});
     return map;
-  },[safeMe]);
-  const heatRowTotals=useMemo(()=>{const o={};EXP_TYPES.forEach(t=>o[t]=heatByType[t].reduce((a,b)=>a+b,0));return o},[heatByType]);
-  const heatColTotals=useMemo(()=>MO.map((_,m)=>EXP_TYPES.reduce((s,t)=>s+heatByType[t][m],0)),[heatByType]);
-  const heatMax=useMemo(()=>Math.max(...EXP_TYPES.flatMap(t=>heatByType[t]),1),[heatByType]);
-  const heatClr=(v)=>{const r=Math.min(v/heatMax,1);const red=Math.round(220*r);const grn=Math.round(255*(1-r*0.7));return`rgb(${Math.max(red,240-Math.round(r*60))},${grn},${Math.round(240-r*100)})`};
+  },[safeMe,safeAeH]);
+  const heatRowTotals=useMemo(()=>{const o={};Object.keys(heatByType).forEach(t=>o[t]=heatByType[t].reduce((a,b)=>a+b,0));return o},[heatByType]);
+  const heatColTotals=useMemo(()=>MO.map((_,m)=>Object.keys(heatByType).reduce((s,t)=>s+heatByType[t][m],0)),[heatByType]);
+  const heatMax=useMemo(()=>Math.max(...Object.values(heatByType).flat(),1),[heatByType]);
+  // Dark-mode compatible: rgba with fixed red base, opacity proportional to intensity.
+  const heatClr=(v)=>{if(v<=0)return"transparent";const intensity=Math.min(v/heatMax,1);return`rgba(220,38,38,${(intensity*0.35).toFixed(3)})`};
 
   // --- Fijos vs Variables ---
   const fijosM=MO.map((_,m)=>safeMe.filter(r=>FIJO.includes(r.type)).reduce((s,r)=>s+val(r,m),0));
@@ -881,7 +929,7 @@ function M1b(){
       <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
         <thead><tr><th style={{...th,textAlign:"left",position:"sticky",left:0,background:C.sf,minWidth:100}}>Categoría</th>{MO.map(m=><th key={m} style={{...th,minWidth:48}}>{m}</th>)}<th style={{...th,color:C.ac,minWidth:60}}>TOTAL</th></tr></thead>
         <tbody>
-          {EXP_TYPES.filter(t=>heatRowTotals[t]>0).map(t=><tr key={t}>
+          {Object.keys(heatByType).filter(t=>heatRowTotals[t]>0).map(t=><tr key={t}>
             <td style={{padding:"4px 6px",fontWeight:600,fontSize:11,position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}>{t}</td>
             {heatByType[t].map((v,m)=><td key={m} style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:10,background:v>0?heatClr(v):"transparent",color:v>0?C.tx:C.tm,borderRadius:2}}>{v>0?fmt(v):""}</td>)}
             <td style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:11,fontWeight:700,color:C.rd}}>{fmt(heatRowTotals[t])}</td>
@@ -977,6 +1025,9 @@ function M1b(){
 
 function M2(){
   const[assets,sAs]=useLocalData("assets",D_AS);const[debts,sDb]=useLocalData("debts",D_DB);
+  const[incHist]=useLocalData("incomeHistory",{});
+  const[meHistAll]=useLocalData("meHistory",{});
+  const[aeHistAll]=useLocalData("aeHistory",{});
   const dAs=useDrag(assets,sAs);const dDb=useDrag(debts,sDb);
   const yrs=PAT_YEARS;const nY=yrs.length;const sY=yrs[0];
   const requiredLen=yearToIdx(yrs[yrs.length-1])+1;
@@ -986,10 +1037,23 @@ function M2(){
   },[requiredLen]);
   const[projGrowth,sPG]=useLocalData("projGrowth",Array(nY).fill({pct:5}));
   const safePG=Array.isArray(projGrowth)?projGrowth:Array(nY).fill({pct:5});
-  const defHist=yrs.map(y=>({year:y,income:0,expense:0}));
+  const defHist=yrs.map(y=>({year:y,income:0,expense:0,override:false}));
   const[hist,sHist]=useLocalData("finHistory",defHist);
-  const safeH=yrs.map((y)=>{const f=Array.isArray(hist)?hist.find(h=>h.year===y):null;return f||{year:y,income:0,expense:0}});
-  const updH=(i,f,v)=>{const n=safeH.map((h,j)=>j===i?{...h,[f]:Number(v)||0}:h);sHist(n)};
+  // Compute income/expense from M1 histories for a given year
+  const computeFinFromM1=(year)=>{
+    const incData=incHist[year]||[];const meData=meHistAll[year]||[];const aeData=aeHistAll[year]||[];
+    const income=MO.reduce((s,_,m)=>s+incData.reduce((ss,r)=>ss+valInc(r,m),0),0);
+    const expense=MO.reduce((s,_,m)=>s+meData.reduce((ss,r)=>ss+valMe(r,m),0)+aeData.reduce((ss,r)=>ss+valAe(r,m),0),0);
+    return{income:Math.round(income),expense:Math.round(expense)};
+  };
+  const safeH=yrs.map((y)=>{
+    const f=Array.isArray(hist)?hist.find(h=>h.year===y):null;
+    if(f&&f.override)return{...f,auto:false};
+    const c=computeFinFromM1(y);
+    return{year:y,income:f?.income||c.income,expense:f?.expense||c.expense,override:false,auto:!(f&&(f.income>0||f.expense>0))};
+  });
+  const updH=(i,f,v)=>{const n=yrs.map((y,j)=>{if(j===i){const cur=safeH[j];return{year:y,income:f==="income"?(Number(v)||0):cur.income,expense:f==="expense"?(Number(v)||0):cur.expense,override:true}}const h=safeH[j];return{year:h.year,income:h.income,expense:h.expense,override:h.override}});sHist(n)};
+  const resetAuto=(i)=>{const n=yrs.map((y,j)=>{if(j===i){const c=computeFinFromM1(y);return{year:y,income:c.income,expense:c.expense,override:false}}const h=safeH[j];return{year:h.year,income:h.income,expense:h.expense,override:h.override}});sHist(n)};
   const savH=safeH.map(h=>h.income-h.expense);
   const srH=safeH.map(h=>h.income>0?(h.income-h.expense)/h.income:0);
 
@@ -1064,8 +1128,8 @@ function M2(){
     <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}>
       <ST icon="📋">Histórico Anual: Ingresos, Gastos y Ahorro</ST>
       <table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:110,position:"sticky",left:0,background:C.sf}}></th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}</tr></thead><tbody>
-        <tr><td style={{padding:"5px 6px",fontWeight:600,color:C.gn,position:"sticky",left:0,background:C.sf}}>📈 Ingresos</td>{safeH.map((h,i)=><td key={i} style={{padding:"2px"}}><input type="number" value={h.income||""} onChange={e=>updH(i,"income",e.target.value)} style={{width:82}}/></td>)}</tr>
-        <tr><td style={{padding:"5px 6px",fontWeight:600,color:C.rd,position:"sticky",left:0,background:C.sf}}>📉 Gastos</td>{safeH.map((h,i)=><td key={i} style={{padding:"2px"}}><input type="number" value={h.expense||""} onChange={e=>updH(i,"expense",e.target.value)} style={{width:82}}/></td>)}</tr>
+        <tr><td style={{padding:"5px 6px",fontWeight:600,color:C.gn,position:"sticky",left:0,background:C.sf}}>📈 Ingresos</td>{safeH.map((h,i)=><td key={i} style={{padding:"2px",position:"relative"}}><div style={{display:"flex",alignItems:"center",gap:2}}><span title={h.override?"Valor editado manualmente — click 🔓 para recalcular":"Calculado desde Ingresos de M1"} style={{fontSize:10,opacity:0.6,cursor:h.override?"pointer":"help"}} onClick={()=>h.override&&resetAuto(i)}>{h.override?"🔒":"🔗"}</span><input type="number" value={h.income||""} onChange={e=>updH(i,"income",e.target.value)} style={{width:68,color:h.override?C.tx:C.tm,fontStyle:h.override?"normal":"italic"}}/></div></td>)}</tr>
+        <tr><td style={{padding:"5px 6px",fontWeight:600,color:C.rd,position:"sticky",left:0,background:C.sf}}>📉 Gastos</td>{safeH.map((h,i)=><td key={i} style={{padding:"2px",position:"relative"}}><div style={{display:"flex",alignItems:"center",gap:2}}><span title={h.override?"Valor editado manualmente — click 🔓 para recalcular":"Calculado desde Gastos de M1"} style={{fontSize:10,opacity:0.6,cursor:h.override?"pointer":"help"}} onClick={()=>h.override&&resetAuto(i)}>{h.override?"🔒":"🔗"}</span><input type="number" value={h.expense||""} onChange={e=>updH(i,"expense",e.target.value)} style={{width:68,color:h.override?C.tx:C.tm,fontStyle:h.override?"normal":"italic"}}/></div></td>)}</tr>
         <tr style={{background:C.sa}}><td style={{padding:"6px",fontWeight:700,color:C.ac,position:"sticky",left:0,background:C.sa}}>💰 Ahorro</td>{savH.map((v,i)=><td key={i} style={{padding:"6px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:v>=0?C.gn:C.rd}}>{fmt(v)}</td>)}</tr>
         <tr><td style={{padding:"6px",fontWeight:500,color:C.td,position:"sticky",left:0,background:C.sf}}>🎯 Tasa</td>{srH.map((v,i)=><td key={i} style={{padding:"6px 4px",textAlign:"right",...mn,fontSize:12,color:v>=.2?C.gn:v>0?C.am:C.rd}}>{safeH[i].income>0?fP(v):"–"}</td>)}</tr>
       </tbody></table>
@@ -1211,12 +1275,12 @@ function M3(){
 
     <Cd style={{marginTop:16}}>
       <ST icon="🏦">¿Me dará el banco la hipoteca?</ST>
-      {(()=>{const{income:inc}=allCtx;const tIMon=MO.map((_,m)=>inc.reduce((s,r)=>s+valInc(r,m),0));const avgMon=tIMon.reduce((a,b)=>a+b,0)/12;const cuota=calc(amt,tin,yrs,ppy);const ratio=avgMon>0?cuota/avgMon:0;const pct=(ratio*100).toFixed(1);const ok=ratio<=0.35;
+      {(()=>{const{income:inc}=allCtx;const tIMon=MO.map((_,m)=>inc.reduce((s,r)=>s+valInc(r,m),0));const monthsWithIncome=tIMon.filter(v=>v>0).length;const avgMon=monthsWithIncome>0?tIMon.reduce((a,b)=>a+b,0)/monthsWithIncome:0;const cuota=calc(amt,tin,yrs,ppy);const ratio=avgMon>0?cuota/avgMon:0;const pct=(ratio*100).toFixed(1);const ok=ratio<=0.35;
         const maxCuota=avgMon*0.35;const ri2=tin/100/ppy;const np2=yrs*ppy;const maxHip=ri2>0?maxCuota*(Math.pow(1+ri2,np2)-1)/(ri2*Math.pow(1+ri2,np2)):maxCuota*np2;
         const maxProperty=dpPct>0?maxHip/(1-dpPct/100):maxHip;const entradaNec=maxProperty-maxHip;
         return<div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:14}}>
-          <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Ingreso mensual</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(avgMon)} zł</div></div>
+          <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Ingreso mensual</div><div style={{fontSize:16,fontWeight:700,color:C.ac,...mn}}>{fmt(avgMon)} zł</div>{monthsWithIncome<12&&monthsWithIncome>0&&<div style={{fontSize:9,color:C.tm,marginTop:3,fontStyle:"italic"}}>Media sobre {monthsWithIncome} meses con ingresos</div>}</div>
           <div style={{padding:10,borderRadius:8,background:C.sa,borderLeft:`3px solid ${C.am}`}}><div style={{fontSize:9,color:C.tm}}>Tu cuota</div><div style={{fontSize:16,fontWeight:700,color:C.am,...mn}}>{fmt(cuota)} zł</div></div>
           <div style={{padding:10,borderRadius:8,background:ok?C.gd:C.rdd,borderLeft:`3px solid ${ok?C.gn:C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Ratio</div><div style={{fontSize:16,fontWeight:700,color:ok?C.gn:C.rd,...mn}}>{pct}%</div></div>
           <div style={{padding:10,borderRadius:8,background:C.rdd,borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Total intereses</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(Math.round(cuota*yrs*12-amt))} zł</div></div>
@@ -1375,9 +1439,9 @@ function M4(){
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:14,marginBottom:16}}>
       <Cd style={{textAlign:"center",borderTop:`3px solid ${C.ac}`,padding:16}}>
         <div style={{fontSize:24,marginBottom:6}}>🔥</div>
-        <div style={{fontSize:10,color:C.tm,marginBottom:4}}>Número FIRE (Regla 4%)</div>
+        <div style={{fontSize:10,color:C.tm,marginBottom:4}}>🔥 Número FIRE (regla 4%)</div>
         <div style={{fontSize:24,fontWeight:700,color:C.ac,...mn}}>{fmt(Math.round(fireNumber))} zł</div>
-        <div style={{fontSize:10,color:C.tm,marginTop:4}}>Gastos anuales ({fmt(fireAnnualExp)} zł) x 25</div>
+        <div style={{fontSize:10,color:C.tm,marginTop:4}}>Gastos anuales ({fmt(fireAnnualExp)} zł) × 25</div>
       </Cd>
       <Cd style={{padding:16}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}><span style={{fontSize:20}}>📊</span><h3 style={{fontSize:14,fontWeight:600}}>% Progreso FIRE</h3></div>
@@ -1389,7 +1453,7 @@ function M4(){
       </Cd>
       <Cd style={{textAlign:"center",borderTop:`3px solid ${fireYearsToIndep<=15?C.gn:fireYearsToIndep<=30?C.am:C.rd}`,padding:16}}>
         <div style={{fontSize:24,marginBottom:6}}>⏱️</div>
-        <div style={{fontSize:10,color:C.tm,marginBottom:4}}>Años a Independencia</div>
+        <div style={{fontSize:10,color:C.tm,marginBottom:4}}>⏱️ Años a Número FIRE</div>
         <div style={{fontSize:24,fontWeight:700,color:fireYearsToIndep<=15?C.gn:fireYearsToIndep<=30?C.am:C.rd,...mn}}>{fireYearsToIndep>=200||!isFinite(fireYearsToIndep)?"∞":`${fireYearsToIndep} años`}</div>
         <div style={{fontSize:10,color:C.tm,marginTop:4}}>Ahorro: {fmt(sav)} zł/año · Rdto: {aR}%</div>
       </Cd>
@@ -1406,17 +1470,18 @@ function M4(){
         <div><Lb>Patrimonio Inicial (zł)</Lb><input type="number" value={iP} onChange={e=>sIP(Number(e.target.value)||0)}/></div>
         <div><Lb>Rendimiento Medio (%)</Lb><input type="number" value={aR} onChange={e=>sAR(Number(e.target.value)||0)}/></div>
       </div>
-      <div style={{display:"flex",gap:12,marginTop:14,flexWrap:"wrap"}}><Bg value={`Ahorro: ${fmt(sav)} zł/año`} type={sav>0?"positive":"negative"}/><Bg value={`Tasa: ${fP(sr)}`} type={sr>=.2?"positive":"warning"}/>{goY&&<Bg value={`🏆 Libertad año ${goY.y}`} type="positive"/>}</div>
+      <div style={{display:"flex",gap:12,marginTop:14,flexWrap:"wrap"}}><Bg value={`Ahorro: ${fmt(sav)} zł/año`} type={sav>0?"positive":"negative"}/><Bg value={`Tasa: ${fP(sr)}`} type={sr>=.2?"positive":"warning"}/>{goY&&<Bg value={`💡 Autosostén año ${goY.y}`} type="positive"/>}</div>
       <Pill title="El poder del interés compuesto">Einstein lo llamó la 8ª maravilla del mundo. Tiempo × rendimiento = magia.</Pill>
+      <Pill title="¿Por qué dos métricas? FIRE vs Autosostén">La <strong>regla del 4% (x25)</strong> asume que necesitas poder retirar tu gasto completo durante 30 años sin quebrar en el peor escenario histórico. Es el objetivo conservador. La tabla de años usa tu rendimiento proyectado (<strong>{aR}%</strong>) para calcular cuándo el rendimiento anual cubre tu gasto — es más optimista porque asume que nunca tocas el principal. Si aR {'>'} 4%, esta segunda métrica te da un "autosostén" más temprano que FIRE clásico.</Pill>
     </Cd>
-    <Cd style={{marginBottom:16}}><ST icon="🏆">Tasa de Ahorro vs Años</ST>
+    <Cd style={{marginBottom:16}}><ST icon="🏆" sub={`Años para que tu rendimiento anual cubra tu gasto, con ${aR}% anual. Más permisivo que la regla del 4%.`}>Tasa de Ahorro vs Años</ST>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:8}}>
         {goT.map((row,i)=>{const hl=Math.abs(sr*100-row.rate)<5;return<div key={i} style={{padding:"10px",borderRadius:8,background:hl?C.ad:C.sa,border:hl?`2px solid ${C.ac}`:`1px solid ${C.bd}`}}><div style={{fontSize:17,fontWeight:700,color:hl?C.ac:C.tx,...mn}}>{row.rate}%</div><div style={{fontSize:10,color:C.tm}}>Tasa ahorro</div><div style={{fontSize:14,fontWeight:600,color:row.yrs<=20?C.gn:row.yrs<=40?C.am:C.rd,...mn,marginTop:4}}>{row.yrs>=200?"∞":`${row.yrs.toFixed(1)} años`}</div></div>})}
       </div>
     </Cd>
     <Cd style={{overflowX:"auto"}}><ST icon="📊">Proyección</ST>
       <div style={{maxHeight:450,overflowY:"auto"}}><table style={{width:"100%",borderCollapse:"collapse"}}><thead style={{position:"sticky",top:0,background:C.sf,zIndex:1}}><tr>{["Año","Ingresos","Gastos","Ahorro","Rdto.","% Cubierto","Patrimonio"].map(h=><th key={h} style={{padding:"7px 6px",color:C.tm,fontWeight:500,textAlign:"right",borderBottom:`2px solid ${C.bd}`,fontSize:12}}>{h}</th>)}</tr></thead><tbody>
-        {proj.slice(0,60).map((row,i)=>{const isGO=row.cov>=1&&(i===0||proj[i-1].cov<1);return<tr key={i} style={{background:isGO?C.gd:row.cov>=1?"rgba(22,163,74,.02)":"transparent",borderBottom:`1px solid ${C.bg}`}}><td style={{padding:"5px 6px",textAlign:"right",fontWeight:isGO?700:400,color:isGO?C.gn:C.tx,fontSize:12}}>{isGO?`🏆 ${row.y}`:row.y}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12}}>{fmt(row.inc)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12}}>{fmt(row.exp)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:row.sav>=0?C.gn:C.rd}}>{fmt(row.sav)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:C.ac}}>{fmt(row.ret)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:row.cov>=1?C.gn:C.am}}>{row.y===0?"–":(row.cov*100).toFixed(1)+"%"}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.ac}}>{fmt(row.pat)}</td></tr>})}
+        {proj.slice(0,60).map((row,i)=>{const isGO=row.cov>=1&&(i===0||proj[i-1].cov<1);return<tr key={i} style={{background:isGO?C.gd:row.cov>=1?"rgba(22,163,74,.02)":"transparent",borderBottom:`1px solid ${C.bg}`}}><td style={{padding:"5px 6px",textAlign:"right",fontWeight:isGO?700:400,color:isGO?C.gn:C.tx,fontSize:12}} title={isGO?"Autosostén: rendimiento cubre gasto":""}>{isGO?`💡 ${row.y}`:row.y}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12}}>{fmt(row.inc)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12}}>{fmt(row.exp)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:row.sav>=0?C.gn:C.rd}}>{fmt(row.sav)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:C.ac}}>{fmt(row.ret)}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,color:row.cov>=1?C.gn:C.am}}>{row.y===0?"–":(row.cov*100).toFixed(1)+"%"}</td><td style={{padding:"5px 6px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.ac}}>{fmt(row.pat)}</td></tr>})}
       </tbody></table></div>
     </Cd>
   </div>;
