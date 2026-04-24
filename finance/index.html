@@ -1197,8 +1197,18 @@ function M1b(){
   const heatRowTotals=useMemo(()=>{const o={};Object.keys(heatByType).forEach(t=>o[t]=heatByType[t].reduce((a,b)=>a+b,0));return o},[heatByType]);
   const heatColTotals=useMemo(()=>MO.map((_,m)=>Object.keys(heatByType).reduce((s,t)=>s+heatByType[t][m],0)),[heatByType]);
   const heatMax=useMemo(()=>Math.max(...Object.values(heatByType).flat(),1),[heatByType]);
-  // Dark-mode compatible: rgba with fixed red base, opacity proportional to intensity.
-  const heatClr=(v)=>{if(v<=0)return"transparent";const intensity=Math.min(v/heatMax,1);return`rgba(220,38,38,${(intensity*0.35).toFixed(3)})`};
+  // Dark-mode compatible: uses theme --c-rd, with floor/ceiling for visibility in both modes
+  const heatClr=(v)=>{
+    if(v<=0)return"transparent";
+    const intensity=Math.min(v/heatMax,1);
+    const pct=Math.round(18+intensity*52);
+    return`color-mix(in srgb, var(--c-rd) ${pct}%, transparent)`;
+  };
+  const heatTxtClr=(v)=>{
+    if(v<=0)return C.tm;
+    const intensity=v/heatMax;
+    return intensity>0.4?"#ffffff":C.tx;
+  };
 
   // --- Fijos vs Variables ---
   const fijosM=MO.map((_,m)=>safeMe.filter(r=>FIJO.includes(r.type)).reduce((s,r)=>s+val(r,m),0));
@@ -1272,7 +1282,7 @@ function M1b(){
         <tbody>
           {Object.keys(heatByType).filter(t=>heatRowTotals[t]>0).map(t=><tr key={t}>
             <td style={{padding:"4px 6px",fontWeight:600,fontSize:11,position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}>{t}</td>
-            {heatByType[t].map((v,m)=><td key={m} style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:10,background:v>0?heatClr(v):"transparent",color:v>0?C.tx:C.tm,borderRadius:2}}>{v>0?fmt(v):""}</td>)}
+            {heatByType[t].map((v,m)=><td key={m} style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:10,background:heatClr(v),color:heatTxtClr(v),borderRadius:2,fontWeight:v>heatMax*0.4?600:400}}>{v>0?fmt(v):""}</td>)}
             <td style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:11,fontWeight:700,color:C.rd}}>{fmt(heatRowTotals[t])}</td>
           </tr>)}
           <tr style={{borderTop:`2px solid ${C.bd}`}}>
