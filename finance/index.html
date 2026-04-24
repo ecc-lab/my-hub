@@ -740,8 +740,10 @@ function M0(){
   const tEfectivo=PAT_YEARS.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="efectivo").reduce((s,a)=>s+(a.values?.[i]||0),0)});
   const tInversion=PAT_YEARS.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="inversión").reduce((s,a)=>s+(a.values?.[i]||0),0)});
   const tPasivo=PAT_YEARS.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="pasivo"||a.type==="otro").reduce((s,a)=>s+(a.values?.[i]||0),0)});
+  // Catch-all: assets with any other/missing type (so netWorth matches patNow)
+  const tOther=PAT_YEARS.map(y=>{const i=yearToIdx(y);return assets.filter(a=>!["efectivo","inversión","pasivo","otro"].includes(a.type)).reduce((s,a)=>s+(a.values?.[i]||0),0)});
   const tDebt=PAT_YEARS.map(y=>{const i=yearToIdx(y);return debts.reduce((s,d)=>s+(d.values?.[i]||0),0)});
-  const netWorth=PAT_YEARS.map((_,i)=>(tEfectivo[i]+tInversion[i]+tPasivo[i])-tDebt[i]);
+  const netWorth=PAT_YEARS.map((_,i)=>(tEfectivo[i]+tInversion[i]+tPasivo[i]+tOther[i])-tDebt[i]);
 
   // Waterfall SVG
   const WaterfallChart=({width=900,height=220})=>{
