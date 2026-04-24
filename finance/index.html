@@ -699,6 +699,86 @@ function MisDatosCard(){
   </Cd>;
 }
 
+// === FinancialReading: diagnóstico narrativo del dashboard ===
+function FinancialReading(p){
+  const{patNow,patDelta,patDeltaPct,tIY,tEY,rY,sr,avgMonthlySavings,tMeY,tAeY,gastosFijos,liquidAssets,runway,monthlyExpTotal,selYear,m7Age,m7RetAge,m7Need,m7Accum,m7RetReturn}=p;
+  // --- Overall health score 0-7 ---
+  let score=0;
+  if(patNow>0)score+=2;else if(patNow<0)score-=1;
+  if(sr>=0.2)score+=2;else if(sr>0)score+=1;
+  if(runway>=12)score+=2;else if(runway>=6)score+=1;
+  if(patDelta>0)score+=1;
+  const overall=score>=6?{l:"💪 Excelente",c:C.gn,bg:C.gd,msg:"Tu situación financiera es sólida. Ahorras bien, tienes colchón, y tu patrimonio crece. El trabajo ahora es optimizar: cada punto de ahorro extra acelera tu libertad financiera."}
+    :score>=4?{l:"✅ Buena",c:C.gn,bg:C.gd,msg:"Vas bien, con márgenes sanos. Tienes áreas concretas que pulir — mira abajo dónde enfocar para pasar de bien a excelente."}
+    :score>=2?{l:"⚠️ Mejorable",c:C.am,bg:C.amd,msg:"Estable pero frágil. Hay uno o dos puntos clave que si no los arreglas acabarán doliendo. Foco en lo que indico abajo antes de pensar en inversión o expansión."}
+    :{l:"🚨 Crítica",c:C.rd,bg:C.rdd,msg:"Gastas más de lo que ingresas o no tienes colchón. Prioridad absoluta: cerrar el desangre y construir fondo de emergencia. Nada más importa hasta que estabilices la base."};
+  // --- Strengths ---
+  const strengths=[];
+  if(sr>=0.3)strengths.push({t:"Tasa de ahorro excepcional",d:`Ahorras ${fP(sr)} de tus ingresos, por encima del 30%. Si mantienes este ritmo, en 10 años multiplicarás tu patrimonio sin necesidad de rentabilidades heroicas.`});
+  else if(sr>=0.2)strengths.push({t:"Tasa de ahorro saludable",d:`Ahorras ${fP(sr)}, el objetivo clásico del 20%. Base sólida para construir patrimonio a largo plazo.`});
+  if(runway>=12)strengths.push({t:"Fondo de emergencia sólido",d:`Tienes ${runway} meses de gasto cubierto en efectivo. Si pierdes ingresos mañana, tienes más de un año de margen sin tocar inversiones.`});
+  else if(runway>=6)strengths.push({t:"Fondo de emergencia aceptable",d:`${runway} meses de gasto en efectivo. Cumples el mínimo recomendado (6 meses).`});
+  if(patDelta>0&&patDeltaPct>=0.1)strengths.push({t:"Patrimonio creciendo fuerte",d:`+${fP(patDeltaPct)} YoY (${fmt(patDelta)} zł). Por encima del 10% anual — interés compuesto trabajando a tu favor.`});
+  else if(patDelta>0)strengths.push({t:"Patrimonio en positivo",d:`+${fmt(patDelta)} zł YoY. Vas hacia arriba, aunque hay margen para acelerar.`});
+  if(patNow>0&&tIY>0&&gastosFijos/tIY<0.5)strengths.push({t:"Gastos fijos controlados",d:`Fijos son ${fP(gastosFijos/tIY)} de tus ingresos (<50%). Tienes flexibilidad: si baja el ingreso, puedes aguantar sin tocar fijos.`});
+  if(avgMonthlySavings>=1000)strengths.push({t:"Ahorro mensual fuerte",d:`${fmt(Math.round(avgMonthlySavings))} zł al mes. Si inviertes esto al 7% anual, en 20 años acumulas ~${fmt(Math.round(avgMonthlySavings*12*((Math.pow(1.07,20)-1)/0.07)/1000))}k zł.`});
+  // --- Weaknesses ---
+  const weaknesses=[];
+  if(sr<0)weaknesses.push({t:"Gastas más de lo que ingresas",d:`Tasa de ahorro negativa (${fP(sr)}): te estás comiendo patrimonio. Esto NO es sostenible. Identifica las 3 categorías de gasto más grandes y corta un 20% en cada una.`});
+  else if(sr<0.1)weaknesses.push({t:"Tasa de ahorro muy baja",d:`Solo ${fP(sr)}. Con esta tasa, jubilarte cómodamente requeriría trabajar ~50 años o rentabilidades muy altas. Objetivo mínimo: 15-20%.`});
+  else if(sr<0.2)weaknesses.push({t:"Tasa de ahorro mejorable",d:`${fP(sr)} está por debajo del 20% objetivo. Cada 5 puntos de subida reducen tu tiempo a FIRE en ~7 años.`});
+  if(runway<3)weaknesses.push({t:"Sin fondo de emergencia",d:`Solo ${runway} meses de efectivo. Un imprevisto (avería coche, reparación casa, mes sin ingresos) te forzará a vender inversiones o endeudarte. Crítico construir 3-6 meses antes de nada más.`});
+  else if(runway<6)weaknesses.push({t:"Fondo de emergencia insuficiente",d:`${runway} meses cubiertos. Por debajo del mínimo estándar (6 meses). Sube el colchón antes de aumentar inversión a largo plazo.`});
+  if(patNow<0)weaknesses.push({t:"Patrimonio neto negativo",d:`Tus deudas superan tus activos en ${fmt(Math.abs(patNow))} zł. Prioridad: pagar deuda cara (tarjetas, préstamos consumo) antes que cualquier inversión que rinda menos que el interés que pagas.`});
+  if(patDelta<0)weaknesses.push({t:"Patrimonio retrocediendo",d:`Has perdido ${fmt(Math.abs(patDelta))} zł (${fP(patDeltaPct)}) respecto al año anterior. Hay que entender por qué: ¿caída de activos, más deuda, o gasto puntual grande?`});
+  if(tIY>0&&gastosFijos/tIY>0.6)weaknesses.push({t:"Gastos fijos demasiado altos",d:`${fP(gastosFijos/tIY)} de tus ingresos van a fijos. Poca flexibilidad si baja el ingreso. Atacar los dos más grandes: vivienda y suscripciones/servicios.`});
+  if(tMeY>0&&(tMeY-gastosFijos)>gastosFijos)weaknesses.push({t:"Variables descontrolados",d:`Tus gastos variables (${fmt(tMeY-gastosFijos)}) superan a los fijos (${fmt(gastosFijos)}). Revisa la pestaña Gastos > Heatmap para ver qué categorías (ocio, restaurantes, compras) disparan cada mes.`});
+  // --- Strategic actions ---
+  const actions=[];
+  if(sr<0.2&&tIY>0){
+    const target=0.2;const need=Math.max(0,tIY*target-rY);
+    if(need>0)actions.push({t:"Plan: llegar al 20% de ahorro",d:`Ahora ahorras ${fmt(rY)} zł/año (${fP(sr)}). Para el 20% necesitas ${fmt(Math.round(need))} zł más al año = ${fmt(Math.round(need/12))} zł/mes. Opciones: renegociar 1-2 fijos grandes (hipoteca, seguros, móvil) y cortar variables puntuales (ocio, restaurantes).`});
+  }
+  if(runway<6&&liquidAssets>=0){
+    const needLiq=Math.max(0,monthlyExpTotal*6-liquidAssets);
+    if(needLiq>0)actions.push({t:"Construye fondo de emergencia",d:`Necesitas ${fmt(Math.round(needLiq))} zł más en efectivo para llegar a 6 meses. Pausa inversiones nuevas hasta cubrirlo. Cuenta remunerada o depósito a plazo — no bolsa, no cripto.`});
+  }
+  if(sr>=0.2&&liquidAssets>monthlyExpTotal*12&&patNow>0){
+    const excess=liquidAssets-monthlyExpTotal*12;
+    actions.push({t:"Exceso de liquidez — mueve a inversión",d:`Tienes ${fmt(Math.round(excess))} zł en efectivo por encima de 12 meses de colchón. Ese dinero pierde ~2-3% al año por inflación. Al 7% invertido, en 10 años serían ~${fmt(Math.round(excess*Math.pow(1.07,10)/1000))}k zł.`});
+  }
+  if(m7RetAge>m7Age&&m7Need>0){
+    const yrsToRet=m7RetAge-m7Age;
+    const r=m7RetReturn/100;
+    const annNeed=m7Need*12;
+    const targetPat=r>0?annNeed*((1-Math.pow(1+r,-(90-m7RetAge)))/r):annNeed*(90-m7RetAge);
+    const gap=targetPat-patNow;
+    const annNeed2=yrsToRet>0?gap/yrsToRet:gap;
+    if(m7Accum<annNeed2&&annNeed2>0)actions.push({t:`Jubilación: acumulación insuficiente`,d:`A tu ritmo (${fmt(m7Accum)} zł/año), no llegas al patrimonio necesario (${fmt(Math.round(targetPat))} zł a los ${m7RetAge}). Necesitas acumular ${fmt(Math.round(annNeed2))} zł/año — o subir rentabilidad proyectada, o retrasar jubilación.`});
+  }
+  if(tIY>0&&tAeY/tIY>0.15)actions.push({t:"Gastos anuales pesan mucho",d:`Gastos anuales (${fmt(tAeY)}) son ${fP(tAeY/tIY)} de tus ingresos. Vacaciones, seguros, revisiones — acumularlos mensualmente (${fmt(Math.round(tAeY/12))} zł/mes) evita meses de "se me fue todo".`});
+  if(strengths.length===0&&weaknesses.length===0&&actions.length===0){
+    strengths.push({t:"Dashboard aún sin datos",d:"Cuando tengas al menos ingresos y gastos para este año, aparecerá aquí la lectura personalizada."});
+  }
+  const Section=({icon,title,items,color})=>items.length===0?null:<div style={{marginTop:14}}>
+    <div style={{fontSize:13,fontWeight:700,color:color,marginBottom:8}}>{icon} {title}</div>
+    <ul style={{listStyle:"none",padding:0,margin:0}}>{items.map((it,i)=><li key={i} style={{padding:"8px 12px",marginBottom:6,borderRadius:8,background:C.sa,borderLeft:`3px solid ${color}`}}>
+      <div style={{fontSize:13,fontWeight:600,color:C.tx,marginBottom:3}}>{it.t}</div>
+      <div style={{fontSize:12,color:C.td,lineHeight:1.55}}>{it.d}</div>
+    </li>)}</ul>
+  </div>;
+  return<Cd style={{marginBottom:14,borderLeft:`4px solid ${overall.c}`}}>
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><span style={{fontSize:20}}>💡</span><h3 style={{fontSize:15,fontWeight:600}}>Lectura Financiera — {selYear}</h3></div>
+    <div style={{padding:"12px 14px",borderRadius:8,background:overall.bg,borderLeft:`3px solid ${overall.c}`,marginBottom:6}}>
+      <div style={{fontSize:14,fontWeight:700,color:overall.c,marginBottom:4}}>{overall.l}</div>
+      <div style={{fontSize:12,color:C.td,lineHeight:1.6}}>{overall.msg}</div>
+    </div>
+    <Section icon="✅" title="Lo que está bien" items={strengths} color={C.gn}/>
+    <Section icon="⚠️" title="Áreas de mejora" items={weaknesses} color={C.am}/>
+    <Section icon="🎯" title="Acciones sugeridas" items={actions} color={C.bl}/>
+  </Cd>;
+}
+
 function M0(){
   const{income:inc,monthlyExp:me,annualExp:ae,savingsGoal:sg,selYear,setYear,YEARS}=useContext(Ctx);
   const[savedHip]=useLocalData("hipScenario",null);
@@ -816,6 +896,15 @@ function M0(){
           <div key={i} style={{padding:12,borderRadius:10,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm,marginBottom:3}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn}}>{x.v}</div>{x.s&&<div style={{fontSize:8,color:C.bh,marginTop:2}}>{x.s}</div>}</div>)}
       </div>
     </Cd>
+
+    <FinancialReading
+      patNow={patNow} patDelta={patDelta} patDeltaPct={patDeltaPct}
+      tIY={tIY} tEY={tEY} rY={rY} sr={sr} avgMonthlySavings={avgMonthlySavings}
+      tMeY={tMeY} tAeY={tAeY} gastosFijos={gastosFijos}
+      liquidAssets={liquidAssets} runway={runway} monthlyExpTotal={monthlyExpTotal}
+      selYear={selYear}
+      m7Age={m7Age} m7RetAge={m7RetAge} m7Need={m7Need} m7Accum={m7Accum} m7RetReturn={m7RetReturn}
+    />
 
     <Cd style={{marginBottom:14,display:"flex",flexDirection:"column",alignItems:"center"}}>
       <ST icon="🏗️" sub={`Desglose del flujo de caja — ${selYear}`}>Cash Flow Waterfall</ST>
