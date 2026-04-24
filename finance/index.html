@@ -184,8 +184,26 @@ const D_A=[{name:"Seguros",type:"Otros",annual:500},{name:"Rev. Vehículo",type:
 const D_AS=[{name:"Efectivo",type:"efectivo",values:[10000,14800,19600,24400,29200,34000,38800,43600,48400,53200]},{name:"Bolsa",type:"inversión",values:Array(10).fill(0)},{name:"Cripto",type:"inversión",values:Array(10).fill(0)},{name:"Inmuebles",type:"inversión",values:Array(10).fill(0)}];
 const D_DB=[{name:"Hipoteca",values:Array(10).fill(0)}];
 
+// === Patrimonio: sliding window of years ===
+// Storage index 0 is anchored to PAT_START_YEAR (2023) and never shifts.
+// The visible window slides so the current year stays inside.
+const PAT_START_YEAR=2023;
+const PAT_WINDOW=10;
+const getPatYears=()=>{
+  const CY=new Date().getFullYear();
+  const end=CY+2;
+  const start=Math.max(PAT_START_YEAR,end-PAT_WINDOW+1);
+  return Array.from({length:PAT_WINDOW},(_,i)=>start+i);
+};
+const PAT_YEARS=getPatYears();
+const yearToIdx=(year)=>year-PAT_START_YEAR;
+const ensureValuesLength=(arr,len)=>arr.map(item=>{
+  const values=item.values||[];
+  if(values.length>=len)return item;
+  return{...item,values:[...values,...Array(len-values.length).fill(0)]};
+});
+
 // === Excel Export/Import (global) ===
-const PAT_YEARS=Array.from({length:10},(_,i)=>2023+i);
 
 function exportToExcel(includeData){
   const wb=XLSX.utils.book_new();
@@ -473,9 +491,9 @@ function M0(){
   const bestMonth=MO[MO.map((_,m)=>tIM0[m]-tMeM0[m]-tAeM0[m]).reduce((best,v,i,a)=>v>a[best]?i:best,0)];
   const[savedMC]=useLocalData("mcGoal",null);
   const[assets]=useLocalData("assets",D_AS);const[debts]=useLocalData("debts",D_DB);
-  const patYrIdx=Math.min(9,Math.max(0,new Date().getFullYear()-2023));
+  const patYrIdx=yearToIdx(new Date().getFullYear());
   const patNow=assets.reduce((s,a)=>s+(a.values?.[patYrIdx]||0),0)-debts.reduce((s,d)=>s+(d.values?.[patYrIdx]||0),0);
-  const patYear=2023+patYrIdx;
+  const patYear=PAT_START_YEAR+patYrIdx;
   const patPrevIdx=Math.max(0,patYrIdx-1);
   const patPrev=assets.reduce((s,a)=>s+(a.values?.[patPrevIdx]||0),0)-debts.reduce((s,d)=>s+(d.values?.[patPrevIdx]||0),0);
   const patDelta=patNow-patPrev;
@@ -495,10 +513,10 @@ function M0(){
   const ahorroCF=tIY-gastosFijos-gastosVar-tAeY;
 
   // Patrimonio timeline by asset class
-  const tEfectivo=PAT_YEARS.map((_,i)=>assets.filter(a=>a.type==="efectivo").reduce((s,a)=>s+(a.values[i]||0),0));
-  const tInversion=PAT_YEARS.map((_,i)=>assets.filter(a=>a.type==="inversión").reduce((s,a)=>s+(a.values[i]||0),0));
-  const tPasivo=PAT_YEARS.map((_,i)=>assets.filter(a=>a.type==="pasivo"||a.type==="otro").reduce((s,a)=>s+(a.values[i]||0),0));
-  const tDebt=PAT_YEARS.map((_,i)=>debts.reduce((s,d)=>s+(d.values[i]||0),0));
+  const tEfectivo=PAT_YEARS.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="efectivo").reduce((s,a)=>s+(a.values?.[i]||0),0)});
+  const tInversion=PAT_YEARS.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="inversión").reduce((s,a)=>s+(a.values?.[i]||0),0)});
+  const tPasivo=PAT_YEARS.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="pasivo"||a.type==="otro").reduce((s,a)=>s+(a.values?.[i]||0),0)});
+  const tDebt=PAT_YEARS.map(y=>{const i=yearToIdx(y);return debts.reduce((s,d)=>s+(d.values?.[i]||0),0)});
   const netWorth=PAT_YEARS.map((_,i)=>(tEfectivo[i]+tInversion[i]+tPasivo[i])-tDebt[i]);
 
   // Waterfall SVG
@@ -599,15 +617,7 @@ function M0(){
     <Cd style={{marginBottom:14}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>💰</span><h3 style={{fontSize:15,fontWeight:600}}>Ingresos y Gastos — {selYear}</h3></div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10}}>
-        {[{l:`Ingresos ${selYear}`,v:`${fmt(tIY)} zł`,c:C.gn,s:`${inc.length} fuentes`},{l:`Gastos ${selYear}`,v:`${fmt(tEY)} zł`,c:C.rd,s:`Mensuales: ${fmt(tMeY)} + Anuales: ${fmt(tAeY)}`},{l:`Ahorro ${selYear}`,v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd,s:`${fmt(tIY)} − ${fmt(tEY)}`},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am},{l:"Obj. Mensual",v:`${fmt(sg)} zł`,c:C.am},{l:"Mejor mes",v:bestMonth,c:C.bl}].map((x,i)=>
-          <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div>{x.s&&<div style={{fontSize:8,color:C.bh,marginTop:2}}>{x.s}</div>}</div>)}
-      </div>
-    </Cd>
-
-    <Cd style={{marginBottom:14}}>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}><span style={{fontSize:18}}>📊</span><h3 style={{fontSize:15,fontWeight:600}}>Patrimonio</h3></div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
-        {[{l:`Patrimonio Neto (${patYear})`,v:`${fmt(patNow)} zł`,c:patNow>=0?C.ac:C.rd,s:"Activos − Deudas"},{l:`Ahorro ${selYear}`,v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd,s:`Ingresos − Gastos`},{l:"Tasa Ahorro",v:fP(sr),c:sr>=.2?C.gn:C.am}].map((x,i)=>
+        {[{l:`Ingresos ${selYear}`,v:`${fmt(tIY)} zł`,c:C.gn,s:`${inc.length} fuentes`},{l:`Gastos ${selYear}`,v:`${fmt(tEY)} zł`,c:C.rd,s:`Mensuales: ${fmt(tMeY)} + Anuales: ${fmt(tAeY)}`},{l:`Ahorro ${selYear}`,v:`${fmt(rY)} zł`,c:rY>=0?C.gn:C.rd,s:`${fmt(tIY)} − ${fmt(tEY)}`},{l:"Obj. Mensual",v:`${fmt(sg)} zł`,c:C.am},{l:"Mejor mes",v:bestMonth,c:C.bl}].map((x,i)=>
           <div key={i} style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${x.c}`}}><div style={{fontSize:9,color:C.tm}}>{x.l}</div><div style={{fontSize:16,fontWeight:700,color:x.c,...mn,marginTop:2}}>{x.v}</div>{x.s&&<div style={{fontSize:8,color:C.bh,marginTop:2}}>{x.s}</div>}</div>)}
       </div>
     </Cd>
@@ -968,9 +978,14 @@ function M1b(){
 function M2(){
   const[assets,sAs]=useLocalData("assets",D_AS);const[debts,sDb]=useLocalData("debts",D_DB);
   const dAs=useDrag(assets,sAs);const dDb=useDrag(debts,sDb);
-  const[projGrowth,sPG]=useLocalData("projGrowth",Array(10).fill({pct:5}));
-  const safePG=Array.isArray(projGrowth)?projGrowth:Array(10).fill({pct:5});
-  const nY=10,sY=2023,yrs=Array.from({length:nY},(_,i)=>sY+i);
+  const yrs=PAT_YEARS;const nY=yrs.length;const sY=yrs[0];
+  const requiredLen=yearToIdx(yrs[yrs.length-1])+1;
+  useEffect(()=>{
+    if(assets.some(a=>(a.values?.length||0)<requiredLen))sAs(ensureValuesLength(assets,requiredLen));
+    if(debts.some(d=>(d.values?.length||0)<requiredLen))sDb(ensureValuesLength(debts,requiredLen));
+  },[requiredLen]);
+  const[projGrowth,sPG]=useLocalData("projGrowth",Array(nY).fill({pct:5}));
+  const safePG=Array.isArray(projGrowth)?projGrowth:Array(nY).fill({pct:5});
   const defHist=yrs.map(y=>({year:y,income:0,expense:0}));
   const[hist,sHist]=useLocalData("finHistory",defHist);
   const safeH=yrs.map((y)=>{const f=Array.isArray(hist)?hist.find(h=>h.year===y):null;return f||{year:y,income:0,expense:0}});
@@ -978,11 +993,11 @@ function M2(){
   const savH=safeH.map(h=>h.income-h.expense);
   const srH=safeH.map(h=>h.income>0?(h.income-h.expense)/h.income:0);
 
-  const tA=yrs.map((_,i)=>assets.reduce((s,a)=>s+(a.values[i]||0),0));
-  const tEfectivo=yrs.map((_,i)=>assets.filter(a=>a.type==="efectivo").reduce((s,a)=>s+(a.values[i]||0),0));
-  const tInversion=yrs.map((_,i)=>assets.filter(a=>a.type==="inversión").reduce((s,a)=>s+(a.values[i]||0),0));
-  const tPasivo=yrs.map((_,i)=>assets.filter(a=>a.type==="pasivo"||a.type==="otro").reduce((s,a)=>s+(a.values[i]||0),0));
-  const tD=yrs.map((_,i)=>debts.reduce((s,d)=>s+(d.values[i]||0),0));
+  const tA=yrs.map(y=>{const i=yearToIdx(y);return assets.reduce((s,a)=>s+(a.values?.[i]||0),0)});
+  const tEfectivo=yrs.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="efectivo").reduce((s,a)=>s+(a.values?.[i]||0),0)});
+  const tInversion=yrs.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="inversión").reduce((s,a)=>s+(a.values?.[i]||0),0)});
+  const tPasivo=yrs.map(y=>{const i=yearToIdx(y);return assets.filter(a=>a.type==="pasivo"||a.type==="otro").reduce((s,a)=>s+(a.values?.[i]||0),0)});
+  const tD=yrs.map(y=>{const i=yearToIdx(y);return debts.reduce((s,d)=>s+(d.values?.[i]||0),0)});
   const pat=yrs.map((_,i)=>tA[i]-tD[i]);
   const rend=pat.map((v,i)=>i===0?0:(pat[i-1]?((v-pat[i-1])/pat[i-1]):0));
 
@@ -990,8 +1005,9 @@ function M2(){
 
   const MLChart=({width=620,height=200})=>{const allV=[...safeH.map(h=>h.income),...safeH.map(h=>h.expense),...savH];if(allV.every(v=>v===0))return<div style={{textAlign:'center',padding:30,color:C.tm,fontSize:12}}>Rellena el histórico de ingresos y gastos arriba</div>;const mx=Math.max(...allV,1),mi=Math.min(...allV,0),rg=mx-mi||1;const pX=50,pY=18,cW=width-pX*2,cH=height-pY*2;const mkP=data=>data.map((v,i)=>({x:pX+(i/(data.length-1))*cW,y:pY+cH-((v-mi)/rg)*cH}));const mkD=pts=>pts.map((p,i)=>`${i===0?"M":"L"}${p.x} ${p.y}`).join(" ");const pI=mkP(safeH.map(h=>h.income)),pE=mkP(safeH.map(h=>h.expense)),pS=mkP(savH);return<svg viewBox={`0 0 ${width} ${height}`} style={{display:"block",width:"100%",height:"auto"}}><path d={mkD(pI)} fill="none" stroke={C.gn} strokeWidth={2.5}/><path d={mkD(pE)} fill="none" stroke={C.rd} strokeWidth={2.5}/><path d={mkD(pS)} fill="none" stroke={C.ac} strokeWidth={2} strokeDasharray="6 3"/>{pI.map((p,i)=><g key={"i"+i}><circle cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.gn} strokeWidth={2}/><text x={p.x} y={height-2} textAnchor="middle" fill={C.tm} fontSize={9}>{yrs[i]}</text></g>)}{pE.map((p,i)=><circle key={"e"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.rd} strokeWidth={2}/>)}{pS.map((p,i)=><circle key={"s"+i} cx={p.x} cy={p.y} r={3} fill={C.w} stroke={C.ac} strokeWidth={2}/>)}</svg>};
 
-  // --- Pie chart data for current year asset allocation ---
+  // --- Pie chart data for current year asset allocation (index into yrs array) ---
   const curYrIdx=Math.min(nY-1,Math.max(0,new Date().getFullYear()-sY));
+  // Note: tEfectivo/tInversion/tPasivo are yrs-indexed (not storage-indexed), so curYrIdx is correct here
   const pieEfectivo=tEfectivo[curYrIdx]||0;
   const pieInversion=tInversion[curYrIdx]||0;
   const piePasivo=tPasivo[curYrIdx]||0;
@@ -1104,9 +1120,9 @@ function M2(){
       <div style={{display:"flex",gap:14,marginTop:6,fontSize:10}}><span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:3,background:C.ac,display:"inline-block"}}></span>Real</span><span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:2,borderTop:`2px dashed ${C.pu}`,display:"inline-block"}}></span><span style={{color:C.pu}}>Proyección</span></span></div>
     </Cd>
 
-    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}><ST icon="🏦" sub="Tipos: efectivo, inversión, pasivo">Activos</ST><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:100,position:"sticky",left:0,background:C.sf}}>Artículo</th><th style={{...th,textAlign:"center",width:75}}>Tipo</th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}<th style={{width:24}}></th></tr></thead><tbody>{assets.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dAs.onStart(e,idx)} onDragOver={dAs.onOver} onDrop={e=>dAs.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}><td style={{padding:"3px 4px",position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:2}}><DH/><input type="text" value={r.name} onChange={e=>{const n=[...assets];n[idx]={...n[idx],name:e.target.value};sAs(n)}} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:80}}/></span></td><td style={{padding:"2px"}}><select value={r.type||"efectivo"} onChange={e=>{const n=[...assets];n[idx]={...n[idx],type:e.target.value};sAs(n)}} style={{fontSize:10,padding:"4px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:75}}><option value="efectivo">Efectivo</option><option value="inversión">Inversión</option><option value="pasivo">Pasivo</option></select></td>{yrs.map((_,yi)=><td key={yi} style={{padding:"1px"}}><input type="number" value={r.values[yi]||""} onChange={e=>{const n=[...assets];n[idx]={...n[idx],values:[...n[idx].values]};n[idx].values[yi]=Number(e.target.value)||0;sAs(n)}} style={{width:82,padding:"6px 4px"}}/></td>)}<td><Xb onClick={()=>{if(assets.length>1){const n=[...assets];n.splice(idx,1);sAs(n)}}}/></td></tr>)}<tr style={{borderTop:`2px solid ${C.bd}`}}><td style={{padding:"8px 6px",fontWeight:700,position:"sticky",left:0,background:C.sf}}>TOTAL</td><td></td>{tA.map((v,i)=><td key={i} style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(v)}</td>)}<td></td></tr></tbody></table><Ab onClick={()=>sAs([...assets,{name:"(nuevo)",type:"efectivo",values:Array(nY).fill(0)}])}/></Cd>
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}><ST icon="🏦" sub="Tipos: efectivo, inversión, pasivo">Activos</ST><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:100,position:"sticky",left:0,background:C.sf}}>Artículo</th><th style={{...th,textAlign:"center",width:75}}>Tipo</th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}<th style={{width:24}}></th></tr></thead><tbody>{assets.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dAs.onStart(e,idx)} onDragOver={dAs.onOver} onDrop={e=>dAs.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}><td style={{padding:"3px 4px",position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:2}}><DH/><input type="text" value={r.name} onChange={e=>{const n=[...assets];n[idx]={...n[idx],name:e.target.value};sAs(n)}} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:80}}/></span></td><td style={{padding:"2px"}}><select value={r.type||"efectivo"} onChange={e=>{const n=[...assets];n[idx]={...n[idx],type:e.target.value};sAs(n)}} style={{fontSize:10,padding:"4px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:75}}><option value="efectivo">Efectivo</option><option value="inversión">Inversión</option><option value="pasivo">Pasivo</option></select></td>{yrs.map((y,yi)=>{const vi=yearToIdx(y);return<td key={yi} style={{padding:"1px"}}><input type="number" value={r.values?.[vi]||""} onChange={e=>{const n=[...assets];const vs=[...(n[idx].values||[])];while(vs.length<=vi)vs.push(0);vs[vi]=Number(e.target.value)||0;n[idx]={...n[idx],values:vs};sAs(n)}} style={{width:82,padding:"6px 4px"}}/></td>})}<td><Xb onClick={()=>{if(assets.length>1){const n=[...assets];n.splice(idx,1);sAs(n)}}}/></td></tr>)}<tr style={{borderTop:`2px solid ${C.bd}`}}><td style={{padding:"8px 6px",fontWeight:700,position:"sticky",left:0,background:C.sf}}>TOTAL</td><td></td>{tA.map((v,i)=><td key={i} style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(v)}</td>)}<td></td></tr></tbody></table><Ab onClick={()=>sAs([...assets,{name:"(nuevo)",type:"efectivo",values:Array(requiredLen).fill(0)}])}/></Cd>
 
-    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}><ST icon="⚠️">Deudas</ST><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:110,position:"sticky",left:0,background:C.sf}}>Artículo</th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}<th style={{width:24}}></th></tr></thead><tbody>{debts.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dDb.onStart(e,idx)} onDragOver={dDb.onOver} onDrop={e=>dDb.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}><td style={{padding:"3px 4px",position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:2}}><DH/><input type="text" value={r.name} onChange={e=>{const n=[...debts];n[idx]={...n[idx],name:e.target.value};sDb(n)}} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:85}}/></span></td>{yrs.map((_,yi)=><td key={yi} style={{padding:"1px"}}><input type="number" value={r.values[yi]||""} onChange={e=>{const n=[...debts];n[idx]={...n[idx],values:[...n[idx].values]};n[idx].values[yi]=Number(e.target.value)||0;sDb(n)}} style={{width:82,padding:"6px 4px"}}/></td>)}<td><Xb onClick={()=>{if(debts.length>1){const n=[...debts];n.splice(idx,1);sDb(n)}}}/></td></tr>)}<tr style={{borderTop:`2px solid ${C.bd}`}}><td style={{padding:"8px 6px",fontWeight:700,position:"sticky",left:0,background:C.sf}}>% s/ Activos</td>{tD.map((v,i)=><td key={i} style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:tA[i]>0?(v/tA[i]>.5?C.rd:v/tA[i]>.25?C.am:C.gn):C.tm}}>{tA[i]>0?(v/tA[i]*100).toFixed(1)+"%":"–"}</td>)}<td></td></tr></tbody></table><Ab onClick={()=>sDb([...debts,{name:"(nueva)",values:Array(nY).fill(0)}])}/></Cd>
+    <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}><ST icon="⚠️">Deudas</ST><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:110,position:"sticky",left:0,background:C.sf}}>Artículo</th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}<th style={{width:24}}></th></tr></thead><tbody>{debts.map((r,idx)=><tr key={idx} draggable onDragStart={e=>dDb.onStart(e,idx)} onDragOver={dDb.onOver} onDrop={e=>dDb.onDrop(e,idx)} style={{borderBottom:`1px solid ${C.bg}`,cursor:"grab"}}><td style={{padding:"3px 4px",position:"sticky",left:0,background:C.sf,whiteSpace:"nowrap"}}><span style={{display:"inline-flex",alignItems:"center",gap:2}}><DH/><input type="text" value={r.name} onChange={e=>{const n=[...debts];n[idx]={...n[idx],name:e.target.value};sDb(n)}} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:85}}/></span></td>{yrs.map((y,yi)=>{const vi=yearToIdx(y);return<td key={yi} style={{padding:"1px"}}><input type="number" value={r.values?.[vi]||""} onChange={e=>{const n=[...debts];const vs=[...(n[idx].values||[])];while(vs.length<=vi)vs.push(0);vs[vi]=Number(e.target.value)||0;n[idx]={...n[idx],values:vs};sDb(n)}} style={{width:82,padding:"6px 4px"}}/></td>})}<td><Xb onClick={()=>{if(debts.length>1){const n=[...debts];n.splice(idx,1);sDb(n)}}}/></td></tr>)}<tr style={{borderTop:`2px solid ${C.bd}`}}><td style={{padding:"8px 6px",fontWeight:700,position:"sticky",left:0,background:C.sf}}>% s/ Activos</td>{tD.map((v,i)=><td key={i} style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:tA[i]>0?(v/tA[i]>.5?C.rd:v/tA[i]>.25?C.am:C.gn):C.tm}}>{tA[i]>0?(v/tA[i]*100).toFixed(1)+"%":"–"}</td>)}<td></td></tr></tbody></table><Ab onClick={()=>sDb([...debts,{name:"(nueva)",values:Array(requiredLen).fill(0)}])}/></Cd>
 
     <Cd style={{marginBottom:16,overflowX:"auto",padding:"16px 12px"}}><ST icon="💎">Patrimonio Neto</ST><table style={{width:"100%",borderCollapse:"collapse"}}><thead><tr><th style={{...th,textAlign:"left",width:110}}></th>{yrs.map(y=><th key={y} style={{...th,minWidth:90}}>{y}</th>)}</tr></thead><tbody><tr><td style={{padding:"7px 6px",fontWeight:700,color:C.ac}}>Patrimonio</td>{pat.map((v,i)=><td key={i} style={{padding:"7px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.ac}}>{fmt(v)}</td>)}</tr><tr><td style={{padding:"7px 6px",color:C.td}}>Rendimiento</td>{rend.map((v,i)=><td key={i} style={{padding:"7px 4px",textAlign:"right",...mn,fontSize:12,color:i===0?C.tm:v>=0?C.gn:C.rd}}>{i===0?"–":fP(v)}</td>)}</tr></tbody></table></Cd>
   </div>;
@@ -1286,44 +1302,44 @@ function M3(){
     })()}
 
     {/* What-If Extra Payment */}
-    {(()=>{
-      const[extraPay,setExtraPay]=useState(0);
-      const ri=tin/100/ppy,np=yrs*ppy;
-      const cuotaOrig=ri===0?amt/np:(amt*ri*Math.pow(1+ri,np))/(Math.pow(1+ri,np)-1);
-      // Original totals
-      const origTotalPaid=cuotaOrig*np;
-      const origTotalInterest=origTotalPaid-amt;
-      // With extra payment
-      const cuotaExtra=cuotaOrig+(extraPay||0);
-      let balExtra=amt,monthsExtra=0,totalInterestExtra=0;
-      while(balExtra>0.01&&monthsExtra<np*2){
-        const intPay=balExtra*ri;
-        const prinPay=Math.min(balExtra,cuotaExtra-intPay);
-        if(prinPay<=0)break;
-        totalInterestExtra+=intPay;
-        balExtra-=prinPay;
-        monthsExtra++;
-      }
-      const yearsExtra=Math.ceil(monthsExtra/12*10)/10;
-      const origYears=yrs;
-      const yearsSaved=Math.max(0,origYears-yearsExtra);
-      const interestSaved=Math.max(0,origTotalInterest-totalInterestExtra);
-
-      return<Cd style={{marginTop:16,marginBottom:16}}>
-        <ST icon="🔮" sub="Simula pagos extra mensuales">What-If: Pago Extra</ST>
-        <div style={{marginBottom:14}}>
-          <Lb>Pago extra mensual (zł)</Lb>
-          <input type="number" value={extraPay||""} onChange={e=>setExtraPay(Number(e.target.value)||0)} style={{width:160}} placeholder="0"/>
-        </div>
-        {extraPay>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
-          <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Original</div><div style={{fontSize:14,fontWeight:700,color:C.rd,...mn}}>{origYears} años</div><div style={{fontSize:10,color:C.tm}}>Intereses: {fmt(Math.round(origTotalInterest))} zł</div></div>
-          <div style={{padding:10,borderRadius:8,background:C.gd,textAlign:"center",borderLeft:`3px solid ${C.gn}`}}><div style={{fontSize:9,color:C.tm}}>Con extra +{fmt(extraPay)} zł/mes</div><div style={{fontSize:14,fontWeight:700,color:C.gn,...mn}}>{yearsExtra} años</div><div style={{fontSize:10,color:C.tm}}>Intereses: {fmt(Math.round(totalInterestExtra))} zł</div></div>
-          <div style={{padding:10,borderRadius:8,background:C.ad,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Te ahorras</div><div style={{fontSize:14,fontWeight:700,color:C.ac,...mn}}>{yearsSaved.toFixed(1)} años</div><div style={{fontSize:10,color:C.gn,fontWeight:600}}>{fmt(Math.round(interestSaved))} zł</div></div>
-        </div>}
-        {!extraPay&&<div style={{textAlign:"center",padding:16,color:C.tm,fontSize:12}}>Introduce un pago extra para ver el impacto</div>}
-      </Cd>;
-    })()}
+    <WhatIfExtraPayment tin={tin} yrs={yrs} amt={amt}/>
   </div>;
+}
+
+function WhatIfExtraPayment({tin,yrs,amt}){
+  const[extraPay,setExtraPay]=useState(0);
+  const ppy=12;
+  const ri=tin/100/ppy,np=yrs*ppy;
+  const cuotaOrig=ri===0?amt/np:(amt*ri*Math.pow(1+ri,np))/(Math.pow(1+ri,np)-1);
+  const origTotalPaid=cuotaOrig*np;
+  const origTotalInterest=origTotalPaid-amt;
+  const cuotaExtra=cuotaOrig+(extraPay||0);
+  let balExtra=amt,monthsExtra=0,totalInterestExtra=0;
+  while(balExtra>0.01&&monthsExtra<np*2){
+    const intPay=balExtra*ri;
+    const prinPay=Math.min(balExtra,cuotaExtra-intPay);
+    if(prinPay<=0)break;
+    totalInterestExtra+=intPay;
+    balExtra-=prinPay;
+    monthsExtra++;
+  }
+  const yearsExtra=Math.ceil(monthsExtra/12*10)/10;
+  const origYears=yrs;
+  const yearsSaved=Math.max(0,origYears-yearsExtra);
+  const interestSaved=Math.max(0,origTotalInterest-totalInterestExtra);
+  return<Cd style={{marginTop:16,marginBottom:16}}>
+    <ST icon="🔮" sub="Simula pagos extra mensuales">What-If: Pago Extra</ST>
+    <div style={{marginBottom:14}}>
+      <Lb>Pago extra mensual (zł)</Lb>
+      <input type="number" value={extraPay||""} onChange={e=>setExtraPay(Number(e.target.value)||0)} style={{width:160}} placeholder="0"/>
+    </div>
+    {extraPay>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
+      <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Original</div><div style={{fontSize:14,fontWeight:700,color:C.rd,...mn}}>{origYears} años</div><div style={{fontSize:10,color:C.tm}}>Intereses: {fmt(Math.round(origTotalInterest))} zł</div></div>
+      <div style={{padding:10,borderRadius:8,background:C.gd,textAlign:"center",borderLeft:`3px solid ${C.gn}`}}><div style={{fontSize:9,color:C.tm}}>Con extra +{fmt(extraPay)} zł/mes</div><div style={{fontSize:14,fontWeight:700,color:C.gn,...mn}}>{yearsExtra} años</div><div style={{fontSize:10,color:C.tm}}>Intereses: {fmt(Math.round(totalInterestExtra))} zł</div></div>
+      <div style={{padding:10,borderRadius:8,background:C.ad,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Te ahorras</div><div style={{fontSize:14,fontWeight:700,color:C.ac,...mn}}>{yearsSaved.toFixed(1)} años</div><div style={{fontSize:10,color:C.gn,fontWeight:600}}>{fmt(Math.round(interestSaved))} zł</div></div>
+    </div>}
+    {!extraPay&&<div style={{textAlign:"center",padding:16,color:C.tm,fontSize:12}}>Introduce un pago extra para ver el impacto</div>}
+  </Cd>;
 }
 
 function M4(){
@@ -1417,7 +1433,7 @@ function M6(){
   const[age,sAge]=useLocalData("mcAge",35);const[retAge,sRet]=useLocalData("mcRetAge",65);const[lifeExp,sLife]=useLocalData("mcLifeExp",90);
   const[assets2026]=useLocalData("assets",D_AS);const[debts2026]=useLocalData("debts",D_DB);
   const[mcExclIliq,setMcExclIliq]=useLocalData("mcExclIliq",false);
-  const autoPat=useMemo(()=>{for(let i=9;i>=0;i--){const tA=assets2026.filter(a=>!mcExclIliq||(a.type==="efectivo"||a.type==="inversión")).reduce((s,a)=>s+(a.values?.[i]||0),0);const tD=debts2026.reduce((s,d)=>s+(d.values?.[i]||0),0);const net=tA-tD;if(net>0)return net}return 0},[assets2026,debts2026,mcExclIliq]);
+  const autoPat=useMemo(()=>{const maxIdx=Math.max(...assets2026.map(a=>(a.values?.length||0)-1),...debts2026.map(d=>(d.values?.length||0)-1),0);for(let i=maxIdx;i>=0;i--){const tA=assets2026.filter(a=>!mcExclIliq||(a.type==="efectivo"||a.type==="inversión")).reduce((s,a)=>s+(a.values?.[i]||0),0);const tD=debts2026.reduce((s,d)=>s+(d.values?.[i]||0),0);const net=tA-tD;if(net>0)return net}return 0},[assets2026,debts2026,mcExclIliq]);
   const[initP,sInit]=useLocalData("mcInitP",0);const[mContr,sMC]=useLocalData("mcContr",0);
   const[mWith,sMW]=useLocalData("mcWith",1500);const[meanR,sMR]=useLocalData("mcMeanR",7);const[vol,sVol]=useLocalData("mcVol",15);
   const[nSims,sNS]=useState(300);const[res,setRes]=useState(null);const[running,sRun]=useState(false);
@@ -1529,7 +1545,7 @@ function M7(){
   const[adjInf,setInf]=useLocalData("m7Inf",false);const[infRate,sInfR]=useLocalData("m7InfR",2.5);
   const[savedPlan,setSavedPlan]=useLocalData("m7Saved",null);
   const[assets2]=useLocalData("assets",D_AS);const[debts2]=useLocalData("debts",D_DB);
-  const autoPat=useMemo(()=>{for(let i=9;i>=0;i--){const tA=assets2.reduce((s,a)=>s+(a.values?.[i]||0),0);const tD=debts2.reduce((s,d)=>s+(d.values?.[i]||0),0);if(tA-tD>0)return tA-tD}return 0},[assets2,debts2]);
+  const autoPat=useMemo(()=>{const maxIdx=Math.max(...assets2.map(a=>(a.values?.length||0)-1),...debts2.map(d=>(d.values?.length||0)-1),0);for(let i=maxIdx;i>=0;i--){const tA=assets2.reduce((s,a)=>s+(a.values?.[i]||0),0);const tD=debts2.reduce((s,d)=>s+(d.values?.[i]||0),0);if(tA-tD>0)return tA-tD}return 0},[assets2,debts2]);
   const safeMe7=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe7=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const totalMeY7=MO.map((_,m)=>safeMe7.reduce((s,rr)=>s+valMe(rr,m),0)).reduce((a,b)=>a+b,0);
