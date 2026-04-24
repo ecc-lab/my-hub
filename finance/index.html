@@ -379,12 +379,17 @@ function exportToExcel(includeData){
     ["1. Rellena las hojas con tus datos. NO cambies los nombres de las hojas ni las cabeceras."],
     ["2. En las hojas con columna 'Año', puedes poner varios años (un año por fila)."],
     ["3. Tipos de ingreso permitidos: Laboral, Inversión, Alquiler, Seguro, Dividendos, Otros"],
-    ["4. Tipos de gasto permitidos: Vivienda, Suministros, Suscripciones, Ocio, Salud, Vehículo, Alimentación, Restaurantes, Deuda, Vacaciones, Mascotas, Hijos, Cuidado Personal, Ropa, Regalos, Otros"],
+    ["4. Tipos de gasto permitidos: Vivienda, Suministros, Suscripciones, Ocio, Salud, Vehículo, Alimentación, Restaurantes, Deuda, Vacaciones, Mascotas, Hijos, Cuidado Personal, Ropa, Regalos, Otros (o tu lista en hoja 'Categorias')"],
     ["5. Tipos de activo permitidos: efectivo, inversión, pasivo"],
-    ["6. En las hojas Hipoteca, Jubilacion MC, Planificador y Otros: NO toques la columna 'Clave', solo edita la columna 'Valor'."],
+    ["6. En las hojas Hipoteca, Jubilacion MC, Planificador, Libertad Financiera y Otros: NO toques la columna 'Clave', solo edita la columna 'Valor'."],
     ["7. Para campos sí/no, escribe 'si' o 'no' en minúsculas."],
-    ["8. La columna Base en Ingresos y Gastos Mensuales representa el importe mensual esperado o típico. Si un mes concreto tiene valor, ese valor sobrescribe el Base para ese mes."],
-    ["9. Sube este Excel desde el dashboard con el botón 'Importar Excel'. Sustituirá tus datos actuales."],
+    ["8. La columna Base en Ingresos y Gastos Mensuales es el importe mensual típico. Si un mes concreto tiene valor (incluido 0 explícito), ese valor sobrescribe el Base para ese mes. Dejar el mes vacío hace que use el Base."],
+    ["9. Hojas extra opcionales:"],
+    ["   - Categorias: nombres de gasto y flag isFijo (si=fijo, no=variable). Sustituye los tipos por defecto."],
+    ["   - Crecimiento Proyectado: % de crecimiento futuro para la proyección de patrimonio (M2)."],
+    ["   - Eventos Jubilacion: gastos puntuales (ej. compra casa) en el simulador Monte Carlo."],
+    ["   - Objetivo Ahorro Anual: objetivo de ahorro mensual diferente por año."],
+    ["10. Sube este Excel desde el dashboard con el botón 'Importar Excel'. Sustituirá tus datos actuales."],
     [""],["Generado:",new Date().toLocaleString("pl-PL")],
   ];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(readme),"README");
@@ -394,10 +399,10 @@ function exportToExcel(includeData){
   const allYears=new Set([...Object.keys(incHist),...Object.keys(meHist),...Object.keys(aeHist)].map(Number).filter(y=>y>0));
   if(allYears.size===0)allYears.add(cy);
   const years=[...allYears].sort();
-  // Ingresos
+  // Ingresos — null = vacío (usa Base), 0 = explícito
   const incH=["Año","Concepto","Tipo","Base",...MO];const incR=[];
-  if(includeData)years.forEach(y=>{(incHist[y]||[]).forEach(r=>incR.push([y,r.name,r.type||"Otros",r.base!=null?r.base:"",...r.amounts]))});
-  if(incR.length===0){incR.push([cy,"Nómina","Laboral",2000,...Array(12).fill(2000)]);incR.push([cy,"Dividendos","Inversión",0,...Array(12).fill(0)])}
+  if(includeData)years.forEach(y=>{(incHist[y]||[]).forEach(r=>incR.push([y,r.name,r.type||"Otros",r.base!=null?r.base:"",...(r.amounts||[]).map(v=>v==null?"":v)]))});
+  if(incR.length===0){incR.push([cy,"Nómina","Laboral",2000,...Array(12).fill("")]);incR.push([cy,"Dividendos","Inversión",0,...Array(12).fill("")])}
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([incH,...incR]),"Ingresos");
   // Gastos Mensuales
   const meH=["Año","Concepto","Tipo","Base",...MO];const meR=[];
@@ -461,11 +466,42 @@ function exportToExcel(includeData){
     ["ajustar_inflacion",get("m7Inf",false)?"si":"no"],
     ["inflacion_pct",get("m7InfR",2.5)],
   ]),"Planificador");
-  // Otros
+  // Otros (config global)
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
     ["Clave","Valor"],
     ["objetivo_ahorro_mensual",get("savingsGoal",400)],
+    ["mc_excluir_iliquidos",get("mcExclIliq",false)?"si":"no"],
   ]),"Otros");
+  // Libertad Financiera (M4) - opcional, sobreescribe valores auto
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ["Clave","Valor"],
+    ["ingreso_anual",get("gI",0)],
+    ["gasto_anual",get("gE",0)],
+    ["patrimonio_inicial",get("gP",0)],
+    ["rendimiento_pct",get("gR",5)],
+  ]),"Libertad Financiera");
+  // Categorias de gasto (custom)
+  const expTypes=get("expTypes",EXP_TYPES_DEFAULT);
+  const ctR=[["Nombre","Fijo (si/no)"]];
+  (Array.isArray(expTypes)?expTypes:EXP_TYPES_DEFAULT).forEach(t=>ctR.push([t.name,t.isFijo?"si":"no"]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(ctR),"Categorias");
+  // Crecimiento Proyectado (M2) - % por año
+  const pg=get("projGrowth",[]);
+  const pgR=[["Año","Pct"]];
+  PAT_YEARS.forEach((y,i)=>pgR.push([y,Array.isArray(pg)&&pg[i]?(pg[i].pct||5):5]));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(pgR),"Crecimiento Proyectado");
+  // Eventos Jubilacion (M6) - gastos puntuales
+  const ev=get("mcEvents",[]);
+  const evR=[["Nombre","Edad","Importe"]];
+  (Array.isArray(ev)?ev:[]).forEach(e=>evR.push([e.name||"",e.age||0,e.amount||0]));
+  if(evR.length===1)evR.push(["Compra coche",45,30000]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(evR),"Eventos Jubilacion");
+  // Objetivo Ahorro Anual - opcional, sobreescribe el de "Otros" para años específicos
+  const sgH=get("sgHistory",{});
+  const sgR=[["Año","Objetivo Mensual"]];
+  Object.keys(sgH).sort().forEach(y=>sgR.push([Number(y),sgH[y]||0]));
+  if(sgR.length===1)sgR.push([cy,get("savingsGoal",400)]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sgR),"Objetivo Ahorro Anual");
   const fname=includeData?`vdb_finance_backup_${new Date().toISOString().split("T")[0]}.xlsx`:"vdb_finance_plantilla.xlsx";
   XLSX.writeFile(wb,fname);
 }
@@ -487,7 +523,7 @@ if(file.size>5*1024*1024)throw new Error("Archivo demasiado grande (max 5MB)");
       const year=Number(row[0]);const name=String(row[1]||"").trim();const type=String(row[2]||"Otros").trim();
       if(!year||!name)return;
       const base=hasIncBase&&row[3]!=null&&row[3]!==""?(Number(row[3])||null):null;
-      const amounts=MO.map((_,i)=>Number(row[incMonthStart+i])||0);
+      const amounts=MO.map((_,i)=>{const v=row[incMonthStart+i];return v!=null&&v!==""?(Number(v)||0):null});
       if(!incHist[year])incHist[year]=[];
       incHist[year].push({name,type,base,amounts});
       const k=name+"|"+type;if(!seen.has(k)){seen.add(k);incMaster.push({name,type})}
@@ -559,7 +595,33 @@ if(file.size>5*1024*1024)throw new Error("Archivo demasiado grande (max 5MB)");
   if(readConfig("Hipoteca",{precio_vivienda:{key:"hPP"},entrada_pct:{key:"hDP"},tin_pct:{key:"hT"},plazo_anios:{key:"hY"},cuota_min:{key:"hMn"},cuota_max:{key:"hMx"}}))summary.push("Hipoteca");
   if(readConfig("Jubilacion MC",{edad_actual:{key:"mcAge"},edad_jubilacion:{key:"mcRetAge"},esperanza_vida:{key:"mcLifeExp"},patrimonio_inicial:{key:"mcInitP"},aportacion_mensual:{key:"mcContr"},retirada_mensual:{key:"mcWith"},rendimiento_medio_pct:{key:"mcMeanR"},volatilidad_pct:{key:"mcVol"},ajustar_inflacion:{key:"mcInf",type:"bool"},inflacion_pct:{key:"mcInfR"}}))summary.push("Jubilación MC");
   if(readConfig("Planificador",{edad_actual:{key:"m7Age"},edad_jubilacion:{key:"m7RetAge"},esperanza_vida:{key:"m7LifeExp"},patrimonio_actual:{key:"m7Pat"},acumulacion_anual:{key:"m7Accum"},gasto_mensual_jubilacion:{key:"m7Need"},rendimiento_jubilacion_pct:{key:"m7RetReturn"},ajustar_inflacion:{key:"m7Inf",type:"bool"},inflacion_pct:{key:"m7InfR"}}))summary.push("Planificador");
-  if(readConfig("Otros",{objetivo_ahorro_mensual:{key:"savingsGoal"}}))summary.push("Objetivo ahorro");
+  if(readConfig("Otros",{objetivo_ahorro_mensual:{key:"savingsGoal"},mc_excluir_iliquidos:{key:"mcExclIliq",type:"bool"}}))summary.push("Otros");
+  if(readConfig("Libertad Financiera",{ingreso_anual:{key:"gI"},gasto_anual:{key:"gE"},patrimonio_inicial:{key:"gP"},rendimiento_pct:{key:"gR"}}))summary.push("Libertad Financiera");
+  // Categorias de gasto (custom)
+  const ctData=readSheet("Categorias");
+  if(ctData.length>1){
+    const types=ctData.slice(1).map(row=>{const name=String(row[0]||"").trim();const fijoStr=String(row[1]||"").toLowerCase();return name?{name,isFijo:fijoStr==="si"||fijoStr==="sí"||fijoStr==="true"||fijoStr==="1"}:null}).filter(Boolean);
+    if(types.length>0){set("expTypes",types);summary.push("Categorías: "+types.length)}
+  }
+  // Crecimiento Proyectado por año (M2)
+  const pgData=readSheet("Crecimiento Proyectado");
+  if(pgData.length>1){
+    const map={};pgData.slice(1).forEach(row=>{const y=Number(row[0]);const v=Number(row[1]);if(y>0&&!isNaN(v))map[y]=v});
+    const arr=PAT_YEARS.map(y=>({pct:map[y]!=null?map[y]:5}));
+    set("projGrowth",arr);summary.push("Crecimiento proyectado");
+  }
+  // Eventos Jubilacion (M6)
+  const evData=readSheet("Eventos Jubilacion");
+  if(evData.length>1){
+    const events=evData.slice(1).map(row=>{const n=String(row[0]||"").trim();const a=Number(row[1])||0;const am=Number(row[2])||0;return n?{name:n,age:a,amount:am}:null}).filter(Boolean);
+    if(events.length>0){set("mcEvents",events);summary.push("Eventos jubilación: "+events.length)}
+  }
+  // Objetivo Ahorro Anual (sgHistory)
+  const sgData=readSheet("Objetivo Ahorro Anual");
+  if(sgData.length>1){
+    const map={};sgData.slice(1).forEach(row=>{const y=Number(row[0]);const v=Number(row[1]);if(y>0&&!isNaN(v))map[y]=v});
+    if(Object.keys(map).length>0){set("sgHistory",map);summary.push("Objetivos ahorro: "+Object.keys(map).length+" años")}
+  }
   set("onboarded",true);
   return summary;
 }
