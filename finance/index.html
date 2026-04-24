@@ -47,6 +47,10 @@ var _financeCloudReady=false;
 const{useState,useMemo,useEffect,useCallback,useRef,createContext,useContext}=React;
 const C={bg:"#f1f5f9",sf:"#ffffff",sa:"#f8fafc",bd:"#e2e8f0",bh:"#cbd5e1",ac:"#0ea5e9",ad:"rgba(14,165,233,0.08)",ag:"rgba(14,165,233,0.2)",gn:"#16a34a",gd:"rgba(22,163,74,0.08)",gb:"rgba(22,163,74,0.25)",rd:"#dc2626",rdd:"rgba(220,38,38,0.08)",rb:"rgba(220,38,38,0.25)",am:"#d97706",amd:"rgba(217,119,6,0.08)",bl:"#2563eb",bld:"rgba(37,99,235,0.08)",blb:"rgba(37,99,235,0.25)",tx:"#1e293b",td:"#475569",tm:"#94a3b8",w:"#fff",pu:"#7c3aed"};
 const MO=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+// Global value helpers — respect explicit 0 in amounts/real
+const valInc=(r,m)=>r.amounts?.[m]!=null?r.amounts[m]:(r.base??0);
+const valMe=(r,m)=>r.real?.[m]!=null?r.real[m]:(r.monthly||0);
+const valAe=(r,m)=>r.real?.[m]!=null?r.real[m]:((r.annual||0)/12);
 const fmt=(n,d=0)=>{if(n==null||isNaN(n))return"0";return Number(n).toLocaleString("pl-PL",{minimumFractionDigits:d,maximumFractionDigits:d})};
 const fP=(n,d=1)=>{if(n==null||isNaN(n))return"0%";return(Number(n)*100).toFixed(d)+"%"};
 const mn={fontFamily:"'JetBrains Mono',monospace"};
@@ -456,13 +460,12 @@ function MisDatosCard(){
 function M0(){
   const{income:inc,monthlyExp:me,annualExp:ae,savingsGoal:sg,selYear,setYear,YEARS}=useContext(Ctx);
   const[savedHip]=useLocalData("hipScenario",null);
-  const incVal=(r,m)=>r.amounts[m]||r.base||0;
-  const tIM0=MO.map((_,m)=>inc.reduce((s,r)=>s+incVal(r,m),0));
+  const tIM0=MO.map((_,m)=>inc.reduce((s,r)=>s+valInc(r,m),0));
   const tIY=tIM0.reduce((a,b)=>a+b,0);
   const safeMe0=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe0=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
-  const tMeM0=MO.map((_,m)=>safeMe0.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0));
-  const tAeM0=MO.map((_,m)=>safeAe0.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0));
+  const tMeM0=MO.map((_,m)=>safeMe0.reduce((s,r)=>s+valMe(r,m),0));
+  const tAeM0=MO.map((_,m)=>safeAe0.reduce((s,r)=>s+valAe(r,m),0));
   const tMeY=tMeM0.reduce((a,b)=>a+b,0);
   const tAeY=tAeM0.reduce((a,b)=>a+b,0);
   const tEY=tMeY+tAeY;
@@ -487,7 +490,7 @@ function M0(){
 
   // Waterfall data
   const FIJO_TYPES=["Vivienda","Suministros","Suscripciones","Deuda"];
-  const gastosFijos=MO.map((_,m)=>safeMe0.filter(r=>FIJO_TYPES.includes(r.type)).reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0)).reduce((a,b)=>a+b,0);
+  const gastosFijos=MO.map((_,m)=>safeMe0.filter(r=>FIJO_TYPES.includes(r.type)).reduce((s,r)=>s+valMe(r,m),0)).reduce((a,b)=>a+b,0);
   const gastosVar=tMeY-gastosFijos;
   const ahorroCF=tIY-gastosFijos-gastosVar-tAeY;
 
@@ -655,10 +658,9 @@ function M1(){
   const safeMe=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
 
-  const incVal1=(r,m)=>r.amounts[m]||r.base||0;
-  const tIM=MO.map((_,m)=>inc.reduce((s,r)=>s+incVal1(r,m),0));
-  const tMeM=MO.map((_,m)=>safeMe.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0));
-  const tAeM=MO.map((_,m)=>safeAe.reduce((s,r)=>{const v=r.real&&r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0));
+  const tIM=MO.map((_,m)=>inc.reduce((s,r)=>s+valInc(r,m),0));
+  const tMeM=MO.map((_,m)=>safeMe.reduce((s,r)=>s+valMe(r,m),0));
+  const tAeM=MO.map((_,m)=>safeAe.reduce((s,r)=>s+valAe(r,m),0));
   const rM=MO.map((_,m)=>tIM[m]-tMeM[m]-tAeM[m]);
   const tIY=tIM.reduce((a,b)=>a+b,0),tMeY=tMeM.reduce((a,b)=>a+b,0),tAeY=tAeM.reduce((a,b)=>a+b,0),tEY=tMeY+tAeY,rY=tIY-tEY;
   const sr=tIY>0?rY/tIY:0;
@@ -719,8 +721,8 @@ function M1(){
           <td style={{padding:"2px 4px"}}><input type="text" value={r.name} onChange={e=>syncIncMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:"100%"}}/></td>
           <td style={{padding:"1px"}}><select value={r.type||"Otros"} onChange={e=>syncIncMeta(idx,"type",e.target.value)} style={{fontSize:9,padding:"4px 2px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:"100%"}}>{INC_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></td>
           <td style={{padding:"1px"}}><input type="number" value={r.base!=null?r.base:""} placeholder="—" onChange={e=>{const v=Number(e.target.value)||0;const n=[...inc];n[idx]={...n[idx],base:v,amounts:Array(12).fill(v)};sI(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
-          {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><input type="number" value={r.amounts[m]||""} onChange={e=>{const n=[...inc];n[idx]={...n[idx],amounts:[...n[idx].amounts]};n[idx].amounts[m]=Number(e.target.value)||0;sI(n)}} style={{width:"100%",padding:"5px 3px"}}/></td>)}
-          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.gn}}>{fmt(MO.reduce((s,_,m)=>s+(r.amounts[m]||r.base||0),0))}</td>
+          {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><input type="number" value={r.amounts?.[m]!=null?r.amounts[m]:""} onChange={e=>{const n=[...inc];n[idx]={...n[idx],amounts:[...n[idx].amounts]};n[idx].amounts[m]=e.target.value===""?null:Number(e.target.value);sI(n)}} style={{width:"100%",padding:"5px 3px"}}/></td>)}
+          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.gn}}>{fmt(MO.reduce((s,_,m)=>s+valInc(r,m),0))}</td>
           <td><Xb onClick={()=>delIncRow(idx)}/></td>
         </tr>)}
         <tr style={{borderTop:`2px solid ${C.bd}`}}><td></td><td style={{padding:"8px 4px",fontWeight:700}}>TOTAL</td><td></td><td></td>{tIM.map((v,i)=><td key={i} style={{padding:"8px 2px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(v)}</td>)}<td style={{padding:"8px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:700,color:C.gn}}>{fmt(tIY)}</td><td></td></tr>
@@ -744,7 +746,7 @@ function M1(){
           <td style={{padding:"1px"}}><select value={r.type||"Otros"} onChange={e=>syncMeMeta(idx,"type",e.target.value)} style={{fontSize:9,padding:"4px 2px",borderRadius:5,border:`1px solid ${C.bd}`,background:C.sa,color:C.td,cursor:"pointer",width:"100%"}}>{EXP_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></td>
           <td style={{padding:"1px"}}><input type="number" value={r.monthly||""} onChange={e=>{const n=[...safeMe];const v=Number(e.target.value)||0;n[idx]={...n[idx],monthly:v,real:Array(12).fill(null)};sM(n)}} style={{width:"100%",background:C.amd,borderColor:C.am,fontWeight:600,padding:"5px 3px"}}/></td>
           {MO.map((_,m)=><td key={m} style={{padding:"1px"}}><input type="number" placeholder={r.monthly} value={real[m]!=null?real[m]:""} onChange={e=>{const n=[...safeMe];const nr=[...(n[idx].real||Array(12).fill(null))];nr[m]=e.target.value===""?null:Number(e.target.value)||0;n[idx]={...n[idx],real:nr};sM(n)}} style={{width:"100%",fontSize:12,padding:"5px 3px"}}/></td>)}
-          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.rd}}>{fmt(MO.reduce((s,_,m)=>s+(real[m]!=null?real[m]:r.monthly),0))}</td>
+          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.rd}}>{fmt(MO.reduce((s,_,m)=>s+valMe(r,m),0))}</td>
           <td><Xb onClick={()=>delMeRow(idx)}/></td>
         </tr>})}
         <tr style={{borderTop:`2px solid ${C.bd}`}}><td></td><td style={{padding:"8px 4px",fontWeight:700}}>TOTAL</td><td></td><td></td>
@@ -773,7 +775,7 @@ function M1(){
           <td style={{padding:"3px 4px",position:"sticky",left:0,background:C.sf}}><input type="text" value={r.name} onChange={e=>syncAeMeta(idx,"name",e.target.value)} style={{background:"transparent",border:"none",color:C.tx,padding:0,fontSize:11,width:95}}/></td>
           <td style={{padding:"2px"}}><input type="number" value={r.annual||""} onChange={e=>{const n=[...safeAe];n[idx]={...n[idx],annual:Number(e.target.value)||0};sA(n)}} style={{width:58,background:C.amd,borderColor:C.am}}/></td>
           {MO.map((_,m)=><td key={m} style={{padding:"2px"}}><input type="number" placeholder={fmt(r.annual/12,0)} value={rl[m]!=null?rl[m]:""} onChange={e=>{const n=[...safeAe];const nr=[...(n[idx].real||Array(12).fill(null))];nr[m]=e.target.value===""?null:Number(e.target.value)||0;n[idx]={...n[idx],real:nr};sA(n)}} style={{width:56}}/></td>)}
-          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.rd}}>{fmt(MO.reduce((s,_,m)=>s+(rl[m]!=null?rl[m]:r.annual/12),0))}</td>
+          <td style={{padding:"3px 4px",textAlign:"right",...mn,fontSize:12,fontWeight:600,color:C.rd}}>{fmt(MO.reduce((s,_,m)=>s+valAe(r,m),0))}</td>
           <td><Xb onClick={()=>delAeRow(idx)}/></td>
         </tr>})}
       </tbody></table>}
@@ -786,7 +788,7 @@ function M1b(){
   const{monthlyExp:me,annualExp:ae,selYear,meHist,aeHist}=useContext(Ctx);
   const FIJO=["Vivienda","Suministros","Suscripciones","Deuda"];
   const safeMe=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
-  const val=(r,m)=>r.real[m]!=null?r.real[m]:r.monthly;
+  const val=(r,m)=>valMe(r,m);
 
   // --- Heatmap data by type x month ---
   const heatByType=useMemo(()=>{
@@ -809,10 +811,10 @@ function M1b(){
   const pctVar=totalAll>0?totalVar/totalAll:0;
 
   // --- MoM ---
-  const lastMonth=useMemo(()=>{for(let m=11;m>=0;m--){const has=safeMe.some(r=>r.real[m]!=null)||safeMe.some(r=>r.monthly>0);if(has)return m}return new Date().getMonth()},[safeMe]);
-  const prevMonth=lastMonth>0?lastMonth-1:null;
+  const lastMonth=useMemo(()=>{for(let m=11;m>=0;m--){if(safeMe.some(r=>r.real?.[m]!=null))return m}return -1},[safeMe]);
+  const prevMonth=lastMonth>0?lastMonth-1:-1;
   const momData=useMemo(()=>{
-    if(prevMonth==null)return[];
+    if(lastMonth<0||prevMonth<0)return[];
     return EXP_TYPES.map(t=>{
       const cur=safeMe.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+val(r,lastMonth),0);
       const prev=safeMe.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+val(r,prevMonth),0);
@@ -820,7 +822,7 @@ function M1b(){
       return{type:t,cur,prev,delta,pct};
     }).filter(d=>d.cur>0||d.prev>0);
   },[safeMe,lastMonth,prevMonth]);
-  const momBadge=(pct)=>{if(pct<=-0.001)return{c:C.gn,bg:C.gd,l:"Baja"};if(pct>0.10)return{c:C.rd,bg:C.rdd,l:"Sube"};return{c:C.am,bg:C.amd,l:"Estable"}};
+  const momBadge=(pct)=>{if(pct<=-0.05)return{c:C.gn,bg:C.gd,l:"Baja"};if(pct>=0.05)return{c:C.rd,bg:C.rdd,l:"Sube"};return{c:C.am,bg:C.amd,l:"Estable"}};
 
   // --- YoY ---
   const prevYear=selYear-1;
@@ -831,7 +833,7 @@ function M1b(){
       const curMe=safeMe.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+MO.reduce((ss,_,m)=>ss+val(r,m),0),0);
       const curAe=ae.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+(r.annual||0),0);
       const cur=curMe+curAe;
-      const pMe=prevMeRaw.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>{const rl=r.real||Array(12).fill(null);return s+MO.reduce((ss,_,m)=>ss+(rl[m]!=null?rl[m]:(r.monthly||0)),0)},0);
+      const pMe=prevMeRaw.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+MO.reduce((ss,_,m)=>ss+valMe(r,m),0),0);
       const pAe=prevAeRaw.filter(r=>(r.type||"Otros")===t).reduce((s,r)=>s+(r.annual||0),0);
       const prev=pMe+pAe;
       const delta=cur-prev;const pct=prev>0?delta/prev:cur>0?1:0;
@@ -906,8 +908,8 @@ function M1b(){
 
     {/* C) MoM */}
     <Cd style={{marginBottom:16}}>
-      <ST icon="📅" sub={prevMonth!=null?`${MO[prevMonth]} → ${MO[lastMonth]}`:""}>{`Comparador MoM (${selYear})`}</ST>
-      {momData.length>0?<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+      <ST icon="📅" sub={prevMonth>=0?`${MO[prevMonth]} → ${MO[lastMonth]}`:""}>{`Comparador MoM (${selYear})`}</ST>
+      {lastMonth<0||prevMonth<0?<div style={{textAlign:"center",padding:20,color:C.tm,fontSize:12}}>Rellena al menos 2 meses reales para comparar MoM.</div>:momData.length>0?<table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
         <thead><tr><th style={{...th,textAlign:"left"}}>Categoría</th><th style={th}>{MO[prevMonth]}</th><th style={th}>{MO[lastMonth]}</th><th style={th}>Δ</th><th style={th}>%</th><th style={th}>Estado</th></tr></thead>
         <tbody>{momData.map(d=>{const b=momBadge(d.pct);return<tr key={d.type} style={{borderBottom:`1px solid ${C.bg}`}}>
           <td style={{padding:"5px 6px",fontWeight:600}}>{d.type}</td>
@@ -1124,7 +1126,8 @@ function M3(){
     {p:"2011",v:2.010},{p:"2012",v:1.110},{p:"2013",v:0.536},{p:"2014",v:0.483},{p:"2015",v:0.168},{p:"2016",v:-0.034},
     {p:"2017",v:-0.149},{p:"2018",v:-0.169},{p:"2019",v:-0.252},{p:"2020",v:-0.299},{p:"2021",v:-0.487},{p:"2022",v:0.991},
     {p:"2023 prom",v:3.866},{p:"2024 prom",v:3.319},{p:"2025 prom",v:2.220},
-    {p:"Ene 26",v:2.290},{p:"Feb 26",v:2.221},{p:"Mar 26",v:2.446}
+    {p:"Ene 26",v:2.290},{p:"Feb 26",v:2.221},{p:"Mar 26",v:2.565},{p:"Abr 26",v:2.740}
+    // Fuente: euribor.com.es (media mensual provisional)
   ];
   const[euriborData]=useState(EURIBOR_HIST);
   const lastEuribor=euriborData[euriborData.length-1];
@@ -1192,7 +1195,7 @@ function M3(){
 
     <Cd style={{marginTop:16}}>
       <ST icon="🏦">¿Me dará el banco la hipoteca?</ST>
-      {(()=>{const{income:inc}=allCtx;const tIMon=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||r.base||0),0));const avgMon=tIMon.reduce((a,b)=>a+b,0)/12;const cuota=calc(amt,tin,yrs,ppy);const ratio=avgMon>0?cuota/avgMon:0;const pct=(ratio*100).toFixed(1);const ok=ratio<=0.35;
+      {(()=>{const{income:inc}=allCtx;const tIMon=MO.map((_,m)=>inc.reduce((s,r)=>s+valInc(r,m),0));const avgMon=tIMon.reduce((a,b)=>a+b,0)/12;const cuota=calc(amt,tin,yrs,ppy);const ratio=avgMon>0?cuota/avgMon:0;const pct=(ratio*100).toFixed(1);const ok=ratio<=0.35;
         const maxCuota=avgMon*0.35;const ri2=tin/100/ppy;const np2=yrs*ppy;const maxHip=ri2>0?maxCuota*(Math.pow(1+ri2,np2)-1)/(ri2*Math.pow(1+ri2,np2)):maxCuota*np2;
         const maxProperty=dpPct>0?maxHip/(1-dpPct/100):maxHip;const entradaNec=maxProperty-maxHip;
         return<div>
@@ -1222,9 +1225,11 @@ function M3(){
       // Build amortization schedule
       const amort=[];let balance=amt,cumPrincipal=0,cumInterest=0;
       for(let m=1;m<=np;m++){
-        const intPay=balance*ri;const prinPay=cuota-intPay;balance=Math.max(0,balance-prinPay);
-        cumPrincipal+=prinPay;cumInterest+=intPay;
-        amort.push({month:m,interest:intPay,principal:prinPay,cumPrincipal,cumInterest,balance});
+        const intPay=balance*ri;const prinPay=cuota-intPay;
+        const prinPayReal=Math.min(prinPay,balance);
+        balance=Math.max(0,balance-prinPayReal);
+        cumPrincipal+=prinPayReal;cumInterest+=intPay;
+        amort.push({month:m,interest:intPay,principal:prinPayReal,cumPrincipal,cumInterest,balance});
       }
       const totalInterest=cumInterest;
       const paidPct=amt>0?cumPrincipal/amt:0;
@@ -1323,10 +1328,10 @@ function M3(){
 
 function M4(){
   const{income:inc,monthlyExp:me,annualExp:ae}=useContext(Ctx);
-  const autoI=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||r.base||0),0)).reduce((a,b)=>a+b,0);
+  const autoI=MO.map((_,m)=>inc.reduce((s,r)=>s+valInc(r,m),0)).reduce((a,b)=>a+b,0);
   const safeMe4=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe4=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
-  const autoE=MO.map((_,m)=>safeMe4.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0)).reduce((a,b)=>a+b,0)+MO.map((_,m)=>safeAe4.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
+  const autoE=MO.map((_,m)=>safeMe4.reduce((s,r)=>s+valMe(r,m),0)).reduce((a,b)=>a+b,0)+MO.map((_,m)=>safeAe4.reduce((s,r)=>s+valAe(r,m),0)).reduce((a,b)=>a+b,0);
   const[aI,sAI]=useLocalData("gI",autoI);const[aE,sAE]=useLocalData("gE",autoE);
   const[iP,sIP]=useLocalData("gP",0);const[aR,sAR]=useLocalData("gR",5);
   useEffect(()=>{if(autoI>0)sAI(autoI)},[autoI]);
@@ -1405,9 +1410,9 @@ function M6(){
   const{income:inc,monthlyExp:me,annualExp:ae}=useContext(Ctx);
   const safeMe6=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe6=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
-  const totalMeY6=MO.map((_,m)=>safeMe6.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.monthly;return s+v},0)).reduce((a,b)=>a+b,0);
-  const totalAeY6=MO.map((_,m)=>safeAe6.reduce((s,r)=>{const v=r.real[m]!=null?r.real[m]:r.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
-  const autoSavM=MO.map((_,m)=>inc.reduce((s,r)=>s+(r.amounts[m]||r.base||0),0)).reduce((a,b)=>a+b,0)/12-((totalMeY6+totalAeY6)/12);
+  const totalMeY6=MO.map((_,m)=>safeMe6.reduce((s,r)=>s+valMe(r,m),0)).reduce((a,b)=>a+b,0);
+  const totalAeY6=MO.map((_,m)=>safeAe6.reduce((s,r)=>s+valAe(r,m),0)).reduce((a,b)=>a+b,0);
+  const autoSavM=MO.map((_,m)=>inc.reduce((s,r)=>s+valInc(r,m),0)).reduce((a,b)=>a+b,0)/12-((totalMeY6+totalAeY6)/12);
   const[savedGoal,setSG]=useLocalData("mcGoal",null);
   const[age,sAge]=useLocalData("mcAge",35);const[retAge,sRet]=useLocalData("mcRetAge",65);const[lifeExp,sLife]=useLocalData("mcLifeExp",90);
   const[assets2026]=useLocalData("assets",D_AS);const[debts2026]=useLocalData("debts",D_DB);
@@ -1527,9 +1532,9 @@ function M7(){
   const autoPat=useMemo(()=>{for(let i=9;i>=0;i--){const tA=assets2.reduce((s,a)=>s+(a.values?.[i]||0),0);const tD=debts2.reduce((s,d)=>s+(d.values?.[i]||0),0);if(tA-tD>0)return tA-tD}return 0},[assets2,debts2]);
   const safeMe7=me.map(r=>({...r,real:r.real||Array(12).fill(null)}));
   const safeAe7=ae.map(r=>({...r,real:r.real||Array(12).fill(null)}));
-  const totalMeY7=MO.map((_,m)=>safeMe7.reduce((s,rr)=>{const v=rr.real[m]!=null?rr.real[m]:rr.monthly;return s+v},0)).reduce((a,b)=>a+b,0);
-  const totalAeY7=MO.map((_,m)=>safeAe7.reduce((s,rr)=>{const v=rr.real[m]!=null?rr.real[m]:rr.annual/12;return s+v},0)).reduce((a,b)=>a+b,0);
-  const autoSavM=MO.map((_,m)=>inc.reduce((s,rr)=>s+(rr.amounts[m]||rr.base||0),0)).reduce((a,b)=>a+b,0)/12-((totalMeY7+totalAeY7)/12);
+  const totalMeY7=MO.map((_,m)=>safeMe7.reduce((s,rr)=>s+valMe(rr,m),0)).reduce((a,b)=>a+b,0);
+  const totalAeY7=MO.map((_,m)=>safeAe7.reduce((s,rr)=>s+valAe(rr,m),0)).reduce((a,b)=>a+b,0);
+  const autoSavM=MO.map((_,m)=>inc.reduce((s,rr)=>s+valInc(rr,m),0)).reduce((a,b)=>a+b,0)/12-((totalMeY7+totalAeY7)/12);
   const loadFromData=()=>{if(autoPat>0)sCP(autoPat);if(autoSavM>0)sAA(Math.round(autoSavM*12))};
 
   const yrsToRet=Math.max(0,retAge-age);const yrsInRet=Math.max(0,lifeExp-retAge);
