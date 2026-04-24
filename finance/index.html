@@ -19,13 +19,23 @@
 <style>
 :root{
   --c-bg:#f1f5f9;--c-sf:#ffffff;--c-sa:#f8fafc;--c-bd:#e2e8f0;--c-bh:#cbd5e1;
-  --c-tx:#1e293b;--c-td:#475569;--c-tm:#94a3b8;
-  --c-ac:#0ea5e9;--c-gn:#16a34a;--c-rd:#dc2626;--c-am:#d97706;--c-bl:#2563eb;--c-pu:#7c3aed;
+  --c-tx:#1e293b;--c-td:#475569;--c-tm:#94a3b8;--c-w:#ffffff;
+  --c-ac:#0ea5e9;--c-ad:rgba(14,165,233,0.08);--c-ag:rgba(14,165,233,0.2);--c-ac30:rgba(14,165,233,0.19);--c-ac40:rgba(14,165,233,0.25);
+  --c-gn:#16a34a;--c-gd:rgba(22,163,74,0.08);--c-gb:rgba(22,163,74,0.25);
+  --c-rd:#dc2626;--c-rdd:rgba(220,38,38,0.08);--c-rb:rgba(220,38,38,0.25);
+  --c-am:#d97706;--c-amd:rgba(217,119,6,0.08);
+  --c-bl:#2563eb;--c-bld:rgba(37,99,235,0.08);--c-blb:rgba(37,99,235,0.25);
+  --c-pu:#7c3aed;
 }
 [data-theme="dark"]{
   --c-bg:#0b1220;--c-sf:#111a2e;--c-sa:#0f172a;--c-bd:#1e293b;--c-bh:#334155;
-  --c-tx:#e5edf7;--c-td:#aab8cc;--c-tm:#7a8699;
-  --c-ac:#38bdf8;--c-gn:#22c55e;--c-rd:#f87171;--c-am:#fbbf24;--c-bl:#60a5fa;--c-pu:#a78bfa;
+  --c-tx:#e5edf7;--c-td:#aab8cc;--c-tm:#7a8699;--c-w:#111a2e;
+  --c-ac:#38bdf8;--c-ad:rgba(56,189,248,0.1);--c-ag:rgba(56,189,248,0.2);--c-ac30:rgba(56,189,248,0.19);--c-ac40:rgba(56,189,248,0.25);
+  --c-gn:#22c55e;--c-gd:rgba(34,197,94,0.1);--c-gb:rgba(34,197,94,0.25);
+  --c-rd:#f87171;--c-rdd:rgba(248,113,113,0.1);--c-rb:rgba(248,113,113,0.25);
+  --c-am:#fbbf24;--c-amd:rgba(251,191,36,0.1);
+  --c-bl:#60a5fa;--c-bld:rgba(96,165,250,0.1);--c-blb:rgba(96,165,250,0.25);
+  --c-pu:#a78bfa;
 }
 html,body{background:var(--c-bg);color:var(--c-tx);}
 [data-theme="dark"] body{background:var(--c-bg)!important;}
@@ -35,14 +45,15 @@ html,body{background:var(--c-bg);color:var(--c-tx);}
 [data-theme="dark"] input,[data-theme="dark"] select,[data-theme="dark"] textarea{
   background:var(--c-sa)!important;color:var(--c-tx)!important;border-color:var(--c-bd)!important;
 }
-[data-theme="dark"] [style*="background: rgb(255, 255, 255)"],
-[data-theme="dark"] [style*="background:#fff"],
-[data-theme="dark"] [style*="background: #fff"],
-[data-theme="dark"] [style*="background:#ffffff"]{background:var(--c-sf)!important;}
-[data-theme="dark"] [style*="background: rgb(248, 250, 252)"],
-[data-theme="dark"] [style*="background:#f8fafc"]{background:var(--c-sa)!important;}
-[data-theme="dark"] [style*="color: rgb(30, 41, 59)"],
-[data-theme="dark"] [style*="color:#1e293b"]{color:var(--c-tx)!important;}
+[data-theme="dark"] button{color:var(--c-td);}
+[data-theme="dark"] label{color:var(--c-td)!important;}
+[data-theme="dark"] h2,[data-theme="dark"] h3{color:var(--c-tx)!important;}
+[data-theme="dark"] p{color:var(--c-td);}
+[data-theme="dark"] table td{color:var(--c-tx);}
+[data-theme="dark"] table th{color:var(--c-tm)!important;}
+[data-theme="dark"] details{color:var(--c-tm);}
+[data-theme="dark"] summary{color:var(--c-td);}
+[data-theme="dark"] a{color:var(--c-td);}
 /* Toast container */
 .vdb-toasts{position:fixed;top:14px;right:14px;z-index:10000;display:flex;flex-direction:column;gap:8px;max-width:380px;pointer-events:none;}
 .vdb-toast{pointer-events:auto;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;
@@ -97,7 +108,7 @@ window._vdbLocalOnly=['vdb_theme'];
 
 <script type="text/babel">
 const{useState,useMemo,useEffect,useCallback,useRef,createContext,useContext}=React;
-const C={bg:"#f1f5f9",sf:"#ffffff",sa:"#f8fafc",bd:"#e2e8f0",bh:"#cbd5e1",ac:"#0ea5e9",ad:"rgba(14,165,233,0.08)",ag:"rgba(14,165,233,0.2)",gn:"#16a34a",gd:"rgba(22,163,74,0.08)",gb:"rgba(22,163,74,0.25)",rd:"#dc2626",rdd:"rgba(220,38,38,0.08)",rb:"rgba(220,38,38,0.25)",am:"#d97706",amd:"rgba(217,119,6,0.08)",bl:"#2563eb",bld:"rgba(37,99,235,0.08)",blb:"rgba(37,99,235,0.25)",tx:"#1e293b",td:"#475569",tm:"#94a3b8",w:"#fff",pu:"#7c3aed"};
+const C={bg:"var(--c-bg)",sf:"var(--c-sf)",sa:"var(--c-sa)",bd:"var(--c-bd)",bh:"var(--c-bh)",ac:"var(--c-ac)",ad:"var(--c-ad)",ag:"var(--c-ag)",gn:"var(--c-gn)",gd:"var(--c-gd)",gb:"var(--c-gb)",rd:"var(--c-rd)",rdd:"var(--c-rdd)",rb:"var(--c-rb)",am:"var(--c-am)",amd:"var(--c-amd)",bl:"var(--c-bl)",bld:"var(--c-bld)",blb:"var(--c-blb)",tx:"var(--c-tx)",td:"var(--c-td)",tm:"var(--c-tm)",w:"var(--c-w)",pu:"var(--c-pu)",ac30:"var(--c-ac30)",ac40:"var(--c-ac40)"};
 const MO=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 // Global value helpers — respect explicit 0 in amounts/real
 const valInc=(r,m)=>r.amounts?.[m]!=null?r.amounts[m]:(r.base??0);
@@ -174,7 +185,7 @@ function Ni({value,onChange,placeholder,dec=0,allowNeg=true,min,max,style,...res
   const onFocus=e=>{setFocus(true);setRaw(num==null||isNaN(num)?"":String(num).replace(".",","));setTimeout(()=>e.target.select(),0)};
   const onBlur=()=>setFocus(false);
   const onCh=e=>{const s=e.target.value;setRaw(s);const cleaned=s.replace(/\s/g,"").replace(/\./g,"").replace(",",".");const allowed=allowNeg?/^-?\d*\.?\d*$/:/^\d*\.?\d*$/;if(cleaned===""||cleaned==="-"){onChange({target:{value:""}});return}if(!allowed.test(cleaned))return;onChange({target:{value:cleaned}})};
-  return<input type="text" inputMode="decimal" value={display} placeholder={placeholder} onChange={onCh} onFocus={onFocus} onBlur={onBlur} title={outOfRange?`Fuera de rango ${min??"-∞"}..${max??"+∞"}`:undefined} style={{...(style||{}),...(outOfRange?{borderColor:"#dc2626"}:{})}} {...rest}/>;
+  return<input type="text" inputMode="decimal" value={display} placeholder={placeholder} onChange={onCh} onFocus={onFocus} onBlur={onBlur} title={outOfRange?`Fuera de rango ${min??"-∞"}..${max??"+∞"}`:undefined} style={{...(style||{}),...(outOfRange?{borderColor:C.rd}:{})}} {...rest}/>;
 }
 
 // === Toast system ===
@@ -246,7 +257,7 @@ const Ab=({onClick})=><button onClick={onClick} style={{display:"flex",alignItem
 const Xb=({onClick})=><button onClick={onClick} title="Eliminar" style={{background:"transparent",border:"none",color:C.bh,cursor:"pointer",fontSize:14,padding:"2px 4px"}} onMouseEnter={e=>e.target.style.color=C.rd} onMouseLeave={e=>e.target.style.color=C.bh}>✕</button>;
 const Sp=()=><div style={{width:20,height:20,border:`2px solid ${C.bd}`,borderTopColor:C.ac,borderRadius:"50%",animation:"spin .6s linear infinite",display:"inline-block"}}></div>;
 const Lb=({children})=><label style={{fontSize:11,color:C.td,display:"block",marginBottom:4,fontWeight:500}}>{children}</label>;
-const DH=()=><span style={{cursor:"grab",padding:"2px 5px",color:"#cbd5e1",fontSize:12,userSelect:"none"}}>⠿</span>;
+const DH=()=><span style={{cursor:"grab",padding:"2px 5px",color:C.bh,fontSize:12,userSelect:"none"}}>⠿</span>;
 function useDrag(items,setItems){const di=React.useRef(null);return{onStart:(e,i)=>{di.current=i;e.dataTransfer.effectAllowed="move"},onOver:(e)=>{e.preventDefault()},onDrop:(e,i)=>{if(di.current===null||di.current===i)return;const n=[...items];const[m]=n.splice(di.current,1);n.splice(i,0,m);setItems(n);di.current=null}}}
 
 const Pill=({title,children})=>{const[open,setOpen]=useState(false);return<div style={{margin:"8px 0",borderRadius:8,border:`1px solid ${open?C.ac+"40":C.bd}`,background:open?C.ad:C.sa,overflow:"hidden",transition:"all .2s"}}><button onClick={()=>setOpen(!open)} style={{width:"100%",padding:"8px 12px",background:"transparent",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",fontFamily:"'Inter',sans-serif"}}><span style={{fontSize:12,fontWeight:600,color:open?C.ac:C.td}}>💡 {title}</span><span style={{fontSize:10,color:C.tm,transition:"transform .2s",transform:open?"rotate(180deg)":"rotate(0)"}}>{open?"▲":"▼"}</span></button>{open&&<div style={{padding:"0 12px 10px",fontSize:12,color:C.td,lineHeight:1.6}}>{children}</div>}</div>};
@@ -611,7 +622,7 @@ function MisDatosCard(){
     }catch(err){toast.err("Error JSON: "+err.message)}
     e.target.value="";
   };
-  return<Cd style={{marginBottom:16,borderTop:`3px solid ${C.ac}`,background:`linear-gradient(135deg,#f0f9ff,#ffffff)`}}>
+  return<Cd style={{marginBottom:16,borderTop:`3px solid ${C.ac}`,background:`linear-gradient(135deg,${C.ad},${C.sf})`}}>
     <ST icon="📁" sub="Importa todos tus datos desde Excel, exporta una copia de seguridad o empieza de cero">Mis Datos</ST>
     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:10}}>
       <button onClick={()=>exportToExcel(false)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.gn}`,background:C.gd,color:C.gn,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📥 Descargar plantilla<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel vacío con la estructura</div></button>
@@ -717,7 +728,7 @@ function M0(){
   };
 
   return<div style={{animation:"fadeIn .3s"}}>
-    <Cd style={{marginBottom:16,background:`linear-gradient(135deg,#e0f2fe,#f0fdf4)`,borderTop:`3px solid ${C.ac}`}}>
+    <Cd style={{marginBottom:16,background:`linear-gradient(135deg,${C.ad},${C.gd})`,borderTop:`3px solid ${C.ac}`}}>
       <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}>
         <div style={{width:56,height:56,borderRadius:14,background:`linear-gradient(135deg,${C.gn},#15803d)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:28,fontWeight:800,color:C.w}}>V</span></div>
         <div><h2 style={{fontSize:22,fontWeight:700}}>Tu dinero, tus reglas 💪</h2><p style={{fontSize:13,color:C.td}}>Resumen de tu vida financiera. Cada número cuenta una historia.</p></div>
@@ -859,7 +870,7 @@ function M1(){
   const srM=MO.map((_,m)=>tIM[m]>0?rM[m]/tIM[m]:0);
 
   return<div style={{animation:"fadeIn .3s"}}>
-    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac30}`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>💡 Tu cuenta de resultados personal.</strong> Pon lo que entra y lo que sale cada mes. Usa las pestañas de año para mantener tu histórico. Arrastra filas (⠿) para ordenar. Pulsa <em>"Mes a mes"</em> para ajustar gastos puntuales. Para rellenar todo de golpe, usa <strong>Importar Excel</strong> en el Dashboard.
     </div>
 
@@ -1058,7 +1069,7 @@ function M1b(){
   };
 
   return<div style={{animation:"fadeIn .3s"}}>
-    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac30}`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>📉 Radiografía de tus gastos.</strong> Heatmap por categoría, fijos vs variables, comparativas mensuales y anuales, y detección de recurrentes.
     </div>
 
@@ -1228,7 +1239,7 @@ function M2(){
   const illiqPct=liqTotal>0?illiqAmt/liqTotal:0;
 
   return<div style={{animation:"fadeIn .3s"}}>
-    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac30}`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>💡 Tu mapa financiero a vista de pájaro.</strong> Registra cuánto ganaste y gastaste cada año — el ahorro se calcula solo. Apunta tus activos y deudas para ver tu patrimonio neto real.
     </div>
 
@@ -1381,7 +1392,7 @@ function M3(){
   const cc=(val,r,a)=>{if(val>=tMin&&val<=tMax)return{bg:C.gd,t:C.gn};if(Math.abs(r-tin)<rStep/2&&a===amt)return{bg:C.bld,t:C.bl};return{bg:"transparent",t:C.tm}};
 
   return<div style={{animation:"fadeIn .3s"}}>
-    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac30}`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>💡 Tu calculadora hipotecaria.</strong> Introduce el importe y el tipo. La matriz te muestra la cuota para cada combinación. Verde = dentro de tu rango. Azul = tu escenario exacto.
     </div>
     <Cd style={{marginBottom:16}}>
@@ -1389,7 +1400,7 @@ function M3(){
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:14}}>
         <div><Lb>Precio vivienda (zł)</Lb><input type="number" value={propPrice} onChange={e=>sPropPrice(Number(e.target.value)||0)}/></div>
         <div><Lb>Entrada (%)</Lb><input type="number" value={dpPct} onChange={e=>sDpPct(Number(e.target.value)||0)} step="5"/><div style={{fontSize:10,color:C.am,fontWeight:600,marginTop:3,...mn}}>{fmt(entrada)} zł</div></div>
-        <div><Lb>Importe hipoteca (zł) <span style={{color:C.ac,fontSize:10}}>auto</span></Lb><div style={{padding:"8px",borderRadius:7,background:C.ad,border:`1px solid ${C.ac}40`,textAlign:"right",...mn,fontSize:14,fontWeight:700,color:C.ac}}>{fmt(amt)} zł</div></div>
+        <div><Lb>Importe hipoteca (zł) <span style={{color:C.ac,fontSize:10}}>auto</span></Lb><div style={{padding:"8px",borderRadius:7,background:C.ad,border:`1px solid ${C.ac40}`,textAlign:"right",...mn,fontSize:14,fontWeight:700,color:C.ac}}>{fmt(amt)} zł</div></div>
         <div><Lb>TIN (%)</Lb><input type="number" value={tin} onChange={e=>sTin(Number(e.target.value)||0)} step="0.01"/></div>
         <div><Lb>Plazo (años)</Lb><input type="number" value={yrs} onChange={e=>sYrs(Number(e.target.value)||0)}/></div>
         <div><Lb>Cuota Obj. Mín (zł)</Lb><input type="number" value={tMin} onChange={e=>sTMin(Number(e.target.value)||0)}/></div>
@@ -1424,7 +1435,7 @@ function M3(){
           <div style={{padding:10,borderRadius:8,background:ok?C.gd:C.rdd,borderLeft:`3px solid ${ok?C.gn:C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Ratio</div><div style={{fontSize:16,fontWeight:700,color:ok?C.gn:C.rd,...mn}}>{pct}%</div></div>
           <div style={{padding:10,borderRadius:8,background:C.rdd,borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Total intereses</div><div style={{fontSize:16,fontWeight:700,color:C.rd,...mn}}>{fmt(Math.round(cuota*yrs*12-amt))} zł</div></div>
         </div>
-        <div style={{padding:14,borderRadius:10,background:"linear-gradient(135deg,#e0f2fe,#f0fdf4)",border:`1px solid ${C.ac}30`,marginBottom:12}}>
+        <div style={{padding:14,borderRadius:10,background:"linear-gradient(135deg,#e0f2fe,#f0fdf4)",border:`1px solid ${C.ac30}`,marginBottom:12}}>
           <div style={{fontSize:13,fontWeight:600,color:C.tx,marginBottom:10}}>💰 ¿Cuánto podrías comprar?</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10}}>
             <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Hipoteca máxima</div><div style={{fontSize:18,fontWeight:700,color:C.ac,...mn}}>{fmt(maxHip)} zł</div></div>
@@ -1598,7 +1609,7 @@ function M4(){
       </Cd>
     </div>
 
-    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac30}`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>💡 ¿Cuándo trabajas porque quieres, no porque debes?</strong> Los datos se cargan solos desde Ingresos. Ajusta el rendimiento y observa el interés compuesto.
     </div>
     <Cd style={{marginBottom:16}}>
@@ -1692,7 +1703,7 @@ function M6(){
     </svg>};
 
   return<div style={{animation:"fadeIn .3s"}}>
-    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac30}`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>💡 Planifica tu jubilación con datos reales.</strong> Pon cuánto aportas y necesitarás. Añade gastos puntuales y activa la inflación para realismo.
     </div>
     <Cd style={{marginBottom:16}}>
@@ -1800,7 +1811,7 @@ function M7(){
   const pctCovered=annualIncNeeded>0?annualAccum/annualIncNeeded:1;
 
   return<div style={{animation:"fadeIn .3s"}}>
-    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac30}`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>💡 ¿Cuánto necesitas para jubilarte?</strong> Edad, jubilación, acumulación anual y gasto mensual. Te decimos si vas bien encaminado.
     </div>
     <Cd style={{marginBottom:16}}>
@@ -1889,7 +1900,7 @@ function M8(){
   const allHealthy=upToDate===total;
 
   return<div style={{animation:"fadeIn .3s"}}>
-    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac}30`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
+    <div style={{padding:"10px 14px",borderRadius:8,background:C.ad,border:`1px solid ${C.ac30}`,marginBottom:14,fontSize:12,color:C.td,lineHeight:1.6}}>
       <strong style={{color:C.ac}}>🩺 Salud de tus datos.</strong> Comprueba si tus fuentes de datos están actualizadas. Verde = al día, ámbar = pendiente de revisar, rojo = desactualizado.
     </div>
 
