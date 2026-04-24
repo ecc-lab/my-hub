@@ -1558,10 +1558,7 @@ function M3(){
     {p:"2017",v:-0.149},{p:"2018",v:-0.169},{p:"2019",v:-0.252},{p:"2020",v:-0.299},{p:"2021",v:-0.487},{p:"2022",v:0.991},
     {p:"2023 prom",v:3.866},{p:"2024 prom",v:3.319},{p:"2025 prom",v:2.220},
     {p:"Ene 26",v:2.290},{p:"Feb 26",v:2.221},{p:"Mar 26",v:2.565},{p:"Abr 26",v:2.740}
-    // Fuente: euribor.com.es (media mensual provisional)
   ];
-  // WIRON 1M — tasa polaca de referencia (sustituye WIBOR)
-  // Fuente: gpwbenchmark.pl (WIRON 1M Stopa Procentowa)
   const WIRON_HIST=[
     {p:"Dic 22",v:6.81},{p:"2023 prom",v:5.39},{p:"2024 prom",v:5.45},
     {p:"Ene 25",v:5.62},{p:"Feb 25",v:5.60},{p:"Mar 25",v:5.59},{p:"Abr 25",v:5.58},
@@ -1569,8 +1566,20 @@ function M3(){
     {p:"Sep 25",v:5.47},{p:"Oct 25",v:5.44},{p:"Nov 25",v:5.42},{p:"Dic 25",v:5.39},
     {p:"Ene 26",v:5.36},{p:"Feb 26",v:5.33},{p:"Mar 26",v:5.30},{p:"Abr 26",v:5.28}
   ];
-  const RATE_OPTIONS={euribor:{label:"Euríbor 12M",data:EURIBOR_HIST,sub:"Hipotecas EUR / zona euro"},wiron:{label:"WIRON 1M",data:WIRON_HIST,sub:"Hipotecas PLN / Polonia"}};
+  // User-editable rate data: stored in localStorage, merged on top of built-in defaults
+  const[euriborExtra,setEuriborExtra]=useLocalData("hEuriborExtra",[]);
+  const[wironExtra,setWironExtra]=useLocalData("hWironExtra",[]);
+  const mergeRates=(base,extra)=>{
+    const map=new Map(base.map(d=>[d.p,d.v]));
+    (extra||[]).forEach(d=>{if(d.p&&d.v!=null)map.set(d.p,d.v)});
+    return[...map.entries()].map(([p,v])=>({p,v}));
+  };
+  const RATE_OPTIONS={
+    euribor:{label:"Euríbor 12M",data:mergeRates(EURIBOR_HIST,euriborExtra),extra:euriborExtra,setExtra:setEuriborExtra,sub:"Hipotecas EUR / zona euro · euribor.com.es"},
+    wiron:{label:"WIRON 1M",data:mergeRates(WIRON_HIST,wironExtra),extra:wironExtra,setExtra:setWironExtra,sub:"Hipotecas PLN / Polonia · gpwbenchmark.pl"}
+  };
   const[rateType,setRateType]=useLocalData("hRateType","euribor");
+  const[showRateEditor,setShowRateEditor]=useState(false);
   const activeRate=RATE_OPTIONS[rateType]||RATE_OPTIONS.euribor;
   const rateData=activeRate.data;
   const lastRate=rateData[rateData.length-1];
@@ -1637,6 +1646,35 @@ function M3(){
         <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.bl}`}}><div style={{fontSize:9,color:C.tm}}>Media</div><div style={{fontSize:18,fontWeight:700,color:C.bl,...mn}}>{avgRate.toFixed(3)}%</div></div>
       </div>
       <RateChart/>
+      <div style={{width:"100%",marginTop:10,display:"flex",justifyContent:"flex-end"}}>
+        <button onClick={()=>setShowRateEditor(!showRateEditor)} style={{background:"transparent",border:`1px solid ${C.bd}`,borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:11,color:C.td}}>✏️ {showRateEditor?"Cerrar editor":"Añadir datos"}</button>
+      </div>
+      {showRateEditor&&(()=>{
+        const opt=RATE_OPTIONS[rateType];
+        const extra=opt.extra||[];
+        const setExtra=opt.setExtra;
+        const[newP,setNewP]=useState("");
+        const[newV,setNewV]=useState("");
+        const add=()=>{const p=newP.trim();const v=parseFloat(String(newV).replace(",","."));if(!p||isNaN(v))return;setExtra([...extra,{p,v}]);setNewP("");setNewV("");toast.ok(`${p}: ${v.toFixed(3)}% añadido a ${opt.label}`)};
+        const remove=(i)=>{setExtra(extra.filter((_,j)=>j!==i))};
+        return<div style={{width:"100%",marginTop:10,padding:"14px",borderRadius:8,background:C.sa,border:`1px solid ${C.bd}`}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.td,marginBottom:10}}>📝 Datos añadidos — {opt.label}</div>
+          {extra.length>0&&<table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:10}}>
+            <thead><tr><th style={{...th,textAlign:"left"}}>Periodo</th><th style={th}>Valor %</th><th></th></tr></thead>
+            <tbody>{extra.map((d,i)=><tr key={i} style={{borderBottom:`1px solid ${C.bd}`}}>
+              <td style={{padding:"4px 6px"}}>{d.p}</td>
+              <td style={{padding:"4px 6px",textAlign:"right",...mn}}>{d.v.toFixed(3)}%</td>
+              <td style={{padding:"4px"}}><Xb onClick={()=>remove(i)}/></td>
+            </tr>)}</tbody>
+          </table>}
+          <div style={{display:"flex",gap:6,alignItems:"flex-end"}}>
+            <div style={{flex:1}}><Lb>Periodo (ej: May 26)</Lb><input type="text" value={newP} onChange={e=>setNewP(e.target.value)} placeholder="May 26" style={{fontSize:12,padding:"6px 8px"}} onKeyDown={e=>e.key==="Enter"&&add()}/></div>
+            <div style={{width:100}}><Lb>Valor %</Lb><input type="text" value={newV} onChange={e=>setNewV(e.target.value)} placeholder="2,750" style={{fontSize:12,padding:"6px 8px",textAlign:"right"}} onKeyDown={e=>e.key==="Enter"&&add()}/></div>
+            <Bt onClick={add} style={{padding:"6px 12px",fontSize:11,whiteSpace:"nowrap"}}>+ Añadir</Bt>
+          </div>
+          <div style={{fontSize:10,color:C.tm,marginTop:8}}>Los datos se guardan en tu navegador y se sincronizan al cloud. Los valores del código base no se borran — tus datos se añaden encima.</div>
+        </div>;
+      })()}
     </Cd>
 
     <Cd style={{overflowX:"auto"}}><ST icon="📐">Matriz Cuota Mensual</ST><table style={{borderCollapse:"collapse",fontSize:11}}><thead><tr><th style={{padding:"6px 8px",color:C.ac,fontWeight:600,textAlign:"left",position:"sticky",left:0,background:C.sf,zIndex:2,minWidth:80}}>zł\TIN%</th>{rates.map(r=><th key={r} style={{padding:"5px",color:Math.abs(r-tin)<rStep/2?C.bl:C.tm,fontWeight:Math.abs(r-tin)<rStep/2?700:400,textAlign:"right",minWidth:52,background:Math.abs(r-tin)<rStep/2?C.bld:"transparent"}}>{r.toFixed(2)}</th>)}</tr></thead><tbody>{matrix.map((row,ri)=><tr key={ri}><td style={{padding:"5px 8px",fontWeight:600,color:amounts[ri]===amt?C.bl:C.tx,position:"sticky",left:0,background:amounts[ri]===amt?C.bld:C.sf,zIndex:1,...mn,fontSize:12}}>{fmt(amounts[ri])}</td>{row.map((v,ci)=>{const col=cc(v,rates[ci],amounts[ri]);return<td key={ci} style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:11,background:col.bg,color:col.t}}>{fmt(v,0)}</td>})}</tr>)}</tbody></table></Cd>
