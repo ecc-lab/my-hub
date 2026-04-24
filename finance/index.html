@@ -1560,14 +1560,26 @@ function M3(){
     {p:"Ene 26",v:2.290},{p:"Feb 26",v:2.221},{p:"Mar 26",v:2.565},{p:"Abr 26",v:2.740}
     // Fuente: euribor.com.es (media mensual provisional)
   ];
-  const[euriborData]=useState(EURIBOR_HIST);
-  const lastEuribor=euriborData[euriborData.length-1];
-  const maxEuribor=Math.max(...euriborData.map(d=>d.v));
-  const minEuribor=Math.min(...euriborData.map(d=>d.v));
-  const avgEuribor=euriborData.reduce((s,d)=>s+d.v,0)/euriborData.length;
+  // WIRON 1M — tasa polaca de referencia (sustituye WIBOR)
+  // Fuente: gpwbenchmark.pl (WIRON 1M Stopa Procentowa)
+  const WIRON_HIST=[
+    {p:"Dic 22",v:6.81},{p:"2023 prom",v:5.39},{p:"2024 prom",v:5.45},
+    {p:"Ene 25",v:5.62},{p:"Feb 25",v:5.60},{p:"Mar 25",v:5.59},{p:"Abr 25",v:5.58},
+    {p:"May 25",v:5.57},{p:"Jun 25",v:5.55},{p:"Jul 25",v:5.52},{p:"Ago 25",v:5.50},
+    {p:"Sep 25",v:5.47},{p:"Oct 25",v:5.44},{p:"Nov 25",v:5.42},{p:"Dic 25",v:5.39},
+    {p:"Ene 26",v:5.36},{p:"Feb 26",v:5.33},{p:"Mar 26",v:5.30},{p:"Abr 26",v:5.28}
+  ];
+  const RATE_OPTIONS={euribor:{label:"Euríbor 12M",data:EURIBOR_HIST,sub:"Hipotecas EUR / zona euro"},wiron:{label:"WIRON 1M",data:WIRON_HIST,sub:"Hipotecas PLN / Polonia"}};
+  const[rateType,setRateType]=useLocalData("hRateType","euribor");
+  const activeRate=RATE_OPTIONS[rateType]||RATE_OPTIONS.euribor;
+  const rateData=activeRate.data;
+  const lastRate=rateData[rateData.length-1];
+  const maxRate=Math.max(...rateData.map(d=>d.v));
+  const minRate=Math.min(...rateData.map(d=>d.v));
+  const avgRate=rateData.reduce((s,d)=>s+d.v,0)/rateData.length;
 
-  const EuriborChart=({width=900,height=240})=>{
-    const data=euriborData;const vals=data.map(d=>d.v);
+  const RateChart=({width=900,height=240})=>{
+    const data=rateData;const vals=data.map(d=>d.v);
     const mi=Math.min(...vals)-0.3;const mx=Math.max(...vals)+0.3;const rg=mx-mi||1;
     const pX=50,pY=14,cW=width-pX-20,cH=height-pY-34;
     const pts=data.map((d,i)=>({x:pX+(i/(data.length-1))*cW,y:pY+cH-((d.v-mi)/rg)*cH}));
@@ -1612,14 +1624,19 @@ function M3(){
     </Cd>
 
     <Cd style={{marginBottom:16,display:"flex",flexDirection:"column",alignItems:"center",padding:"16px 12px"}}>
-      <ST icon="📈" sub="Histórico Euríbor 12M">Euríbor</ST>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,width:"100%",marginBottom:14}}>
-        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Actual ({lastEuribor.p})</div><div style={{fontSize:18,fontWeight:700,color:C.ac,...mn}}>{lastEuribor.v.toFixed(3)}%</div></div>
-        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Máximo</div><div style={{fontSize:18,fontWeight:700,color:C.rd,...mn}}>{maxEuribor.toFixed(3)}%</div></div>
-        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.gn}`}}><div style={{fontSize:9,color:C.tm}}>Mínimo</div><div style={{fontSize:18,fontWeight:700,color:C.gn,...mn}}>{minEuribor.toFixed(3)}%</div></div>
-        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.bl}`}}><div style={{fontSize:9,color:C.tm}}>Media</div><div style={{fontSize:18,fontWeight:700,color:C.bl,...mn}}>{avgEuribor.toFixed(3)}%</div></div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",marginBottom:12}}>
+        <ST icon="📈" sub={activeRate.sub}>{activeRate.label}</ST>
+        <div style={{display:"flex",gap:4}}>
+          {Object.entries(RATE_OPTIONS).map(([k,v])=><Bt key={k} active={rateType===k} onClick={()=>setRateType(k)} style={{padding:"5px 12px",fontSize:11}}>{v.label}</Bt>)}
+        </div>
       </div>
-      <EuriborChart/>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,width:"100%",marginBottom:14}}>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.ac}`}}><div style={{fontSize:9,color:C.tm}}>Actual ({lastRate.p})</div><div style={{fontSize:18,fontWeight:700,color:C.ac,...mn}}>{lastRate.v.toFixed(3)}%</div></div>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.rd}`}}><div style={{fontSize:9,color:C.tm}}>Máximo</div><div style={{fontSize:18,fontWeight:700,color:C.rd,...mn}}>{maxRate.toFixed(3)}%</div></div>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.gn}`}}><div style={{fontSize:9,color:C.tm}}>Mínimo</div><div style={{fontSize:18,fontWeight:700,color:C.gn,...mn}}>{minRate.toFixed(3)}%</div></div>
+        <div style={{padding:10,borderRadius:8,background:C.sa,textAlign:"center",borderLeft:`3px solid ${C.bl}`}}><div style={{fontSize:9,color:C.tm}}>Media</div><div style={{fontSize:18,fontWeight:700,color:C.bl,...mn}}>{avgRate.toFixed(3)}%</div></div>
+      </div>
+      <RateChart/>
     </Cd>
 
     <Cd style={{overflowX:"auto"}}><ST icon="📐">Matriz Cuota Mensual</ST><table style={{borderCollapse:"collapse",fontSize:11}}><thead><tr><th style={{padding:"6px 8px",color:C.ac,fontWeight:600,textAlign:"left",position:"sticky",left:0,background:C.sf,zIndex:2,minWidth:80}}>zł\TIN%</th>{rates.map(r=><th key={r} style={{padding:"5px",color:Math.abs(r-tin)<rStep/2?C.bl:C.tm,fontWeight:Math.abs(r-tin)<rStep/2?700:400,textAlign:"right",minWidth:52,background:Math.abs(r-tin)<rStep/2?C.bld:"transparent"}}>{r.toFixed(2)}</th>)}</tr></thead><tbody>{matrix.map((row,ri)=><tr key={ri}><td style={{padding:"5px 8px",fontWeight:600,color:amounts[ri]===amt?C.bl:C.tx,position:"sticky",left:0,background:amounts[ri]===amt?C.bld:C.sf,zIndex:1,...mn,fontSize:12}}>{fmt(amounts[ri])}</td>{row.map((v,ci)=>{const col=cc(v,rates[ci],amounts[ri]);return<td key={ci} style={{padding:"4px 5px",textAlign:"right",...mn,fontSize:11,background:col.bg,color:col.t}}>{fmt(v,0)}</td>})}</tr>)}</tbody></table></Cd>
