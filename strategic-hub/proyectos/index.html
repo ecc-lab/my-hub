@@ -1,16 +1,2075 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Proyectos — Eloi Cortés</title>
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<meta name="theme-color" content="#F5F1E8">
+<title>Impact'26 · Poznań · Plan de campaña · Eloi Cortés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
 <style>
-body { background: #0a0c10; color: #8b91a8; font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-p { font-size: 14px; }
-a { color: #c9a84c; text-decoration: none; }
+:root {
+  --navy: #0A1628;
+  --navy-soft: #142238;
+  --navy-mid: #1F2E47;
+  --cream: #F5F1E8;
+  --cream-soft: #FAF8F3;
+  --camel: #B08D57;
+  --camel-soft: #C9A878;
+  --camel-text: #6B5330;      /* WCAG AAA on cream */
+  --olive: #6B7547;
+  --olive-soft: #8B9560;
+  --olive-text: #54602E;      /* WCAG AAA on cream */
+  --muted: #666666;           /* WCAG AA on cream-soft */
+  --charcoal: #1C1F26;
+  --rust: #A0522D;
+  --line: rgba(176, 141, 87, 0.25);
+  --line-strong: rgba(176, 141, 87, 0.45);
+}
+
+html {
+  color-scheme: only light;
+  background-color: #F5F1E8 !important;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #F5F1E8 !important;
+  color: #0A1628 !important;
+  line-height: 1.55;
+  font-weight: 400;
+  min-height: 100vh;
+  /* NO -webkit-text-fill-color here — it cascades into dark blocks and kills readability */
+}
+
+/* Explicit dark text on all light content areas */
+main, .tab-content, .section-header, .timeline, .session,
+.tracks-grid, .track-card, .objectives-grid, .objective,
+.alt-grid, .alt-row, .alt-intro, .action-card, .disclaimer,
+p, li, span, div {
+  color: inherit;
+}
+
+/* ===== ALL DARK-BACKGROUND BLOCKS: FORCE CREAM TEXT ===== */
+.masthead,
+.masthead *,
+.masthead p,
+.masthead span,
+.masthead h1,
+.masthead div {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+.masthead .masthead-top,
+.masthead .masthead-top span {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.masthead h1.title {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+.masthead h1.title .accent {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.masthead .subtitle {
+  color: rgba(245,241,232,0.75) !important;
+  -webkit-text-fill-color: rgba(245,241,232,0.75) !important;
+}
+
+.masthead .countdown-num {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.masthead .countdown-label {
+  color: rgba(245,241,232,0.6) !important;
+  -webkit-text-fill-color: rgba(245,241,232,0.6) !important;
+}
+
+.tabs,
+.tab-btn {
+  color: rgba(245,241,232,0.6) !important;
+  -webkit-text-fill-color: rgba(245,241,232,0.6) !important;
+}
+
+.tab-btn.active {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+.tab-btn:hover {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.tab-btn .num {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.speaker,
+.speaker *,
+.speaker-name,
+.speaker-role {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+.speaker-role {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.checklist,
+.checklist *,
+.checklist-title,
+.checklist li {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+.checklist li {
+  color: rgba(245,241,232,0.85) !important;
+  -webkit-text-fill-color: rgba(245,241,232,0.85) !important;
+}
+
+.checklist li::before {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.hotel-card,
+.hotel-card *,
+.hotel-eyebrow,
+.hotel-name,
+.hotel-meta-item,
+.hotel-reasons li {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+.hotel-eyebrow {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.hotel-meta-item {
+  color: rgba(245,241,232,0.6) !important;
+  -webkit-text-fill-color: rgba(245,241,232,0.6) !important;
+}
+
+.hotel-meta-item strong {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.hotel-reasons li {
+  color: rgba(245,241,232,0.85) !important;
+  -webkit-text-fill-color: rgba(245,241,232,0.85) !important;
+}
+
+.decision-callout,
+.decision-callout * {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+.decision-eyebrow {
+  color: #A0522D !important;
+  -webkit-text-fill-color: #A0522D !important;
+}
+
+.decision-title {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+.rule-label {
+  color: #C9A878 !important;
+  -webkit-text-fill-color: #C9A878 !important;
+}
+
+.rule-box p, .rule-box li, .rule-box ol, .rule-box ul {
+  color: rgba(245,241,232,0.85) !important;
+  -webkit-text-fill-color: rgba(245,241,232,0.85) !important;
+}
+
+/* Inline dark blocks inside tab content (inline styles with navy bg) */
+[style*="background: var(--navy)"],
+[style*="background: #0A1628"],
+[style*="background: #142238"],
+[style*="background-color: #0A1628"],
+[style*="background: var(--navy-soft)"] {
+  color: #F5F1E8 !important;
+  -webkit-text-fill-color: #F5F1E8 !important;
+}
+
+[style*="background: var(--navy)"] *,
+[style*="background: #0A1628"] *,
+[style*="background: #142238"] *,
+[style*="background-color: #0A1628"] * {
+  -webkit-text-fill-color: inherit !important;
+}
+
+/* Dark mode overrides — keep consistent */
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background-color: #F5F1E8 !important;
+    color: #0A1628 !important;
+  }
+  main, .tab-content {
+    background: #F5F1E8 !important;
+  }
+}
+
+/* ============ MASTHEAD ============ */
+.masthead {
+  background: var(--navy);
+  color: var(--cream);
+  padding: 32px 48px 24px;
+  border-bottom: 3px double var(--camel);
+  position: relative;
+  overflow: hidden;
+}
+
+.masthead::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 300px; height: 100%;
+  background: radial-gradient(ellipse at top right, rgba(176, 141, 87, 0.15), transparent 70%);
+  pointer-events: none;
+}
+
+.masthead-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--camel-soft);
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+  font-weight: 500;
+}
+
+.masthead-top span { display: inline-block; }
+
+h1.title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  font-variation-settings: "opsz" 144, "SOFT" 50;
+}
+
+h1.title .accent {
+  color: var(--camel);
+  font-style: normal;
+  font-weight: 300;
+}
+
+.subtitle {
+  margin-top: 14px;
+  font-size: 15px;
+  font-weight: 300;
+  color: rgba(245, 241, 232, 0.75);
+  max-width: 720px;
+  letter-spacing: 0.01em;
+}
+
+.countdown {
+  display: flex;
+  gap: 28px;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.countdown-num {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 300;
+  color: var(--camel);
+  line-height: 1;
+  font-variation-settings: "opsz" 144;
+}
+
+.countdown-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(245, 241, 232, 0.6);
+  margin-top: 6px;
+}
+
+/* ============ NAV TABS ============ */
+.tabs {
+  background: var(--navy-soft);
+  padding: 0 48px;
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--line-strong);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: rgba(245, 241, 232, 0.6);
+  padding: 18px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--camel-soft);
+}
+
+.tab-btn.active {
+  color: var(--cream);
+  border-bottom-color: var(--camel);
+}
+
+.tab-btn .num {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--camel);
+  margin-right: 6px;
+  font-size: 13px;
+}
+
+/* ============ MAIN CONTENT ============ */
+main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px;
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ SECTION HEADERS ============ */
+.section-header {
+  margin-bottom: 36px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.section-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--camel-text);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+h2.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(28px, 3.5vw, 44px);
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: -0.015em;
+  color: var(--navy);
+  line-height: 1;
+  font-variation-settings: "opsz" 144;
+}
+
+.section-lead {
+  margin-top: 14px;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--navy-mid);
+  max-width: 780px;
+  line-height: 1.6;
+}
+
+/* ============ DAY HEADER ============ */
+.day-header {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  margin: 48px 0 24px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--navy);
+}
+
+.day-header:first-child {
+  margin-top: 0;
+}
+
+.day-num {
+  font-family: 'Fraunces', serif;
+  font-size: 72px;
+  font-weight: 200;
+  font-style: italic;
+  color: var(--camel-text);
+  line-height: 0.85;
+  font-variation-settings: "opsz" 144;
+}
+
+.day-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.day-name {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.day-date {
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--olive-text);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+/* ============ SESSION CARD ============ */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.session {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 24px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.session:hover {
+  background: rgba(176, 141, 87, 0.05);
+  padding-left: 12px;
+  margin-left: -12px;
+  padding-right: 12px;
+  margin-right: -12px;
+}
+
+.session-time {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--navy);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  padding-top: 2px;
+}
+
+.session-time .duration {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  color: var(--olive);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.session-body { min-width: 0; }
+
+.session-tag {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 3px 9px;
+  border: 1px solid;
+  margin-bottom: 8px;
+  border-radius: 1px;
+}
+
+.tag-keynote { color: var(--navy); border-color: var(--navy); background: rgba(10, 22, 40, 0.04); }
+.tag-track { color: var(--olive-text); border-color: var(--olive-text); background: rgba(107, 117, 71, 0.08); }
+.tag-network { color: var(--camel-text); border-color: var(--camel-text); background: rgba(176, 141, 87, 0.10); }
+.tag-meal { color: #6b5d3a; border-color: #b8a368; background: rgba(184, 163, 104, 0.08); }
+.tag-rest { color: #5a6470; border-color: #8a96a3; background: rgba(138, 150, 163, 0.06); }
+.tag-decision { color: var(--rust); border-color: var(--rust); background: rgba(160, 82, 45, 0.06); }
+.tag-cocktail { color: var(--camel-text); border-color: var(--camel-text); background: rgba(176, 141, 87, 0.10); }
+
+.session-title {
+  font-family: 'Fraunces', serif;
+  font-size: 21px;
+  font-weight: 500;
+  color: var(--navy);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+
+.session-summary {
+  font-size: 14px;
+  color: var(--navy-mid);
+  line-height: 1.55;
+  margin-bottom: 10px;
+}
+
+.session-why {
+  display: none;
+  margin-top: 14px;
+  padding: 16px 18px;
+  background: var(--cream-soft);
+  border-left: 3px solid var(--camel);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--navy-mid);
+}
+
+.session.expanded .session-why { display: block; }
+
+.session-why strong {
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--camel-text);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.session-alt {
+  display: none;
+  margin-top: 10px;
+  padding: 14px 18px;
+  background: rgba(107, 117, 71, 0.06);
+  border-left: 3px solid var(--olive);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--navy-mid);
+}
+
+.session.expanded .session-alt { display: block; }
+
+.session-alt strong {
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--olive-text);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.expand-icon {
+  position: absolute;
+  right: 0;
+  top: 24px;
+  color: var(--camel);
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 300;
+  transition: transform 0.3s ease;
+}
+
+.session.expanded .expand-icon { transform: rotate(45deg); }
+
+/* ============ DECISION CALLOUT ============ */
+.decision-callout {
+  background: var(--navy);
+  color: var(--cream);
+  padding: 32px 36px;
+  margin: 24px 0;
+  border-left: 6px solid var(--rust);
+  position: relative;
+  overflow: hidden;
+}
+
+.decision-callout::before {
+  content: '!';
+  position: absolute;
+  top: -20px;
+  right: 24px;
+  font-family: 'Fraunces', serif;
+  font-size: 180px;
+  font-weight: 200;
+  color: rgba(160, 82, 45, 0.15);
+  line-height: 1;
+  font-style: italic;
+}
+
+.decision-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rust);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.decision-title {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  font-weight: 400;
+  font-style: italic;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.decision-rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.rule-box {
+  padding: 18px;
+  background: rgba(245, 241, 232, 0.05);
+  border: 1px solid rgba(245, 241, 232, 0.15);
+}
+
+.rule-label {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--camel-soft);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.rule-box ol, .rule-box ul {
+  margin-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.rule-box p { font-size: 13px; line-height: 1.6; }
+
+/* ============ AGENDA TAB ============ */
+.disclaimer {
+  background: rgba(160, 82, 45, 0.06);
+  border-left: 4px solid var(--rust);
+  padding: 18px 22px;
+  margin-bottom: 36px;
+}
+
+.disclaimer-title {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--rust);
+  font-size: 15px;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.disclaimer p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--navy-mid);
+}
+
+.tracks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.track-card {
+  padding: 22px;
+  background: var(--cream-soft);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--camel);
+  transition: all 0.25s ease;
+  cursor: default;
+  position: relative;
+}
+
+.track-card.priority {
+  border-top-color: var(--olive);
+  background: rgba(107, 117, 71, 0.04);
+}
+
+.track-card.new {
+  border-top-color: var(--rust);
+}
+
+.track-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(10, 22, 40, 0.08);
+}
+
+.track-tag {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--camel-text);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.track-card.priority .track-tag { color: var(--olive-text); }
+.track-card.new .track-tag { color: var(--rust); }
+
+.track-name {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--navy);
+  line-height: 1.25;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.track-desc {
+  font-size: 13px;
+  color: var(--navy-mid);
+  line-height: 1.55;
+}
+
+.track-fit {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 11px;
+  font-style: italic;
+  font-family: 'Fraunces', serif;
+  color: var(--olive);
+}
+
+.track-fit.high { color: var(--olive-text); font-weight: 500; }
+.track-fit.med { color: var(--camel-text); }
+.track-fit.low { color: var(--muted); }
+
+/* ============ SPEAKERS ============ */
+.speakers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.speaker {
+  padding: 18px 20px;
+  background: var(--navy);
+  color: var(--cream);
+  border-left: 3px solid var(--camel);
+  transition: all 0.25s ease;
+}
+
+.speaker:hover {
+  background: var(--navy-soft);
+  transform: translateX(4px);
+}
+
+.speaker-name {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--cream);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.speaker-role {
+  font-size: 12px;
+  color: var(--camel-soft);
+  line-height: 1.4;
+}
+
+/* ============ TARGETS TAB ============ */
+.objectives-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 22px;
+  margin-bottom: 48px;
+}
+
+.objective {
+  padding: 28px;
+  background: var(--cream-soft);
+  border: 1px solid var(--line);
+  position: relative;
+}
+
+.objective-num {
+  font-family: 'Fraunces', serif;
+  font-size: 80px;
+  font-weight: 200;
+  font-style: italic;
+  color: var(--camel-text);
+  line-height: 0.8;
+  font-variation-settings: "opsz" 144;
+  position: absolute;
+  top: 16px;
+  right: 22px;
+  opacity: 0.7;
+}
+
+.objective-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--olive-text);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.objective-target {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--navy);
+  line-height: 1.25;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+
+.objective-detail {
+  font-size: 13px;
+  color: var(--navy-mid);
+  line-height: 1.6;
+}
+
+.checklist {
+  background: var(--navy);
+  color: var(--cream);
+  padding: 36px;
+  margin-top: 32px;
+}
+
+.checklist-title {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--cream);
+  margin-bottom: 22px;
+}
+
+.checklist ul {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 36px;
+}
+
+.checklist li {
+  font-size: 14px;
+  padding-left: 28px;
+  position: relative;
+  color: rgba(245, 241, 232, 0.85);
+  line-height: 1.5;
+}
+
+.checklist li::before {
+  content: '○';
+  position: absolute;
+  left: 0;
+  top: -2px;
+  color: var(--camel);
+  font-size: 18px;
+}
+
+/* ============ LOGISTICS TAB ============ */
+.logistics-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 32px;
+}
+
+.hotel-card {
+  background: var(--navy);
+  color: var(--cream);
+  padding: 36px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hotel-card::before {
+  content: '★';
+  position: absolute;
+  bottom: -30px;
+  right: -10px;
+  font-size: 220px;
+  color: rgba(176, 141, 87, 0.06);
+  line-height: 1;
+  font-family: 'Fraunces', serif;
+}
+
+.hotel-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--camel);
+  margin-bottom: 8px;
+}
+
+.hotel-name {
+  font-family: 'Fraunces', serif;
+  font-size: 36px;
+  font-weight: 400;
+  font-style: italic;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+
+.hotel-meta {
+  display: flex;
+  gap: 24px;
+  margin: 18px 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 1;
+}
+
+.hotel-meta-item {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 241, 232, 0.6);
+}
+
+.hotel-meta-item strong {
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: -0.005em;
+  color: var(--camel-soft);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+.hotel-reasons {
+  position: relative;
+  z-index: 1;
+  margin-top: 16px;
+}
+
+.hotel-reasons li {
+  list-style: none;
+  font-size: 13px;
+  padding: 6px 0 6px 22px;
+  position: relative;
+  color: rgba(245, 241, 232, 0.85);
+  line-height: 1.5;
+}
+
+.hotel-reasons li::before {
+  content: '·';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  color: var(--camel);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.action-card {
+  background: var(--cream-soft);
+  border: 1px solid var(--line);
+  padding: 28px;
+}
+
+.action-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--rust);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.action-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--navy);
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+
+.action-list {
+  list-style: none;
+}
+
+.action-list li {
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--navy-mid);
+}
+
+.action-list li:last-child { border-bottom: none; }
+
+.action-list li strong {
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--navy);
+  font-size: 14px;
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+
+/* ============ ALTERNATIVES TAB ============ */
+.alt-intro {
+  background: var(--cream-soft);
+  border: 1px solid var(--line);
+  padding: 24px 28px;
+  margin-bottom: 32px;
+}
+
+.alt-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.alt-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr;
+  gap: 20px;
+  padding: 22px;
+  background: var(--cream-soft);
+  border: 1px solid var(--line);
+  align-items: start;
+}
+
+.alt-time {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--navy);
+  font-feature-settings: "tnum";
+}
+
+.alt-time small {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  color: var(--olive);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.alt-col {
+  border-left: 3px solid;
+  padding-left: 16px;
+}
+
+.alt-col.chosen { border-color: var(--camel); }
+.alt-col.alt { border-color: rgba(107, 117, 71, 0.4); }
+
+.alt-col-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.alt-col.chosen .alt-col-label { color: var(--camel-text); }
+.alt-col.alt .alt-col-label { color: var(--olive-text); }
+
+.alt-col-title {
+  font-family: 'Fraunces', serif;
+  font-size: 15px;
+  color: var(--navy);
+  font-weight: 500;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+
+.alt-col-reason {
+  font-size: 12px;
+  color: var(--navy-mid);
+  line-height: 1.5;
+}
+
+/* ============ FOOTER ============ */
+footer {
+  background: var(--navy);
+  color: rgba(245, 241, 232, 0.5);
+  padding: 24px 48px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-top: 3px double var(--camel);
+  margin-top: 60px;
+}
+
+footer .accent { color: var(--camel); font-style: italic; }
+
+/* ============ RESPONSIVE ============ */
+/* Better font rendering on mobile */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@media (max-width: 900px) {
+  .masthead { padding: 24px 20px 18px; }
+  main { padding: 28px 20px; }
+  .tabs { padding: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+  .tab-btn { padding: 16px 18px; font-size: 11px; min-height: 48px; scroll-snap-align: start; flex-shrink: 0; }
+  .masthead-top { flex-direction: column; gap: 6px; align-items: flex-start; }
+  .countdown { gap: 20px; flex-wrap: wrap; }
+  .countdown-num { font-size: 28px; }
+
+  .section-lead { font-size: 15px; }
+  .section-title { font-size: 28px !important; }
+
+  .day-header { gap: 18px; margin: 32px 0 18px; }
+  .day-num { font-size: 56px; }
+  .day-name { font-size: 22px; }
+
+  .session { grid-template-columns: 1fr; gap: 4px; padding: 18px 0; min-height: 64px; }
+  .session-time { padding-top: 0; font-size: 16px; }
+  .session-time .duration { display: inline; margin-left: 10px; }
+  .session-title { font-size: 19px; }
+  .session-summary { font-size: 14px; }
+  .session:hover { background: transparent; padding-left: 0; margin-left: 0; padding-right: 0; margin-right: 0; }
+  .session.expanded { background: rgba(176, 141, 87, 0.04); padding-left: 14px; margin-left: -14px; padding-right: 14px; margin-right: -14px; }
+  .expand-icon { top: 18px; font-size: 22px; }
+
+  .decision-callout { padding: 24px 22px; }
+  .decision-title { font-size: 22px; }
+  .decision-rules { grid-template-columns: 1fr; gap: 14px; }
+  .rule-box { padding: 16px; }
+
+  .checklist { padding: 26px 22px; }
+  .checklist ul { grid-template-columns: 1fr; gap: 12px; }
+  .checklist li { font-size: 14px; }
+
+  .logistics-grid { grid-template-columns: 1fr; gap: 22px; }
+  .hotel-card, .action-card { padding: 26px 22px; }
+  .hotel-name { font-size: 30px; }
+  .hotel-meta { flex-direction: column; gap: 12px; }
+
+  .alt-row { grid-template-columns: 1fr; gap: 14px; padding: 20px; }
+  .alt-col { padding-left: 14px; }
+  .alt-time { font-size: 16px; }
+  .alt-time small { display: inline; margin-left: 10px; }
+
+  .objectives-grid { grid-template-columns: 1fr; gap: 16px; }
+  .objective { padding: 24px 22px; }
+  .objective-num { font-size: 60px; top: 14px; right: 18px; }
+  .objective-target { font-size: 20px; }
+
+  .tracks-grid { grid-template-columns: 1fr; }
+  .speakers-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .speaker { padding: 14px 16px; }
+  .speaker-name { font-size: 15px; }
+  .speaker-role { font-size: 11px; }
+
+  footer { padding: 22px 20px; font-size: 10px; letter-spacing: 0.1em; }
+
+  h1.title { font-size: 38px; line-height: 1; }
+  .subtitle { font-size: 14px; margin-top: 12px; }
+}
+
+@media (max-width: 480px) {
+  .countdown { gap: 14px; }
+  .countdown-item { min-width: calc(50% - 7px); }
+  .speakers-grid { grid-template-columns: 1fr; }
+  h1.title { font-size: 34px; }
+  .day-num { font-size: 48px; }
+  .hotel-name { font-size: 26px; }
+}
 </style>
 </head>
 <body>
-<p>Próximamente · <a href="../">← Volver</a></p>
+
+<header class="masthead">
+  <div class="masthead-top">
+    <span>Briefing privado · Eloi Cortés Catalan</span>
+    <span>Plan v10 · Día 2 con opción A (14:15) o B (12:00)</span>
+  </div>
+  <h1 class="title">Impact'26 · <span class="accent">Poznań</span></h1>
+  <p class="subtitle">Plan de campaña para dos eventos consecutivos en Poznań · Endeavor Dinner 12 mayo + Impact'26 los días 13·14 · Identidad única: MD Orona Polonia.</p>
+  <div class="countdown">
+    <div class="countdown-item">
+      <div class="countdown-num" id="cd-days">—</div>
+      <div class="countdown-label">Días al evento</div>
+    </div>
+    <div class="countdown-item">
+      <div class="countdown-num">3</div>
+      <div class="countdown-label">Días en Poznań</div>
+    </div>
+    <div class="countdown-item">
+      <div class="countdown-num">2</div>
+      <div class="countdown-label">Eventos clave</div>
+    </div>
+    <div class="countdown-item">
+      <div class="countdown-num">3</div>
+      <div class="countdown-label">Objetivos comerciales</div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="plan"><span class="num">I</span>El plan</button>
+  <button class="tab-btn" data-tab="agenda"><span class="num">II</span>Agenda Impact</button>
+  <button class="tab-btn" data-tab="alt"><span class="num">III</span>Alternativas</button>
+  <button class="tab-btn" data-tab="targets"><span class="num">IV</span>Objetivos</button>
+  <button class="tab-btn" data-tab="endeavor"><span class="num">V</span>Endeavor prep</button>
+  <button class="tab-btn" data-tab="logistics"><span class="num">VI</span>Logística</button>
+</nav>
+
+<main>
+
+<!-- ============ TAB I · PLAN ============ -->
+<section class="tab-content active" id="plan">
+  <div class="section-header">
+    <div class="section-eyebrow">El plan · día por día</div>
+    <h2 class="section-title">Tres días, dos eventos, una identidad</h2>
+    <p class="section-lead">Vas como MD de Orona Polonia a los dos eventos. El día 0 ya no es llegada tranquila · es el Endeavor Networking Dinner, que se convierte en puerta de entrada al ecosistema polaco que luego verás en Impact CEE. Haz clic en cada bloque para ver el porqué y la alternativa descartada.</p>
+  </div>
+
+  <!-- DÍA 0 -->
+  <div class="day-header">
+    <span class="day-num">0</span>
+    <div class="day-label">
+      <span class="day-name">Día 0 · Endeavor Dinner</span>
+      <span class="day-date">Martes · 12 mayo</span>
+    </div>
+  </div>
+
+  <!-- ENDEAVOR CALLOUT -->
+  <div class="decision-callout" style="border-left-color: var(--olive);">
+    <div class="decision-eyebrow" style="color: var(--olive);">Upgrade estratégico · no conflicto</div>
+    <div class="decision-title">El Endeavor Dinner cambia el viaje a mejor</div>
+    <p style="font-size:14px; line-height:1.6; max-width:780px; position:relative; z-index:1;">Endeavor Poland reúne invite·only a founders de scale·ups, inversores y ecosystem leaders polacos · 18:30·22:00 en Concordia Taste, a minutos andando de tu apartamento en Grunwald. Esto no compite con Impact CEE, lo multiplica.</p>
+    <div class="decision-rules">
+      <div class="rule-box">
+        <div class="rule-label">Ventaja 1 · Puerta de entrada</div>
+        <p>Muchos asistentes del Endeavor dinner también estarán en Impact CEE los días 13·14. Llegas al coffee #1 del día 13 habiendo cenado con ellos la noche anterior · ya no vas a frío.</p>
+      </div>
+      <div class="rule-box">
+        <div class="rule-label">Ventaja 2 · Perfil único</div>
+        <p>En una sala de tech founders, tú eres el MD industrial de €1.1B que fabrica desde Polonia para Europa. Eso es exactamente la historia que Endeavor celebra · no hay nadie como tú esa noche.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="timeline" id="day0"></div>
+
+  <!-- DÍA 1 -->
+  <div class="day-header">
+    <span class="day-num">1</span>
+    <div class="day-label">
+      <span class="day-name">Día 1 · Arranque</span>
+      <span class="day-date">Miércoles · 13 mayo</span>
+    </div>
+  </div>
+  <div class="timeline" id="day1"></div>
+
+  <!-- DECISIÓN CALLOUT -->
+  <div class="decision-callout">
+    <div class="decision-eyebrow">Punto de decisión · 16:00 día 1</div>
+    <div class="decision-title">Cena post·cóctel · sí o no</div>
+    <p style="font-size:14px; line-height:1.6; max-width:680px; position:relative; z-index:1;">A las 16:00 en punto, con la cabeza fría, decides una de dos. No llegues al cóctel "a ver qué pasa". Esa decisión a las 21:30 con dos copas encima siempre es mala.</p>
+    <div class="decision-rules">
+      <div class="rule-box">
+        <div class="rule-label">A · Hay cena</div>
+        <p>Solo si cumple las 3 condiciones:</p>
+        <ol style="margin-top:8px;">
+          <li>Es alguien dentro de tus 3 objetivos</li>
+          <li>Tú le has propuesto la cena en persona, no por mensaje</li>
+          <li>Está confirmada con sitio y hora</li>
+        </ol>
+      </div>
+      <div class="rule-box">
+        <div class="rule-label">B · No hay cena</div>
+        <p>Andando a casa en 5·10 min después del cóctel. Proteges el día 2. El 14 es donde se cierran las relaciones del 13, y para eso hay que llegar fresco. Tu cama, tu ducha, tu café por la mañana.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 2 -->
+  <div class="day-header">
+    <span class="day-num">2</span>
+    <div class="day-label">
+      <span class="day-name">Día 2 · Media jornada</span>
+      <span class="day-date">Jueves · 14 mayo · salida 12:00 ó 14:15</span>
+    </div>
+  </div>
+
+  <!-- DEPARTURE CALLOUT · TWO SCENARIOS -->
+  <div class="decision-callout" style="border-left-color: var(--olive);">
+    <div class="decision-eyebrow" style="color: var(--olive-soft);">Restricción dura · viaje Poznań → Kraków</div>
+    <div class="decision-title">Dos escenarios · eliges en la mañana del 14</div>
+    <p style="font-size:14px; line-height:1.6; max-width:780px; position:relative; z-index:1; color:rgba(245,241,232,0.9);">430 km · ruta A2 → S7 · 4h30m de conducción. El timeline del plan está construido para la opción A (salida 14:15). La opción B (salida 12:00) es legítima si se cumple la condición clave de abajo.</p>
+
+    <div class="decision-rules">
+      <div class="rule-box" style="border-color: rgba(201, 168, 120, 0.4); background: rgba(201, 168, 120, 0.08);">
+        <div class="rule-label" style="color: var(--camel-soft); font-size: 15px; margin-bottom: 10px;">A · Salida 14:15 · default</div>
+        <p style="font-size:12px; color:rgba(245,241,232,0.85); margin-bottom:8px;"><strong style="color:var(--camel-soft); font-style:normal; font-weight:500;">Llegada Kraków:</strong> ~18:45</p>
+        <p style="font-size:12px; color:rgba(245,241,232,0.85); margin-bottom:10px;"><strong style="color:var(--camel-soft); font-style:normal; font-weight:500;">Incluye 4 bloques:</strong></p>
+        <ol style="margin-left:18px; font-size:12px; line-height:1.6;">
+          <li>09:00 · Keynote</li>
+          <li>10:30 · Coffee #3 (re·encuentros)</li>
+          <li>11:00 · 1 sesión selecta (60 min)</li>
+          <li>12:00 · Lounge final + despedidas</li>
+        </ol>
+        <p style="font-size:11px; color:rgba(245,241,232,0.7); margin-top:12px; font-style:italic;">→ Elige A si hay promesas pendientes de día 1 o Endeavor que cerrar en persona.</p>
+      </div>
+
+      <div class="rule-box" style="border-color: rgba(139, 149, 96, 0.4); background: rgba(139, 149, 96, 0.08);">
+        <div class="rule-label" style="color: var(--olive-soft); font-size: 15px; margin-bottom: 10px;">B · Salida 12:00 · acelerada</div>
+        <p style="font-size:12px; color:rgba(245,241,232,0.85); margin-bottom:8px;"><strong style="color:var(--olive-soft); font-style:normal; font-weight:500;">Llegada Kraków:</strong> ~16:30</p>
+        <p style="font-size:12px; color:rgba(245,241,232,0.85); margin-bottom:10px;"><strong style="color:var(--olive-soft); font-style:normal; font-weight:500;">Incluye 2 bloques solo:</strong></p>
+        <ol style="margin-left:18px; font-size:12px; line-height:1.6;">
+          <li>09:00 · Keynote</li>
+          <li>10:30 · Coffee #3 (re·encuentros)</li>
+          <li style="list-style:none; margin-left:-18px; color:rgba(245,241,232,0.5);">✗ Sin sesión 11:00</li>
+          <li style="list-style:none; margin-left:-18px; color:rgba(245,241,232,0.5);">✗ Sin lounge final</li>
+        </ol>
+        <p style="font-size:11px; color:rgba(245,241,232,0.7); margin-top:12px; font-style:italic;">→ Elige B solo si coffee #3 ya cumplió · y tienes cena/compromiso en Kraków esa noche.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 22px; padding: 16px 20px; background: rgba(160, 82, 45, 0.12); border-left: 3px solid var(--rust); position:relative; z-index:1;">
+      <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color: #D68665; font-weight:600; margin-bottom:6px;">Regla de decisión · 10:45 del día 14</div>
+      <p style="font-size:13px; color:rgba(245,241,232,0.9); line-height:1.55;">A las 10:45 · mitad del coffee #3 · decides. Si ya has cerrado los 3·4 reencuentros clave y no hay nada más que hacer, te preparas para salir a las 12:00 (opción B). Si todavía tienes promesas que cerrar o gente que ver, completas hasta las 14:15 (opción A). <strong style="color:var(--camel-soft); font-style:normal; font-weight:500;">No tomes la decisión antes del 14 · depende del estado real del networking tras los días 12 y 13.</strong></p>
+    </div>
+  </div>
+
+  <div class="timeline" id="day2"></div>
+</section>
+
+<!-- ============ TAB II · AGENDA COMPLETA ============ -->
+<section class="tab-content" id="agenda">
+  <div class="section-header">
+    <div class="section-eyebrow">Agenda completa · todo lo publicado</div>
+    <h2 class="section-title">Lo que hay confirmado para Impact'26</h2>
+    <p class="section-lead">Todo el material público disponible a fecha de hoy: tracks temáticos y speakers confirmados. La agenda con sesiones, horas y stages aún no se ha publicado.</p>
+  </div>
+
+  <div class="disclaimer">
+    <div class="disclaimer-title">⚠ La agenda detallada todavía no existe</div>
+    <p>Verificado el 9 de abril contra impactcee.com/impact/2026/. Solo están publicados speakers y tracks temáticos. Las sesiones concretas con hora, stage y panelistas se publican habitualmente 3·4 semanas antes del evento (mediados·finales de abril). Cuando salgan, sustituyo los bloques temáticos del Plan por sesiones reales.</p>
+  </div>
+
+  <h3 style="font-family:'Fraunces',serif; font-size:24px; font-weight:400; color:var(--navy); margin-bottom:8px; font-style:italic;">Tracks temáticos confirmados</h3>
+  <p style="font-size:13px; color:var(--navy-mid); margin-bottom:18px;">Verde · alta prioridad para Orona · Rojo · nuevo en 2026 · Camel · interés general</p>
+  <div class="tracks-grid" id="tracks-grid"></div>
+
+  <h3 style="font-family:'Fraunces',serif; font-size:24px; font-weight:400; color:var(--navy); margin: 48px 0 8px; font-style:italic;">Speakers confirmados</h3>
+  <p style="font-size:13px; color:var(--navy-mid); margin-bottom:18px;">Una selección del lineup principal de Impact'26. La lista completa supera los 650 ponentes en 10 stages.</p>
+  <div class="speakers-grid" id="speakers-grid"></div>
+</section>
+
+<!-- ============ TAB III · ALTERNATIVAS ============ -->
+<section class="tab-content" id="alt">
+  <div class="section-header">
+    <div class="section-eyebrow">Alternativas · qué descartas y por qué</div>
+    <h2 class="section-title">El coste de oportunidad de cada bloque</h2>
+    <p class="section-lead">En cada slot hay 8·10 sesiones simultáneas. Esto compara la sesión elegida contra la alternativa más relevante que descartas. Sirve como red de seguridad: si tu sesión elegida cae o no aporta, ya sabes a dónde ir.</p>
+  </div>
+
+  <div class="alt-intro">
+    <p style="font-size:14px; line-height:1.6; color:var(--navy-mid);">Importante: las alternativas son los <em>tipos</em> de sesión que existirán en cada franja, basadas en los tracks confirmados. Cuando salga la agenda real, los nombres concretos de los paneles y los ponentes encajan en esta estructura sin tocar la lógica.</p>
+  </div>
+
+  <div class="alt-grid" id="alt-grid"></div>
+</section>
+
+<!-- ============ TAB IV · OBJETIVOS ============ -->
+<section class="tab-content" id="targets">
+  <div class="section-header">
+    <div class="section-eyebrow">Objetivos · qué tiene que pasar para que el viaje valga</div>
+    <h2 class="section-title">3 números que definen el éxito</h2>
+    <p class="section-lead">Sin estos tres números, el viaje no se justifica. Con ellos, el Executive ticket de 7.499 PLN está pagado. Todo lo demás es secundario.</p>
+  </div>
+
+  <div class="objectives-grid">
+    <div class="objective">
+      <div class="objective-num">5</div>
+      <div class="objective-label">Objetivo 1 · Real Estate</div>
+      <div class="objective-target">Conversaciones con promotores o fondos de real estate con proyectos activos en Polonia</div>
+      <div class="objective-detail">No cualquier promotor · solo aquellos con pipeline activo en Polonia o CEE en los próximos 18 meses. Conversación de mínimo 5 minutos, con permiso para LinkedIn al final, con una nota tomada en el móvil inmediatamente después. Un follow·up personalizado en las siguientes 48 horas.</div>
+    </div>
+    <div class="objective">
+      <div class="objective-num">2</div>
+      <div class="objective-label">Objetivo 2 · Sector público</div>
+      <div class="objective-target">Contactos con decisores de infraestructura pública</div>
+      <div class="objective-detail">Funcionarios polacos o ministeriales con presupuesto sobre infraestructura urbana, hospitales, transporte o edificios públicos. El sector público polaco compra ascensores · esto es directo. Habrá ministros en Impact, pero los útiles son los chiefs of staff, no los ministros.</div>
+    </div>
+    <div class="objective">
+      <div class="objective-num">1</div>
+      <div class="objective-label">Objetivo 3 · Visibilidad</div>
+      <div class="objective-target">Un momento público de posicionamiento</div>
+      <div class="objective-detail">Una pregunta al ponente al final de una sesión Industry 5.0 o Invisible Innovation, presentándote como "MD de Orona Polonia". Te pone en el radar de 200·400 personas en 30 segundos. Un solo momento · bien preparado · es más rentable que 5 conversaciones de café.</div>
+    </div>
+  </div>
+
+  <div class="checklist">
+    <div class="checklist-title">Checklist pre·viaje</div>
+    <ul>
+      <li>Confirmar Endeavor dinner en Luma · ver lista de asistentes</li>
+      <li>Ticket Executive Impact'26 confirmado (código YPO vence 20 abril)</li>
+      <li>Lista de 10 targets nominales en el móvil</li>
+      <li>25 tarjetas de visita con QR del board CV</li>
+      <li>Plantilla de mensaje LinkedIn post·evento lista</li>
+      <li>App oficial Impact descargada y testeada</li>
+      <li>Batería externa cargada + cargador USB·C rápido</li>
+      <li>Camisa de repuesto en casa lista para cambio rápido día 1</li>
+      <li>Notas Apple/Notion abiertas con plantilla "contacto"</li>
+      <li>Frase de presentación memorizada (10 segundos)</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ TAB V · ENDEAVOR PREP ============ -->
+<section class="tab-content" id="endeavor">
+  <div class="section-header">
+    <div class="section-eyebrow">Endeavor Dinner · inteligencia previa</div>
+    <h2 class="section-title">Lo que necesitas saber antes del 12 mayo</h2>
+    <p class="section-lead">Preparación específica del Endeavor IMPACTful Networking Dinner. Este es el evento con mejor ratio valor/tiempo de todo el viaje · 3.5 horas, invite·only, en una sala de 100·120 personas seleccionadas. Entra preparado.</p>
+  </div>
+
+  <!-- What is Endeavor -->
+  <div style="background: var(--navy); color: var(--cream); padding: 36px; margin-bottom: 32px; border-left: 4px solid var(--camel); position: relative; overflow: hidden;">
+    <div style="font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color: var(--camel-text); margin-bottom:8px;">Contexto · qué es Endeavor Poland</div>
+    <div style="font-family:'Fraunces', serif; font-size: 28px; font-weight: 400; font-style: italic; margin-bottom: 18px; letter-spacing: -0.01em;">La red que genera unicornios polacos</div>
+    <p style="font-size:14px; line-height:1.7; color:rgba(245,241,232,0.85); max-width:780px;">Endeavor es una red global de "High·Impact Entrepreneurs" con presencia en 40 mercados. Endeavor Poland lanzó en septiembre 2022, con sede en Warsaw. Su fondo <em>Endeavor Catalyst</em> es uno de los inversores early·stage más productivos del mundo en generación de unicornios fuera de USA y China. Su misión en Polonia: identificar a los fundadores polacos con mayor potencial global y conectarlos con mentores, inversores e incumbents.</p>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-top: 22px; border-top: 1px solid var(--line); padding-top: 18px;">
+      <div>
+        <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:rgba(245,241,232,0.5); margin-bottom:4px;">Managing Director</div>
+        <div style="font-family:'Fraunces',serif; font-size:16px; color:var(--camel-soft); font-style:italic;">Bartosz Lipnicki</div>
+      </div>
+      <div>
+        <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:rgba(245,241,232,0.5); margin-bottom:4px;">Board Chair</div>
+        <div style="font-family:'Fraunces',serif; font-size:16px; color:var(--camel-soft); font-style:italic;">Wiktor Schmidt · Netguru</div>
+      </div>
+      <div>
+        <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:rgba(245,241,232,0.5); margin-bottom:4px;">Edición</div>
+        <div style="font-family:'Fraunces',serif; font-size:16px; color:var(--camel-soft); font-style:italic;">3ª · desde 2023 con Google for Startups</div>
+      </div>
+      <div>
+        <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:rgba(245,241,232,0.5); margin-bottom:4px;">Tamaño edición 2023</div>
+        <div style="font-family:'Fraunces',serif; font-size:16px; color:var(--camel-soft); font-style:italic;">120 asistentes curados</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Crítical connection: Mati -->
+  <div style="background: rgba(160, 82, 45, 0.08); border-left: 4px solid var(--rust); padding: 28px 32px; margin-bottom: 32px;">
+    <div style="font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color: var(--rust); font-weight:600; margin-bottom:8px;">Conexión crítica · aprovecharla</div>
+    <div style="font-family:'Fraunces', serif; font-size: 24px; font-weight: 500; font-style: italic; color: var(--navy); margin-bottom: 12px; letter-spacing: -0.01em;">Mati Staniszewski · puente entre el dinner y el main stage</div>
+    <p style="font-size:14px; line-height:1.7; color: var(--navy-mid);">Mati Staniszewski, co·founder de ElevenLabs, es parte de la red Endeavor Poland Y speaker confirmado en Impact'26. Probabilidad alta de que esté en el dinner del 12. Si consigues 90 segundos de conversación el lunes, el martes vas al main stage de Impact con un speaker que ya te conoce. Es la mejor leverage del viaje.</p>
+    <p style="font-size:13px; line-height:1.6; color: var(--navy-mid); margin-top: 12px; font-style: italic;">Tu gancho: "Somos una industria que apenas empieza a incorporar voice AI en mantenimiento técnico en campo · me interesa cómo están pensando ElevenLabs sobre contextos industriales con ruido."</p>
+  </div>
+
+  <!-- Target list -->
+  <h3 style="font-family:'Fraunces',serif; font-size:24px; font-weight:400; color:var(--navy); margin-bottom:8px; font-style:italic;">Perfiles a buscar en el dinner</h3>
+  <p style="font-size:13px; color:var(--navy-mid); margin-bottom:18px;">El dinner es invite·only · no hay lista pública. Estos son los perfiles a identificar al entrar a la sala y priorizar.</p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 32px;">
+    <div style="padding: 22px; background: var(--cream-soft); border: 1px solid var(--line); border-top: 3px solid var(--olive);">
+      <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color: var(--olive-text); font-weight:600; margin-bottom:8px;">Prioridad 1 · Host</div>
+      <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:500; color:var(--navy); margin-bottom:6px;">Bartosz Lipnicki</div>
+      <div style="font-size:13px; color:var(--navy-mid); line-height:1.55;">MD Endeavor Poland. Conoce a todo el ecosistema. Una conversación de 5 min con él te abre 20 puertas · y te invita al próximo evento.</div>
+      <div style="margin-top:10px; font-size:11px; font-style:italic; font-family:'Fraunces',serif; color:var(--olive-text);">→ Pide presentación a 2 founders específicos</div>
+    </div>
+    <div style="padding: 22px; background: var(--cream-soft); border: 1px solid var(--line); border-top: 3px solid var(--olive);">
+      <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color: var(--olive-text); font-weight:600; margin-bottom:8px;">Prioridad 1 · Board Chair</div>
+      <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:500; color:var(--navy); margin-bottom:6px;">Wiktor Schmidt</div>
+      <div style="font-size:13px; color:var(--navy-mid); line-height:1.55;">Co·founder de Netguru (software house top polaca). Board Chair Endeavor. Perfil "industrial·tech bridge" · entenderá Orona inmediatamente.</div>
+      <div style="margin-top:10px; font-size:11px; font-style:italic; font-family:'Fraunces',serif; color:var(--olive-text);">→ Conversación sobre proptech/IoT industrial</div>
+    </div>
+    <div style="padding: 22px; background: var(--cream-soft); border: 1px solid var(--line); border-top: 3px solid var(--camel);">
+      <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color: var(--camel-text); font-weight:600; margin-bottom:8px;">Prioridad 2 · Speaker bridge</div>
+      <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:500; color:var(--navy); margin-bottom:6px;">Mati Staniszewski</div>
+      <div style="font-size:13px; color:var(--navy-mid); line-height:1.55;">Co·founder ElevenLabs. Speaker en Impact'26 · probable asistente al dinner. Gancho: voice AI en contextos industriales.</div>
+      <div style="margin-top:10px; font-size:11px; font-style:italic; font-family:'Fraunces',serif; color:var(--camel-text);">→ 90 seg · café el día 13 si hay química</div>
+    </div>
+    <div style="padding: 22px; background: var(--cream-soft); border: 1px solid var(--line); border-top: 3px solid var(--camel);">
+      <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color: var(--camel-text); font-weight:600; margin-bottom:8px;">Prioridad 2 · Tipología</div>
+      <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:500; color:var(--navy); margin-bottom:6px;">PropTech / BuildTech founders</div>
+      <div style="font-size:13px; color:var(--navy-mid); line-height:1.55;">Founders polacos de scale·ups en real estate tech, smart buildings, construction tech. Son potenciales partners o targets M&A a medio plazo.</div>
+      <div style="margin-top:10px; font-size:11px; font-style:italic; font-family:'Fraunces',serif; color:var(--camel-text);">→ Identifica 2·3 en la sala</div>
+    </div>
+    <div style="padding: 22px; background: var(--cream-soft); border: 1px solid var(--line); border-top: 3px solid var(--camel);">
+      <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color: var(--camel-text); font-weight:600; margin-bottom:8px;">Prioridad 2 · Tipología</div>
+      <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:500; color:var(--navy); margin-bottom:6px;">VCs con thesis industrial</div>
+      <div style="font-size:13px; color:var(--navy-mid); line-height:1.55;">Algunos VCs polacos (Inovo, OTB, Market One) tienen thesis en industrial tech. Red indirecta para real estate deals · muchos LPs son family offices inmobiliarios.</div>
+      <div style="margin-top:10px; font-size:11px; font-style:italic; font-family:'Fraunces',serif; color:var(--camel-text);">→ Vía hacia LPs inmobiliarios</div>
+    </div>
+    <div style="padding: 22px; background: var(--cream-soft); border: 1px solid var(--line); border-top: 3px solid var(--muted);">
+      <div style="font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color: var(--muted); font-weight:600; margin-bottom:8px;">Prioridad 3 · Observación</div>
+      <div style="font-family:'Fraunces',serif; font-size:17px; font-weight:500; color:var(--navy); margin-bottom:6px;">Ecosystem leaders</div>
+      <div style="font-size:13px; color:var(--navy-mid); line-height:1.55;">Gente de PFR Ventures, PARP, NCBR, algún cargo de Ministerio Digital. Relevantes para objetivo 2 (sector público) pero solo si aparecen. No perseguir activamente.</div>
+      <div style="margin-top:10px; font-size:11px; font-style:italic; font-family:'Fraunces',serif; color:var(--muted);">→ Oportunista</div>
+    </div>
+  </div>
+
+  <!-- Portfolio companies -->
+  <h3 style="font-family:'Fraunces',serif; font-size:24px; font-weight:400; color:var(--navy); margin: 40px 0 8px; font-style:italic;">3 empresas portfolio que debes conocer</h3>
+  <p style="font-size:13px; color:var(--navy-mid); margin-bottom:18px;">Son las scale·ups polacas que Endeavor ya ha seleccionado. Si mencionas alguna con conocimiento real, demuestras que has hecho los deberes.</p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 32px;">
+    <div style="padding: 22px; background: var(--navy-soft); color: var(--cream); border-left: 3px solid var(--camel);">
+      <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:500; color: var(--cream); margin-bottom:6px;">Booksy</div>
+      <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color: var(--camel-soft); margin-bottom:10px;">Beauty & wellness SaaS</div>
+      <div style="font-size:13px; color: rgba(245,241,232,0.8); line-height:1.55;">Gestión de citas para salones de belleza. Unicornio polaco. Fundado en Kraków · tu ciudad.</div>
+    </div>
+    <div style="padding: 22px; background: var(--navy-soft); color: var(--cream); border-left: 3px solid var(--camel);">
+      <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:500; color: var(--cream); margin-bottom:6px;">ElevenLabs</div>
+      <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color: var(--camel-soft); margin-bottom:10px;">Voice AI</div>
+      <div style="font-size:13px; color: rgba(245,241,232,0.8); line-height:1.55;">Generación de voz AI. Mati Staniszewski + Piotr Dabkowski. Valoración última ronda >$1B. Speaker en Impact'26.</div>
+    </div>
+    <div style="padding: 22px; background: var(--navy-soft); color: var(--cream); border-left: 3px solid var(--camel);">
+      <div style="font-family:'Fraunces',serif; font-size:18px; font-weight:500; color: var(--cream); margin-bottom:6px;">Silent Eight</div>
+      <div style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color: var(--camel-soft); margin-bottom:10px;">RegTech / AML</div>
+      <div style="font-size:13px; color: rgba(245,241,232,0.8); line-height:1.55;">Compliance y AML automatizado. Julia + Martin Markiewicz. Interesante por el paralelismo con tu background M&A (compliance en integraciones).</div>
+    </div>
+  </div>
+
+  <!-- Opening line -->
+  <div style="background: var(--cream-soft); border: 1px solid var(--line); padding: 28px 32px; margin-bottom: 24px;">
+    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color: var(--camel-text); font-weight:600; margin-bottom:8px;">Tu frase de entrada · 10 segundos</div>
+    <div style="font-family:'Fraunces',serif; font-size: 20px; font-style: italic; color: var(--navy); line-height: 1.45; margin-bottom: 14px; letter-spacing: -0.005em;">"Dirijo Orona en Polonia · fabricamos 1 de cada 10 ascensores nuevos de Europa desde aquí. Vengo a Endeavor porque la próxima ola de valor en nuestra industria viene del cruce entre manufacturing y software · y ese cruce se está escribiendo en esta sala."</div>
+    <p style="font-size:13px; color:var(--navy-mid); line-height:1.6; font-style:italic;">Esta frase hace tres cosas en 10 segundos: posiciona escala (€1.1B implícito), posiciona tecnología (Polonia exporta manufacturing a Europa), y declara qué quieres (partners, no inversión). Memorizarla.</p>
+  </div>
+
+  <!-- Fireside questions -->
+  <div style="background: var(--navy); color: var(--cream); padding: 32px 36px; border-left: 4px solid var(--olive);">
+    <div style="font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color: var(--olive-soft); font-weight:600; margin-bottom:10px;">Si hay Q&A del fireside chat</div>
+    <div style="font-family:'Fraunces',serif; font-size: 22px; font-style: italic; margin-bottom: 16px;">Pregunta preparada · úsala solo si aporta</div>
+    <p style="font-size:14px; line-height:1.65; color: rgba(245,241,232,0.9); max-width: 780px;">Si el formato permite pregunta desde el público · pide el micro · preséntate como "Eloi Cortés, MD de Orona Polonia, grupo industrial de €1.1B" · y pregunta lo siguiente:</p>
+    <p style="font-family:'Fraunces',serif; font-size: 18px; font-style: italic; color: var(--camel-soft); margin-top: 18px; padding: 16px 20px; background: rgba(245,241,232,0.05); border-left: 3px solid var(--camel); line-height: 1.45;">"What's the biggest blind spot Polish tech startups have about partnering with industrial incumbents · and where should those conversations start?"</p>
+    <p style="font-size:13px; line-height:1.6; color: rgba(245,241,232,0.75); margin-top: 16px;">Hace tres cosas: te pone en el radar de 120 personas, posiciona a Orona como incumbent buscando partners, y genera conversación post·pregunta con founders que se te acerquen. No la fuerces · úsala solo si hay Q&A y nadie está haciendo preguntas memorables.</p>
+  </div>
+</section>
+
+<!-- ============ TAB VI · LOGÍSTICA ============ -->
+<section class="tab-content" id="logistics">
+  <div class="section-header">
+    <div class="section-eyebrow">Logística · base operativa</div>
+    <h2 class="section-title">Apartamento, venues, micro·decisiones</h2>
+    <p class="section-lead">Base propia en Grunwald. Cero hotel, cero taxi, cero fricción logística. Todo andando.</p>
+  </div>
+
+  <div class="logistics-grid">
+    <div class="hotel-card">
+      <div class="hotel-eyebrow">Base · tu apartamento</div>
+      <div class="hotel-name">Grunwald, Poznań</div>
+      <div style="font-size:13px; color:rgba(245,241,232,0.7); position:relative; z-index:1;">60·704 Poznań · al lado del Congress Center</div>
+      <div class="hotel-meta">
+        <div class="hotel-meta-item">A Congress Center<strong>5·10 min andando</strong></div>
+        <div class="hotel-meta-item">A Concordia (Endeavor)<strong>5·10 min andando</strong></div>
+        <div class="hotel-meta-item">Coste alojamiento<strong>0 PLN</strong></div>
+      </div>
+      <ul class="hotel-reasons">
+        <li>Ventaja definitiva: descanso real en tu propia cama entre bloques del día 1 (17:30·18:30) · llegas al cóctel duchado, cambiado y fresco</li>
+        <li>Tu cocina para el café de la mañana · desayuno tranquilo antes del evento sin depender del timing del hotel</li>
+        <li>Sin transporte dependiente · no hay Bolt que no llegue, tranvía que se retrase, o taxi que no encuentres</li>
+        <li>Conoces el barrio y los restaurantes · puedes ofrecer cena post·cóctel en "tu terreno" con autoridad</li>
+        <li>Cero coste de alojamiento · el ticket Executive de 7.499 PLN es la inversión total del viaje</li>
+      </ul>
+    </div>
+
+    <div class="action-card">
+      <div class="action-eyebrow">Acciones críticas esta semana</div>
+      <div class="action-title">Lo que no puede esperar</div>
+      <ul class="action-list">
+        <li>
+          <strong>1 · Confirmar Endeavor dinner en Luma</strong>
+          Verificar que la invitación está aceptada. Si Luma lista asistentes, anotar 5 targets del dinner.
+        </li>
+        <li>
+          <strong>2 · Confirmar ticket Executive Impact'26</strong>
+          Código YPO_x_IMPACT26 vence 20 abril. 7.499 PLN. Confirmar que incluye Speakers Lounge + cóctel + primera fila.
+        </li>
+        <li>
+          <strong>3 · Bloquear calendar 12→15 mayo</strong>
+          12 Endeavor dinner · 13·14 Impact · 15 mañana follow·up (es donde se materializa el ROI).
+        </li>
+        <li>
+          <strong>4 · Descargar app Impact</strong>
+          En cuanto esté disponible. Lista de asistentes confirmados · targets nominales del evento.
+        </li>
+        <li>
+          <strong>5 · Preparar kit físico</strong>
+          25 tarjetas de visita con QR del board CV · batería externa · cargador USB·C · camisa de repuesto en casa lista.
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Concordia venue card -->
+  <div style="margin-top: 32px; padding: 28px; background: var(--navy-soft); color: var(--cream); border-left: 4px solid var(--olive);">
+    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--olive-soft); font-weight:600; margin-bottom:8px;">Venue día 0 · Endeavor Dinner</div>
+    <div style="font-family:'Fraunces',serif; font-size:24px; font-style:italic; font-weight:400; margin-bottom:6px;">Restauracja Concordia Taste Poznań</div>
+    <div style="font-size:13px; color:rgba(245,241,232,0.7); margin-bottom:18px;">Zwierzyniecka 3/1 · 60·813 Poznań · +48 609 002 964</div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; border-top: 1px solid var(--line); padding-top: 16px;">
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(245,241,232,0.6);">Evento<strong style="display:block; font-family:'Fraunces',serif; font-style:italic; font-size:15px; text-transform:none; letter-spacing:-0.005em; color:var(--camel-soft); margin-top:4px; font-weight:400;">IMPACTful Networking Dinner</strong></div>
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(245,241,232,0.6);">Fecha y hora<strong style="display:block; font-family:'Fraunces',serif; font-style:italic; font-size:15px; text-transform:none; letter-spacing:-0.005em; color:var(--camel-soft); margin-top:4px; font-weight:400;">12 mayo · 18:30·22:00</strong></div>
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(245,241,232,0.6);">Desde casa<strong style="display:block; font-family:'Fraunces',serif; font-style:italic; font-size:15px; text-transform:none; letter-spacing:-0.005em; color:var(--camel-soft); margin-top:4px; font-weight:400;">5·10 min andando</strong></div>
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(245,241,232,0.6);">Organizador<strong style="display:block; font-family:'Fraunces',serif; font-style:italic; font-size:15px; text-transform:none; letter-spacing:-0.005em; color:var(--camel-soft); margin-top:4px; font-weight:400;">Endeavor Poland</strong></div>
+    </div>
+  </div>
+
+  <!-- Impact venue card -->
+  <div style="margin-top: 20px; padding: 28px; background: var(--cream-soft); border: 1px solid var(--line); border-left: 4px solid var(--camel);">
+    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--camel-text); font-weight:600; margin-bottom:8px;">Venue días 1·2 · Impact'26</div>
+    <div style="font-family:'Fraunces',serif; font-size:24px; font-style:italic; font-weight:400; margin-bottom:6px; color:var(--navy);">Poznań Congress Center · MTP</div>
+    <div style="font-size:13px; color:var(--navy-mid); margin-bottom:18px;">Głogowska 14 · 60·734 Poznań</div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; border-top: 1px solid var(--line); padding-top: 16px;">
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--navy-mid);">Fecha<strong style="display:block; font-family:'Fraunces',serif; font-style:italic; font-size:15px; text-transform:none; letter-spacing:-0.005em; color:var(--navy); margin-top:4px; font-weight:500;">13·14 mayo</strong></div>
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--navy-mid);">Desde casa<strong style="display:block; font-family:'Fraunces',serif; font-style:italic; font-size:15px; text-transform:none; letter-spacing:-0.005em; color:var(--navy); margin-top:4px; font-weight:500;">5·10 min andando</strong></div>
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--navy-mid);">Stages<strong style="display:block; font-family:'Fraunces',serif; font-style:italic; font-size:15px; text-transform:none; letter-spacing:-0.005em; color:var(--navy); margin-top:4px; font-weight:500;">10 stages · Executive lounge</strong></div>
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--navy-mid);">Descanso día 1<strong style="display:block; font-family:'Fraunces',serif; font-style:italic; font-size:15px; text-transform:none; letter-spacing:-0.005em; color:var(--navy); margin-top:4px; font-weight:500;">En casa · 17:30·18:30</strong></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Impact'26 · Plan personal · <span class="accent">Eloi Cortés Catalan</span> · MD Orona Group Poland
+</footer>
+
+<script>
+// ============ DATA ============
+const day0Sessions = [
+  {time: 'Tarde', dur: 'Llegada', type: 'rest', tag: 'Llegada', title: 'Llegada al apartamento Grunwald',
+   summary: 'Ya estás en casa. Sin check·in, sin maletas, sin logística. Dejar la cabeza descansada para el dinner.',
+   why: 'Tener apartamento propio en Grunwald a 5·10 min del venue y del Concordia elimina toda la fricción logística del viaje. Es la ventaja competitiva más infravalorada de estos 3 días.',
+   alt: '—'},
+  {time: '16:00', dur: '90 min', type: 'rest', tag: 'Preparación', title: 'Descanso + preparación Endeavor',
+   summary: 'Revisión de la lista de asistentes del dinner en la app de Luma. Memorizar 5 nombres clave. Siesta de 30 min. Ducha. Vestirse para el dinner.',
+   why: 'El Endeavor dinner es el primer evento de alto valor del viaje · entra preparado. Si Luma lista asistentes, identificar 5 antes de entrar cambia por completo la noche. 3 horas de networking con preparación > 6 horas sin ella.',
+   alt: 'Llegar al dinner sin preparación · descartado · desperdicias una oportunidad invite·only.'},
+  {time: '18:10', dur: '10 min', type: 'network', tag: 'Traslado', title: 'Andando al Concordia Taste',
+   summary: 'Grunwald 60·704 → Concordia Taste, Zwierzyniecka 3/1 · 5·10 min a pie. Llegar 5 min antes.',
+   why: 'Ambos en zona MTP/Bukowska. Andando, ventilado por el camino, llegas activado y sereno. Cero taxi, cero dependencia.',
+   alt: '—'},
+  {time: '18:30', dur: '3h 30min', type: 'cocktail', tag: 'Endeavor Dinner · invite only', title: 'Endeavor IMPACTful Networking Dinner',
+   summary: 'Founders polacos de scale·ups + inversores + ecosystem leaders + fireside chat. Tu angle: "MD de Orona Poland · fabricamos 1 de cada 10 ascensores nuevos de Europa desde Polonia".',
+   why: 'Esto no compite con Impact CEE · lo amplifica. Los asistentes del dinner son exactamente el perfil que verás en Impact 24·48h después. Llegar "ya conocido" al coffee del día 13 cambia la dinámica. Y tu perfil industrial en una sala de tech founders te hace único · la historia de Orona Polonia ES la historia que Endeavor celebra.',
+   alt: 'Saltarse el dinner y quedarse en casa · descartado · pierdes 3.5h con el perfil exacto de tus objetivos.'},
+  {time: '22:00', dur: '15 min', type: 'network', tag: 'Regreso', title: 'Vuelta andando a casa + cierre LinkedIn',
+   summary: '5·10 min a pie. Aprovecha la caminata para enviar 2·3 conexiones LinkedIn en caliente a las personas con las que hubo química.',
+   why: 'El "mejor café" o "seguimos hablando" se cierra saliendo, no al día siguiente. Los 10 min andando son tiempo productivo · mensajes LinkedIn personalizados mientras la conversación está fresca.',
+   alt: 'Dejarlo para mañana · descartado · mañana es Impact CEE a toda velocidad.'},
+  {time: '22:15', dur: '30 min', type: 'rest', tag: 'Notas + setup', title: 'Notas del dinner + setup final día 1',
+   summary: 'Notas en el móvil por cada conversación del dinner · nombre, empresa, tema, promesa. Setup técnico para el día 13: móvil al 100%, batería externa, 25 tarjetas, QR del CV, app Impact abierta.',
+   why: 'Dos cosas que no pueden dejarse para mañana. Las notas porque el 70% se olvida en 24h. El setup porque el día 13 arranca a las 8:00 y cualquier problema técnico cuesta tiempo de networking.',
+   alt: 'Dormir primero y hacerlo mañana · descartado · mañana arranca a las 8:00.'},
+];
+
+const day1Sessions = [
+  // PRE-EVENTO
+  {time: '09:30', dur: '30 min', type: 'network', tag: 'Registro + barrido', title: 'Llegada · registro Executive · primer barrido Speakers Lounge',
+   summary: 'Acreditación sin colas. Reconocimiento del layout del venue. Identificar la zona del Speakers Lounge y las mesas del café Executive.',
+   why: 'La ventana de 09:30 a 10:00 es el momento menos saturado del evento. Puedes hablar con cualquier ponente o asistente sin que nadie tenga prisa. No desperdicies esta ventana durmiendo.',
+   alt: 'Llegar a las 10:00 directamente al keynote · descartado · pierdes el único momento de networking sin presión del día.'},
+
+  // BLOQUE APERTURA — MAIN STAGE
+  {time: '10:00', dur: '20 min', type: 'keynote', tag: 'Keynote · Main Stage · AMBOS', title: 'Who Gains, Who Loses? The Struggle for Prosperity in the Age of AI — Daron Acemoğlu (MIT · Nobel Economía 2024)',
+   summary: 'La sesión inaugural más importante del evento. Acemoğlu argumenta que la IA está concentrando valor en pocas manos y desplazando empleo manufacturero. Primera fila zona Executive.',
+   why: 'PARA ORONA: La tesis de Acemoğlu es el marco intelectual exacto para posicionar a Orona como empresa que lleva tecnología a la industria sin destruir empleo. PARA ELOI: Es el speaker con más credibilidad intelectual del evento. Estar en primera fila en el keynote inaugural te identifica como alguien que merece ser conocido.',
+   alt: 'No hay alternativa válida para este slot · es el keynote de apertura del evento.'},
+
+  {time: '10:20', dur: '25 min', type: 'track', tag: 'Panel · Main Stage · ORONA', title: 'Europe in a Shifting World Order — Acemoğlu + Gajewski (Santander Bank Polska CEO) + Blicharski (Żabka Group CEO) + Marc Walder (Ringier)',
+   summary: 'Debate entre el Nobel y los CEOs de las empresas más grandes de Polonia. Moderado por Matthew Kaminski (editor Politico Europe). Main Stage.',
+   why: 'Michał Gajewski (CEO Santander Bank Polska) financia proyectos de construcción y desarrollo inmobiliario en toda Polonia — son los bancos que prestan a los promotores que especifican los ascensores. Tomasz Blicharski (Żabka) opera 10.000+ tiendas con ascensores de servicio. El coffee break post-sesión es el momento de approach a ambos.',
+   alt: 'Cualquier sesión paralela · descartado · aquí están CEOs de empresas con proyectos activos en Polonia.'},
+
+  {time: '10:45', dur: '15 min', type: 'track', tag: 'Fireside · Main Stage · Eloi', title: 'A New World Order: How Geopolitics is shaping the Future of Business — Jon Huntsman (VP Mastercard · ex-Embajador EE.UU.)',
+   summary: 'Fireside de 15 minutos con Huntsman. Moderado por Piotr Kraśko (Fakty TVN). Mastercard es el patrocinador principal del evento y tiene presencia masiva en toda la agenda.',
+   why: 'Huntsman es un conector de primer nivel entre política y empresa. Y Mastercard está en el Speakers Lounge. El gancho post-sesión: conectar su perspectiva geopolítica con el modelo de expansión europeo de Orona.',
+   alt: 'Salir al Speakers Lounge ya para pillar a Gajewski (Santander) en caliente · también válido.'},
+
+  // BLOQUE MINISTROS — OBJETIVO SECTOR PÚBLICO
+  {time: '11:05', dur: '10 min', type: 'keynote', tag: '🏛 Keynote · Main Stage · SECTOR PÚBLICO', title: 'Keynote — Wojciech Balczun (Minister Aktywów Państwowych — Ministerio de Activos del Estado)',
+   summary: 'El ministro que supervisa todas las empresas estatales polacas y sus presupuestos de inversión. Keynote individual de 10 minutos. Main Stage.',
+   why: 'OBJETIVO 2 (sector público). El Ministerio de Activos del Estado es responsable de la gestión de hospitales públicos, edificios de organismos estatales, infraestructura de transporte público. Todos llevan ascensores. El ministro no firma los contratos, pero define los presupuestos de modernización. Su equipo en el coffee break posterior es el target.',
+   alt: 'Speakers Lounge para pillar a los panelistas del bloque anterior · también válido pero prioridad menor.'},
+
+  {time: '11:20', dur: '15 min', type: 'track', tag: 'Fireside · Main Stage · ORONA', title: 'Investing in Poland\'s Dynamic Growth Market — Peter Bosek (CEO Erste Group)',
+   summary: 'El CEO de Erste Group — uno de los mayores bancos del CEE — explica por qué Polonia es el mercado más dinámico de Europa. Erste Bank financia proyectos de construcción y desarrollo inmobiliario en toda la región. Moderado por Grzegorz Nawacki.',
+   why: 'OBJETIVO 1 (real estate). Erste Group financia a los promotores inmobiliarios que son clientes directos de Orona. Un contacto con Bosek o su equipo en el Lounge te pone en el radar de los proyectos que Erste financia en Polonia. Gancho: "Somos el proveedor de ascensores en X proyectos financiados por Erste en Polonia."',
+   alt: 'Coffee break anticipado para pillar a Balczun (ministro) antes de que se vaya · también válido.'},
+
+  {time: '11:35', dur: '15 min', type: 'keynote', tag: '🏛 Keynote · Main Stage · SECTOR PÚBLICO', title: 'Keynote — Andrzej Domański (Minister Finansów i Gospodarki — Ministro de Finanzas y Economía)',
+   summary: 'El ministro de Finanzas polaco. Keynote individual de 15 minutos. Define el presupuesto de inversiones públicas en infraestructura del país. Main Stage.',
+   why: 'OBJETIVO 2 (sector público). Domański controla el presupuesto de inversión pública en Polonia. Hospitales nuevos, ampliaciones de infraestructura, inversión en accesibilidad urbana — todo pasa por su ministerio. La audiencia de este keynote incluye funcionarios de alto rango que sí están en el lobby del venue.',
+   alt: 'Ir al Speakers Lounge ya · descartado · este bloque de ministros es el de mayor densidad de contactos sector público del día.'},
+
+  // COFFEE BREAK #1
+  {time: '11:55', dur: '30 min', type: 'network', tag: '🔑 Coffee #1 — post-ministros', title: 'Coffee break #1 — el más importante de la mañana',
+   summary: 'Ventana de 30 minutos entre bloques. Target prioritario: chiefs of staff de los ministerios (no los ministros directamente) + Gajewski (Santander) + Bosek (Erste) + cualquier contacto del Endeavor dinner.',
+   why: 'Los funcionarios de alto rango toman café justo después de sus jefes bajar del escenario. No vayas al ministro — ve al director general que está detrás. Una conversación de 90 segundos con el jefe de gabinete del Ministro de Activos vale más que 10 emails fríos. Y si reconoces alguien del Endeavor dinner de anoche, ese re-encuentro es oro.',
+   alt: 'Sesiones de 12:00 en adelante · descartado · esta es la ventana de approach más valiosa de la mañana.'},
+
+  // CLOONEY + LOUNGE
+  {time: '12:00', dur: '30 min', type: 'track', tag: 'Fireside · Main Stage · Eloi', title: 'Justice, Solidarity and Global Change — Amal Clooney [OPCIONAL vs Speakers Lounge]',
+   summary: 'Fireside de 30 minutos con Amal Clooney (human rights lawyer). Moderado por Anita Werner (TVN). Alta afluencia — la sala estará llena.',
+   why: 'Bajo ROI para Orona directamente, pero alto valor de visibilidad pasiva (sala más llena del día). ALTERNATIVA MEJOR: ir al Speakers Lounge a buscar a Bosek (Erste) o a los panelistas de la mañana. Decide según cómo fue el coffee break #1.',
+   alt: 'Speakers Lounge ronda 1 — si el coffee fue productivo, Lounge. Si no, quédate para la visibilidad.'},
+
+  {time: '12:30', dur: '45 min', type: 'meal', tag: 'Lunch + Speakers Lounge #1', title: 'Lunch + Speakers Lounge — ronda 1 [+ ventana Acemoğlu signing]',
+   summary: 'Primera ronda crítica del Lounge. Targets prioritarios: Peter Bosek (Erste Group) + cualquier ponente del bloque de ministros. A las 13:00 hay un BONUS: Daron Acemoğlu firma libros en el Impact Bookstore (Signing, 13:00-14:00). Esto coincide con el inicio de Urban Next (Trzaskowski 13:15). Solución: 10 minutos al signing 13:00-13:10 para intercambiar dos frases con el Nobel, luego Stage 7 para Trzaskowski.',
+   why: 'El book signing de Acemoğlu es la única oportunidad de conversación directa con el Nobel fuera del escenario. No hace falta más de 10 minutos — el objetivo es el intercambio, no la charla. Y Bosek puede encontrarse en el Lounge antes de las 13:00. El gancho para Bosek: "¿Cuántos de los proyectos de construcción que financia Erste en Polonia tienen especificado ya el proveedor de ascensores?"',
+   alt: 'Comer en el área general del venue · descartado · pierdes el acceso al Lounge y al book signing.'},
+
+  // URBAN NEXT BLOCK — EL BLOQUE CLAVE PARA ORONA
+  {time: '13:15', dur: '15 min', type: 'track', tag: '⭐ OBJETIVO 1 · Urban Next Stage', title: 'From Brussels to City Hall: The Power of EU Funding — Rafał Trzaskowski (Alcalde de Varsovia)',
+   summary: 'El alcalde de Varsovia explica cómo gestiona los fondos europeos para la transformación urbana de la ciudad. Urban Next Stage (Stage 7). Moderado por Jerzy Mielewski.',
+   why: 'OBJETIVO 1+2 combinados. Trzaskowski controla el presupuesto de inversión urbana de Varsovia — hospitales municipales, edificios públicos, residencias sociales, estaciones de metro, infraestructura de accesibilidad. TODOS llevan ascensores. Su equipo firma los pliegos. El Speakers Lounge post-sesión es el momento de approach. Gancho: "¿Cómo afecta la normativa europea de accesibilidad a los requisitos técnicos de los nuevos edificios municipales?"',
+   alt: 'Impact & Mastercard Stage (banca) · descartado · World Bank y EBRD son contactos más indirectos para Orona que el alcalde de Varsovia.'},
+
+  {time: '13:30', dur: '20 min', type: 'track', tag: '⭐ OBJETIVO 2 · Urban Next Stage', title: 'From local decisions to systemic change: financing the green and digital transition — Marcin Grądzki (Urząd m.st. Warszawa)',
+   summary: 'Funcionario del Ayuntamiento de Varsovia sobre el modelo de financiación de la transición verde y digital en infraestructura municipal. Urban Next Stage.',
+   why: 'Grądzki no es político — es un técnico de alto nivel que decide especificaciones de infraestructura. Estos son exactamente los contactos que necesitas para el objetivo sector público. Después de la sesión, acércate con una pregunta técnica sobre estándares de accesibilidad: "¿Cómo están adaptando las especificaciones de edificios públicos nuevos a la directiva europea de accesibilidad?" Eso abre la puerta a Orona.',
+   alt: 'Impact & Mastercard Stage · descartado · los funcionarios del Ayuntamiento de Varsovia tienen más impacto directo en el negocio de Orona que los panelistas bancarios.'},
+
+  {time: '13:50', dur: '20 min', type: 'track', tag: 'Urban Next Stage · ORONA', title: 'Off the beaten path. Promoting lesser-known destinations — Bohdan Pawłowicz [GAP ENTRE SESIONES]',
+   summary: 'Sesión de turismo urbano. Baja relevancia para Orona. Usar este slot para el Speakers Lounge ronda 2 y approach a Trzaskowski / Grądzki que acaban de bajar del escenario.',
+   why: 'La sesión de 13:50 es de turismo — aprovecha para el Speakers Lounge donde Trzaskowski y Grądzki estarán accesibles durante máximo 20-30 minutos antes de irse.',
+   alt: 'Asistir a la sesión de turismo · descartado · el Lounge es más valioso ahora.'},
+
+  {time: '14:10', dur: '20 min', type: 'track', tag: '⭐ OBJETIVO 1 · Urban Next Stage', title: 'The city in motion: from infrastructure to new mobility services — PKP Intercity + Polskie Porty Lotnicze + Alcaldesa Sopot',
+   summary: 'Marcin Karasiński (CEO PKP Intercity), Łukasz Chaberski (PPL — aeropuertos polacos), Magdalena Czarzyńska-Jachim (Alcaldesa Sopot). Urban Next Stage.',
+   why: 'OBJETIVO 1. PKP Intercity gestiona todas las estaciones de tren de Polonia — infraestructura pública que requiere ascensores de accesibilidad y modernización continua. PPL gestiona los aeropuertos polacos (Chopin, Kraków-Balice, etc.) — misma lógica. Sopot como ejemplo de ciudad turística que invierte en infraestructura de accesibilidad. Tres potenciales clientes directos en un panel de 20 minutos.',
+   alt: 'Impact & Mastercard Stage "Who Needs Banks?" · descartado · los directivos de infraestructura pública son más relevantes que los banqueros para el objetivo Orona.'},
+
+  // COFFEE BREAK #2
+  {time: '14:30', dur: '30 min', type: 'network', tag: 'Coffee #2 · Urban Next approach', title: 'Coffee break #2 — approach panelistas Urban Next',
+   summary: 'Momento de máxima receptividad para los panelistas de Urban Next. Trzaskowski, Grądzki, Karasiński (PKP) y Chaberski (PPL) están tomando café. Target: 2 conversaciones de 5-7 minutos.',
+   why: 'Este coffee break es donde conviertes el conocimiento de las sesiones en contacto real. El gancho con Karasiński (PKP): "Estuve en la sesión — PKP tiene 350 estaciones. ¿Cómo están priorizando la modernización de ascensores para cumplir la directiva de accesibilidad?" Con Trzaskowski o su equipo: "La sesión me generó una duda sobre cómo el Ayuntamiento especifica proveedores en los pliegos de obra pública." 90 segundos + tarjeta + LinkedIn.',
+   alt: 'Asistir a sesiones bancarias · descartado · este coffee es el pico de valor del día para objetivo 1.'},
+
+  // AFTERNOON — FLEXIBLE
+  {time: '15:00', dur: '40 min', type: 'track', tag: '🆕 Nuevo hallazgo · Impact Arena', title: '"Strategic resources & critical infrastructure" — PKP SA + Veolia + Gasiuk-Pihowicz (EU Parliament) [15:00-15:20]',
+   summary: 'Moderated discussion en el Impact Arena (Green Economy/Energy track). Alan Beroud (PKP SA) — mismo grupo que PKP Intercity. Luiz Hanania (Veolia) — utilities, gestión de edificios. Kamila Gasiuk-Pihowicz (Parlamento Europeo). Seguido a las 15:20 de "Energy 4.0: The Smart Energy Revolution" con Grzegorz Wrona (Ministerstwo Aktywów Państwowych) — official senior del MISMO ministerio que el Ministro Balczun.',
+   why: 'DOBLE HALLAZGO no identificado en el plan anterior. Primero: Alan Beroud (PKP SA) es un contacto del mismo grupo corporativo que PKP Intercity (que viste en Urban Next). Te da una segunda oportunidad de approach PKP en un contexto diferente. Segundo y más importante: Grzegorz Wrona del Ministerio de Activos del Estado a las 15:20 — es el tipo de funcionario senior que traduce las directrices del ministro en especificaciones técnicas de edificios. Si el approach al ministro Balczun en el coffee #1 fue incompleto, Wrona es la segunda bala. Y puedes referenciar: "Estuve en la intervención del ministro esta mañana, y me surgió una duda técnica sobre los estándares de ascensores en los nuevos edificios del Estado."',
+   alt: 'Speakers Lounge ronda 2 — igualmente válido. La decisión depende de si ya tienes contactos PKP del Urban Next.'},
+
+  {time: '15:15', dur: '25 min', type: 'track', tag: 'Future Geopolitics Stage 3 · Eloi', title: '"A World in Entropy: The End of the Order We Knew" — Timothy Snyder + Rafał Trzaskowski + Ece Temelkuran',
+   summary: 'Snyder (Harvard/Yale, el pensador más agudo sobre democracia y autoritarismo) + Trzaskowski (Alcalde Varsovia — lo conoces del Urban Next de esta mañana) + Temelkuran + Philippe Tibi. Future Geopolitics Stage 3.',
+   why: 'PARA ELOI. Snyder es el speaker con mayor profundidad intelectual del evento junto con Acemoğlu. Y Trzaskowski aparece en ESTE panel también — si no lograste hacer el approach después de su sesión de Urban Next, este panel te da un segundo contexto. Bonus: si le ves en el Speakers Lounge post-panel, puedes referenciar AMBAS sesiones: "Fue interesante ver la transición de tu sesión sobre EU funding esta mañana a este panel más filosófico sobre el orden mundial."',
+   alt: 'Impact Arena "A world powered by renewables" · descartado · baja relevancia vs Snyder + bonus Trzaskowski.'},
+  {time: '16:00', dur: '25 min', type: 'track', tag: '🎯 Objetivo 3 · Visibilidad · Main Stage', title: '"Between the Canon and Pop Culture: Who Decides What Art Is?" — Jeff Koons + Boris Kudlička (Opera Narodowa) + Omenaa Mensah',
+   summary: 'Panel con Jeff Koons, el director de la Ópera Nacional Polaca y la fundadora de Omenaa Foundation. Main Stage. Sala al 100% — 400-600 personas. Moderado por Timothée Verrecchia.',
+   why: 'OBJETIVO 3 (visibilidad pública). Jeff Koons es el ponente más famoso del slot. La sala estará llena. Si hay Q&A, esta es tu oportunidad: "Como director de una empresa que fabrica los mecanismos que dan acceso universal a estos espacios culturales — ascensores en óperas, museos y galerías — ¿cómo ven la responsabilidad de la infraestructura en la experiencia del arte?" Eso te pone en el radar de 500 personas y es perfectamente coherente con el perfil de Orona.',
+   alt: 'Future Geopolitics Stage — "Europe 2035: Can the EU Survive?" · descartado · no aporta visibilidad pública en la misma magnitud.'},
+
+  // DESCANSO EN CASA — VENTAJA GRUNWALD
+  {time: '16:30', dur: '60 min', type: 'rest', tag: '🏠 Descanso en casa · ventaja Grunwald', title: 'Descanso obligatorio en el apartamento — 5 min andando',
+   summary: '5-10 min andando a casa. Ducha. Camisa limpia. 20 minutos de cama real. Café. Revisión mental de los 3-5 targets del cóctel. Vuelves andando a las 17:30 para el bloque de tarde.',
+   why: 'Esta es la ventaja más importante de tener apartamento en Grunwald. Mientras los demás Executive holders se sientan en un sofá del Lounge, tú te duchas, te cambias y te tumbas 20 minutos. La diferencia entre llegar al cóctel de las 19:00 fresco vs fundido son 2-3 conversaciones de calidad. Eso justifica el apartamento.',
+   alt: 'Quedarse en el venue · descartado · tienes tu casa a 5 minutos, es imperdonable no usarla.'},
+
+  // TARDE — SCOTT GALLOWAY
+  {time: '18:00', dur: '45 min', type: 'keynote', tag: '⭐ Keynote · Main Stage · Eloi', title: '"Algebra of Happiness" — Scott Galloway (NYU Stern · 240K+ seguidores LinkedIn)',
+   summary: 'El mejor speaker de la tarde. Galloway habla de la ecuación entre éxito profesional, bienestar personal y las decisiones que marcan una vida. Main Stage. 45 minutos.',
+   why: 'PARA ELOI PERSONALMENTE. Galloway es el speaker con mayor conexión con tu perfil de audiencia — directivos de entre 40-55 años en transición de líder operacional a board. Su keynote te dará material de conversación inmediato para el cóctel de las 19:00. Y a las 18:45 entra Mati Staniszewski — si Mati estuvo en el Endeavor dinner, este es el momento de re-encontrarle en el contexto natural.',
+   alt: 'Ir directamente al cóctel a las 18:00 · descartado · llegas demasiado temprano y sin material conversacional fresco.'},
+
+  {time: '18:45', dur: '15 min', type: 'keynote', tag: '⭐ Fireside · Main Stage · AMBOS [Endeavor]', title: '"AI Optimist" — Mati Staniszewski (ElevenLabs) con Scott Galloway como moderador',
+   summary: 'Mati Staniszewski (co-founder ElevenLabs, portfolio Endeavor Poland) en conversación con Scott Galloway. Main Stage. 15 min.',
+   why: 'CRÍTICO si Mati estuvo en el Endeavor dinner del 12 de mayo. Este es el re-encuentro natural en el contexto del evento. Después de la sesión, acércate: "Mati, fue un placer anoche en Concordia — este fireside con Galloway es exactamente la conversación sobre voice AI en industria que mencionamos." Eso cierra el loop Endeavor → Impact y convierte una cena en una relación.',
+   alt: 'Ir directamente al cóctel · descartado · si Mati está aquí, este re-encuentro público vale más que cualquier conversación de cóctel.'},
+
+  // COCTEL
+  {time: '19:00', dur: '2 horas', type: 'cocktail', tag: 'Cóctel Executive · evento principal', title: 'Executive Private Cocktail',
+   summary: 'El núcleo del ticket Executive. Target: 3 conversaciones de calidad. Llega con la lista mental de 5 personas de las que quieres encontrar: Trzaskowski/equipo (Urban Next) + Bosek (Erste) + cualquier contacto del Endeavor dinner + 2 wildcards del día.',
+   why: 'Ventana de 2 horas. 3 conversaciones reales > 15 intercambios de tarjetas. El gancho perfecto para Urban Next contacts: "Estuve en tu sesión esta tarde — tenía una pregunta que no tuve oportunidad de hacer sobre los pliegos de accesibilidad." Eso es una conversación de 5 minutos mínimo.',
+   alt: 'Quedarse hasta el final del cóctel · descartado · rendimientos decrecientes después de 2 horas.'},
+
+  {time: '21:00', dur: '0-120 min', type: 'network', tag: 'Ventana cena [decisión a las 16:00]', title: 'Cena con contacto fuerte [CONDICIONAL — ver reglas A/B]',
+   summary: 'Solo si la decisión de las 16:00 fue A (3 condiciones cumplidas). Si fue B, andando a casa en 5 min. Zona Bukowska/MTP tiene restaurantes a minutos del venue.',
+   why: '2 horas a solas con un contacto cualificado vale más que 20 tarjetas intercambiadas. Bonus: puedes ofrecer un restaurante del barrio con autoridad porque vives aquí.',
+   alt: 'A casa andando · proteges el día 2, que con salida 12:00 ó 14:15 requiere frescura máxima.'},
+];
+
+const day2Sessions = [
+  {time: '08:30', dur: '20 min', type: 'rest', tag: 'Repaso en casa', title: 'Café en casa + notas del día 1 + lista de re-encuentros',
+   summary: 'Tu cocina, tu tranquilidad. Abres las notas del día 1 y del Endeavor dinner. Writes: 3 personas que tienes que reencontrar HOY sí o sí.',
+   why: 'Día comprimido. Cada bloque tiene que servir a algo concreto. 20 minutos de planificación en casa valen más que 2 horas improvisadas en el venue.',
+   alt: 'Salir directo al venue · descartado · llegas sin saber a quién buscar primero.'},
+
+  // APERTURA DÍA 2 — MATI ES LA PRIORIDAD
+  {time: '09:50', dur: '15 min', type: 'keynote', tag: '⭐⭐⭐ Keynote · Main Stage · AMBOS [Endeavor]', title: '"Breaking the sound barrier: The voice agent era" — Mati Staniszewski (co-founder ElevenLabs)',
+   summary: 'Mati Staniszewski — co-founder de ElevenLabs (valoración >$1B, portfolio Endeavor Poland) — abre el día 2 en el Main Stage con un keynote sobre la era de los agentes de voz. Primera fila zona Executive.',
+   why: 'Si Mati estuvo en el Endeavor dinner del 12, este keynote es LA sesión del día 2 para ti. Llegas habiendo cenado con él la noche anterior. Estar en primera fila mientras habla cierra el loop de manera visible. Gancho en el coffee posterior: "Tu keynote conecta exactamente con lo que comentamos en Concordia sobre voice AI en contextos industriales."',
+   alt: 'No hay alternativa · si Mati estuvo en el dinner, esta sesión es obligatoria.'},
+
+  {time: '10:05', dur: '15 min', type: 'track', tag: 'Fireside · Main Stage · Eloi', title: '"Breaking the sound barrier" [extended fireside] — Mati Staniszewski + Matthew Kaminski (editor Politico)',
+   summary: 'Continuación del keynote en formato fireside. Kaminski profundiza en las implicaciones de los voice agents para industrias no-tech.',
+   why: 'Kaminski preguntará exactamente sobre el uso de voice AI en industrias tradicionales — tu industria. Si tienes oportunidad de pregunta al final, este es el momento: "¿Cómo ven ElevenLabs el uso de voice agents en mantenimiento técnico industrial, donde el técnico trabaja con las manos ocupadas?" Eso es objetivo 3 + conexión Endeavor.',
+   alt: 'Coffee break anticipado para pillar a Mati justo al bajar del escenario · igualmente válido.'},
+
+  // COFFEE BREAK #3 — EL MÁS IMPORTANTE
+  {time: '10:25', dur: '20 min', type: 'network', tag: '🔑 Coffee #3 — RE-ENCUENTROS · NO negociable', title: 'Coffee break #3 — el bloque más valioso de todo el viaje',
+   summary: 'Busca activamente a las 3 personas de tu lista. Si Mati está aquí: re-encuentro post-keynote. Si están los contactos de Urban Next del día 1: segunda conversación que convierte contacto en relación. 90 segundos por persona son suficientes.',
+   why: 'El primer contacto (día 1 o Endeavor) fue un encuentro. El segundo contacto (hoy) es una relación. Sin este bloque, todo lo de ayer y del Endeavor dinner son tarjetas intercambiadas sin seguimiento. Este coffee break es el ROI de todo el viaje.',
+   alt: 'Ir directamente a la sesión de las 10:40 · descartado · ninguna sesión vale más que este coffee.'},
+
+  {time: '10:40', dur: '25 min', type: 'track', tag: 'Panel · Main Stage · Eloi', title: '"Three superpowers? Europe between the US and China" — Martin Wolf (FT) + Joe Schoendorf (Accel Partners) + Alice Han (Greenmantle)',
+   summary: 'Debate sobre el triángulo geopolítico US-China-Europe. Martin Wolf (FT chief economics commentator) + Joe Schoendorf (partner en Accel, el fondo detrás de Spotify, Slack, CrowdStrike) + Alice Han (Greenmantle, geopolítica y mercados). Moderado por Olivia Kinghorst.',
+   why: 'PARA ELOI. Joe Schoendorf (Accel) es el ponente más interesante para el objetivo board/NED — es el tipo de inversora de growth equity que busca directivos operacionales con experiencia industrial en Europa. El gancho en el Speakers Lounge: "¿Cómo evalúa Accel el perfil de directivos operacionales en sus portfolio companies europeas?"',
+   alt: 'AI Stage (Stage 1) — "Why most great ideas fail" con Stefan Batory (Booksy CEO) · interesante para el perfil Endeavor pero menos que el panel de Martin Wolf.'},
+
+  {time: '11:10', dur: '15 min', type: 'track', tag: 'Main Stage · contexto', title: 'Fireside — Władysław Kosiniak-Kamysz (Wiceprezes Rady Ministrów — Viceprimer Ministro)',
+   summary: 'El Viceprimer Ministro de Polonia en formato fireside en el Main Stage. Sesión sin título confirmado.',
+   why: 'OBJETIVO 2 (sector público). El Viceprimer Ministro tiene control sobre inversiones en infraestructura nacional. Más importante: su equipo está en el venue.',
+   alt: 'Speakers Lounge mientras dura el fireside · igualmente válido según el resultado del coffee #3.'},
+
+  {time: '11:45', dur: '30 min', type: 'keynote', tag: 'Keynote · Main Stage · Eloi', title: '"Architects of the new era: power, capital and Artificial Intelligence" — Joe Schoendorf (Accel Partners)',
+   summary: 'Keynote de 30 minutos de Joe Schoendorf, partner en Accel — uno de los fondos de VC más influyentes del mundo. Habla sobre quién va a ganar la próxima década en AI.',
+   why: 'PARA ELOI. Accel Partners busca directivos operacionales para sus portfolio companies. Un keynote de 30 minutos te da 3-4 puntos de conversación concretos para el Speakers Lounge. Gancho: "¿Qué tipo de perfil operacional busca Accel para sus portfolio companies industriales en CEE?"',
+   alt: 'Speakers Lounge durante el keynote · descartado · perdería el material de conversación para el approach posterior.'},
+
+  // PUNTO DE DECISIÓN SALIDA
+  {time: '12:15', dur: '30 min', type: 'network', tag: '🚗 PUNTO DECISIÓN · 10:45 fue cuando decidiste', title: 'Speakers Lounge final + cierre de contactos [OPCIÓN A: salida 12:00 o OPCIÓN B: continúas]',
+   summary: 'OPCIÓN A (salida 12:00): Sales ahora. Andando al apartamento. Carga el coche. Salida para Kraków a las 12:15-12:30. ETA Kraków ~16:45. / OPCIÓN B (salida 14:15): Lunch + Speakers Lounge #2. Después continúas con el bloque de Industry & Space.',
+   why: 'La decisión se tomó a las 10:45 según el estado de los re-encuentros. Si ya cumpliste los 3-4 re-encuentros clave de tu lista → OPCIÓN A. Si quedan contactos pendientes → OPCIÓN B.',
+   alt: 'Asistir a más sesiones sin tener la lista de re-encuentros cerrada · descartado · no improvises la salida.'},
+
+  // OPCIÓN B ÚNICAMENTE — 13:00 en adelante
+  {time: '13:05', dur: '15 min', type: 'track', tag: '🆕 AI Stage 1 · Eloi + Endeavor [solo Opción B]', title: '"Why most great ideas fail — and why yours won\'t" — Stefan Batory (Booksy CEO)',
+   summary: 'Stefan Batory (CEO y co-founder de Booksy — el SaaS de reservas para salones de belleza con 40M+ usuarios) en format fireside. AI Stage 1. Moderado por Aleksander Kutela (RASP). Booksy es portfolio Endeavor Poland. [Solo si salida a las 14:15]',
+   why: 'Booksy es portfolio de Endeavor Poland — el mismo Endeavor que organizó el dinner del 12 de mayo. Si Batory o alguien de Booksy estuvo en el dinner, esta sesión es el re-encuentro natural. Gancho perfecto: "Vi tu sesión esta mañana — hay un paralelo directo entre escalar un SaaS y escalar una operación industrial como la nuestra. ¿Tienes 5 minutos después?"',
+   alt: 'Industry Stage 4 "Logistics in motion" 13:10 · para Orona tiene más impacto directo — priorizar Industry Stage si tienes que elegir.'},
+
+  {time: '13:10', dur: '15 min', type: 'track', tag: 'Industry Stage · ORONA [solo Opción B]', title: '"Logistics in motion: from operations to strategy in a changing world of supply" — mod: Sebastian Ogórek (wyborcza.biz)',
+   summary: 'Fireside sobre logística y operaciones en el nuevo contexto global. Industry & Space Technologies Stage (Stage 4). [Solo si salida a las 14:15]',
+   why: 'Contexto operacional directo para Orona — supply chain, vertical transport en centros logísticos. Ponente a confirmar.',
+   alt: 'AI Stage — "The age of agentic AI: time to rebuild your organization" (13:20-13:40) · con Allegro, Salesforce, Comarch, AWS · más aplicable a transformación organizativa.'},
+
+  {time: '13:25', dur: '20 min', type: 'track', tag: 'Industry Stage · ORONA [solo Opción B]', title: '"Future skills: the foundation of innovation and strategic advantage" — NAWA + Łukasiewicz + Solarski (Miasto Poznań)',
+   summary: 'Wojciech Karczewski (NAWA), Hubert Cichocki (Sieć Badawcza Łukasiewicz), Jędrzej Solarski (Ayuntamiento Poznań). Industry & Space Stage. [Solo si salida a las 14:15]',
+   why: 'ORONA + OBJETIVO 2. El talento técnico es el pain point estructural de Orona Polonia. Solarski como alcalde adjunto de Poznań es contacto directo para infraestructura municipal local. Gancho: "¿Cómo está Poznań adaptando los requisitos de accesibilidad en las obras municipales?"',
+   alt: 'AI Stage — "Agentic AI" · igualmente válido si prefieres el ángulo de transformación digital.'},
+
+  {time: '13:45', dur: '20 min', type: 'track', tag: 'Industry Stage · ORONA+Eloi [solo Opción B]', title: '"At the Crossroads of Global Security and Future Development" — Jaśkowiak (Alcalde Poznań) + Miguel Berger (Embajador Alemán) + Ivan Krastev (IWM)',
+   summary: 'Jacek Jaśkowiak (Alcalde de Poznań — el anfitrión del evento), Miguel Berger (Embajador de Alemania en Polonia), Ivan Krastev (Institute for Human Sciences Viena). Industry Stage. [Solo si salida a las 14:15]',
+   why: 'OBJETIVO 2. Jaśkowiak es el alcalde de la ciudad donde estás en este momento — tiene presupuesto directo sobre infraestructura municipal de Poznań. Es el mayor propietario de infraestructura pública de la ciudad donde tienes apartamento. Gancho: "El Ayuntamiento de Poznań tiene plans de modernización de centros cívicos — ¿cómo gestiona los requisitos de accesibilidad?" Ivan Krastev es bonus para Eloi (pensador de geopolítica europeo top).',
+   alt: 'Speakers Lounge final · también válido si ya tienes el contacto de Trzaskowski de ayer.'},
+
+  {time: '14:05', dur: '10 min', type: 'network', tag: '🚗 Salida · Opción B', title: 'Salida final · andando al apartamento · salida para Kraków',
+   summary: 'Salida del venue a las 14:05. Andando 5-10 min al apartamento. Pack. Coche. Salida Poznań → Kraków a las 14:15. ETA Kraków ~18:45.',
+   why: 'Con la restricción de salida a las 14:15, cualquier sesión posterior no entra. Los últimos 10 minutos son para cerrar en persona cualquier promesa pendiente ("te mando eso esta tarde") y decir adiós a los contactos que todavía estén en el coffee del venue.',
+   alt: 'Quedarse hasta las 15:00 · descartado · pierdes el margen para imprevistos en el viaje.'},
+];
+
+const tracks = [
+  // TRACKS REALES CONFIRMADOS EN AGENDA 2026
+  {name: 'Urban Next (Stage 7 Día 1)', tag: 'REAL · alta prioridad', priority: 'high', desc: 'Alcalde de Varsovia, Ayuntamiento Varsovia, PKP Intercity, aeropuertos polacos. La infraestructura pública que compra ascensores está en este stage.', fit: '⭐⭐⭐ Objetivo 1+2 directos'},
+  {name: 'Industry & Space Technologies (Stage 4 Día 2)', tag: 'REAL · alta prioridad', priority: 'high', desc: 'Logística, future skills, at the crossroads, Alcalde Poznań, Łukasiewicz, colaboración industrial. El track más relevante del día 2 para Orona.', fit: '⭐⭐⭐ Objetivo 1+2 Día 2'},
+  {name: 'Economics of AI (Main Stage Día 1)', tag: 'REAL · alta prioridad', priority: 'high', desc: 'Acemoğlu keynote, Europe & World Order, EU AI regulation debate, Kristalina Georgieva IMF. Marco intelectual + ministros polacos.', fit: '⭐⭐ Presencia + Sector público'},
+  {name: 'General Session · Main Stage mañana (ambos días)', tag: 'REAL · alta prioridad', priority: 'high', desc: 'Bloque de ministros (11:05-11:50 Día 1), Mati Staniszewski abre Día 2 (09:50), Scott Galloway (18:00 Día 1), Justin Trudeau cierra Día 2 (17:05).', fit: '⭐⭐ Visibilidad + conexiones'},
+  {name: 'Global Economy & Banking (Mastercard Stage)', tag: 'REAL · media prioridad', priority: 'med', desc: 'World Bank, EBRD, Erste Group, Santander, Unicredit. Financiadores de los promotores inmobiliarios que son clientes de Orona.', fit: 'Contactos de segundo grado'},
+  {name: 'AI Track (Stage 1 Día 2)', tag: 'REAL · media prioridad', priority: 'med', desc: 'Agentic AI, Booksy/Allegro/Salesforce, Joe Schoendorf (Accel), Anne Applebaum. Transformación organizativa + geopolítica.', fit: 'Eloi personal + transformación'},
+  {name: 'Future Geopolitics (Stage 3)', tag: 'REAL · media prioridad', priority: 'med', desc: 'Timothy Snyder, Peter Pomerantsev, Alexander Soros, Rafał Trzaskowski también aquí. Contexto geopolítico CEE.', fit: 'Eloi personal · contexto'},
+  {name: 'Green Economy + Energy (Stage 6)', tag: 'REAL · baja prioridad', priority: 'low', desc: 'Sostenibilidad, transición verde, nuclear, energías renovables. Tangencial para Orona.', fit: 'Bajo · skip salvo oportunidad'},
+  // TRACKS QUE PLANEAMOS Y NO EXISTEN
+  {name: 'Industry 5.0 — NO EXISTE en agenda real', tag: '⚠ Planificado · no existe', priority: 'new', desc: 'Este track fue anunciado como temática pero no aparece como stage separado en la agenda publicada. El equivalente más cercano es Urban Next + Industry & Space.', fit: '→ Sustituido por Urban Next'},
+  {name: 'Invisible Innovation — NO EXISTE en agenda real', tag: '⚠ Planificado · no existe', priority: 'new', desc: 'Otro track anunciado como temática pero ausente de la agenda. Sin sesiones identificadas bajo este nombre.', fit: '→ Sustituido por AI Stage'},
+  {name: 'From Workforce to Skillsforce — NO EXISTE como stage', tag: '⚠ Planificado · no existe', priority: 'new', desc: 'La temática existe bajo "Future skills" en Industry Stage (Día 2) y bajo Inclusive Future, pero no como stage dedicado.', fit: '→ Future skills en Industry Stage Día 2'},
+  {name: 'Cybersecurity + Defence (Stage 4+5 Día 1)', tag: 'REAL · no relevante', priority: 'low', desc: 'Ciberguerra, defensa nacional, drones, infraestructura crítica. Ponentes militares y gubernamentales. No alineado con objetivos Orona.', fit: 'Skip completo'},
+  {name: 'Mental Health & Wellbeing (Stage 5)', tag: 'REAL · no relevante', priority: 'low', desc: 'Salud mental, bienestar, familia, dopamina. No relevante para objetivos comerciales.', fit: 'Skip completo'},
+  {name: 'Cancer Research + Health & Longevity (Stage 6 Día 2)', tag: 'REAL · nuevo 2026', priority: 'new', desc: 'Track nuevo en 2026. Oncología, longevidad, microbioma. No relevante para Orona.', fit: 'Skip completo'},
+  {name: 'Sports & Tourism Marketing (Stage 7 Día 2)', tag: 'REAL · no relevante', priority: 'low', desc: 'Simona Halep, Michał Kubiak, Andrzej Bargiel. No relevante.', fit: 'Skip completo'},
+];
+
+const speakers = [
+  // REAL CONFIRMED SPEAKERS — RANKED BY RELEVANCE FOR ELOI+ORONA
+  {name: 'Daron Acemoğlu', role: 'Nobel Prize Economics 2024 · MIT · keynote apertura Día 1 · 10:00'},
+  {name: 'Mati Staniszewski', role: 'Co·founder ElevenLabs (>$1B val) · Endeavor Poland · keynote apertura Día 2 · 09:50'},
+  {name: 'Scott Galloway', role: 'NYU Stern · keynote "Algebra of Happiness" · Día 1 · 18:00'},
+  {name: 'Joe Schoendorf', role: 'Partner Accel Partners (Spotify, Slack) · keynote Día 2 · 11:45'},
+  {name: 'Rafał Trzaskowski', role: 'Alcalde Varsovia · Urban Next Stage · Día 1 · 13:15 · objetivo Orona'},
+  {name: 'Peter Bosek', role: 'CEO Erste Group · Main Stage · Día 1 · 11:20 · financia promotores inmobiliarios CEE'},
+  {name: 'Wojciech Balczun', role: 'Minister Aktywów Państwowych (Activos del Estado) · 11:05 · objetivo sector público'},
+  {name: 'Andrzej Domański', role: 'Minister Finansów i Gospodarki (Finanzas) · 11:35 · objetivo sector público'},
+  {name: 'Jon Huntsman', role: 'VP Mastercard · ex-Gobernador Utah · ex-Embajador EE.UU. · Día 1 · 10:45'},
+  {name: 'Kristalina Georgieva', role: 'Managing Director IMF · Stage 1 Día 1 · 14:20'},
+  {name: 'Martin Wolf', role: 'Chief Economics Commentator · Financial Times · Días 1 y 2'},
+  {name: 'Marcin Karasiński', role: 'CEO PKP Intercity · Urban Next Stage · Día 1 · 14:10 · cliente potencial Orona'},
+  {name: 'Jacek Jaśkowiak', role: 'Alcalde Poznań · Industry Stage Día 2 · 13:45 · objetivo sector público local'},
+  {name: 'Justin Trudeau', role: 'Ex-Primer Ministro Canadá · Main Stage · CIERRA Día 2 · 17:05 [fuera de tu horario]'},
+  {name: 'Anne Applebaum', role: 'The Atlantic · AI Stage Día 2 · 14:45 · geopolítica + democracia'},
+  {name: 'Amal Clooney', role: 'Abogada derechos humanos · Main Stage Día 1 · 12:00'},
+  {name: 'Timothy Snyder', role: 'Yale/Harvard · "A World in Entropy" · Future Geopolitics · Días 1 y 2'},
+];
+
+const alternatives = [
+  {time: '10:00', dur: 'Día 1', chosen: {title: 'Daron Acemoğlu keynote "Who Gains, Who Loses?" (Main Stage)', reason: 'Nobel Economics 2024 · apertura del evento · primera fila Executive · presencia visible máxima'}, alt: {title: 'Ir directamente al Speakers Lounge', reason: 'El Lounge a las 10:00 está vacío · los ponentes están en escena · momento incorrecto'}},
+  {time: '11:05', dur: 'Día 1', chosen: {title: 'Bloque ministros (Balczun + Bosek + Domański)', reason: 'Objetivo 2 (sector público) · los tres en 45 minutos · densidad máxima de contactos públicos del evento'}, alt: {title: 'Industry 5.0 / Invisible Innovation', reason: 'Estos tracks NO EXISTEN en la agenda real 2026 — error de planificación corregido'}},
+  {time: '13:15', dur: 'Día 1', chosen: {title: 'Urban Next: Trzaskowski + Grądzki + PKP Intercity (3 sesiones consecutivas)', reason: 'Alcalde Varsovia + Ayuntamiento + PKP en 75 minutos · objetivo 1+2 concentrados · MEJOR BLOQUE DEL DÍA PARA ORONA'}, alt: {title: 'Impact & Mastercard Stage "New economic playbook" (World Bank, EBRD)', reason: 'Contactos financieros de segundo grado para Orona · menos directo que hablar con el ayuntamiento de Varsovia'}},
+  {time: '16:00', dur: 'Día 1', chosen: {title: 'Jeff Koons panel "Between the Canon and Pop Culture" (Main Stage)', reason: 'Sala llena 400-500 personas · oportunidad de pregunta para visibilidad · objetivo 3'}, alt: {title: 'Future Geopolitics "Europe 2035" (Stage 3)', reason: 'Interesante intelectualmente pero sin oportunidad de visibilidad comparable'}},
+  {time: '18:00', dur: 'Día 1', chosen: {title: 'Scott Galloway keynote "Algebra of Happiness"', reason: 'Mejor speaker de tarde · material conversacional para el cóctel · Mati Staniszewski entra a las 18:45'}, alt: {title: 'Ir directamente al cóctel de las 19:00', reason: 'Llegas demasiado temprano y sin material conversacional del día'}},
+  {time: '09:50', dur: 'Día 2', chosen: {title: 'Mati Staniszewski keynote "Breaking the sound barrier" (Main Stage)', reason: 'Conexión directa con Endeavor dinner del 12 mayo · primer re-encuentro del día 2 · obligatorio'}, alt: {title: 'Cualquier sesión paralela', reason: 'No existe alternativa válida si Mati estuvo en el dinner'}},
+  {time: '11:45', dur: 'Día 2', chosen: {title: 'Joe Schoendorf (Accel) keynote "Architects of the new era"', reason: 'Accel busca directivos operacionales para portfolio europeo · material de conversación para Speakers Lounge'}, alt: {title: 'AI Stage "Agentic AI: rebuild your organization"', reason: 'Allegro, Salesforce, AWS · interesante pero menos relevante para el perfil NED de Eloi'}},
+  {time: '13:25', dur: 'Día 2 (Opción B)', chosen: {title: 'Industry Stage: Future skills + Alcalde Poznań', reason: 'Workforce challenge de Orona + contacto municipal local · objetivo 2 en versión Poznań'}, alt: {title: 'AI Stage o Speakers Lounge', reason: 'Ambas válidas si ya tienes contactos suficientes del día 1'}},
+];
+
+// ============ RENDER ============
+function renderSessions(containerId, sessions) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = sessions.map((s, i) => `
+    <div class="session" data-idx="${i}">
+      <div class="session-time">${s.time}<span class="duration">${s.dur}</span></div>
+      <div class="session-body">
+        <span class="session-tag tag-${s.type}">${s.tag}</span>
+        <div class="session-title">${s.title}</div>
+        <div class="session-summary">${s.summary}</div>
+        <div class="session-why"><strong>Por qué este bloque</strong>${s.why}</div>
+        <div class="session-alt"><strong>Alternativa descartada</strong>${s.alt}</div>
+      </div>
+      <span class="expand-icon">+</span>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.session').forEach(el => {
+    el.addEventListener('click', () => el.classList.toggle('expanded'));
+  });
+}
+
+function renderTracks() {
+  const container = document.getElementById('tracks-grid');
+  container.innerHTML = tracks.map(t => {
+    const cls = t.priority === 'high' ? 'priority' : (t.priority === 'new' ? 'new' : '');
+    const fitCls = t.priority === 'high' ? 'high' : (t.priority === 'med' ? 'med' : 'low');
+    return `
+      <div class="track-card ${cls}">
+        <div class="track-tag">${t.tag}</div>
+        <div class="track-name">${t.name}</div>
+        <div class="track-desc">${t.desc}</div>
+        <div class="track-fit ${fitCls}">→ ${t.fit}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderSpeakers() {
+  const container = document.getElementById('speakers-grid');
+  container.innerHTML = speakers.map(s => `
+    <div class="speaker">
+      <div class="speaker-name">${s.name}</div>
+      <div class="speaker-role">${s.role}</div>
+    </div>
+  `).join('');
+}
+
+function renderAlternatives() {
+  const container = document.getElementById('alt-grid');
+  container.innerHTML = alternatives.map(a => `
+    <div class="alt-row">
+      <div class="alt-time">${a.time}<small>${a.dur}</small></div>
+      <div class="alt-col chosen">
+        <div class="alt-col-label">→ Eliges esto</div>
+        <div class="alt-col-title">${a.chosen.title}</div>
+        <div class="alt-col-reason">${a.chosen.reason}</div>
+      </div>
+      <div class="alt-col alt">
+        <div class="alt-col-label">× Descartas esto</div>
+        <div class="alt-col-title">${a.alt.title}</div>
+        <div class="alt-col-reason">${a.alt.reason}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ============ TABS ============
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
+});
+
+// ============ COUNTDOWN ============
+function updateCountdown() {
+  const eventDate = new Date('2026-05-13T09:00:00');
+  const now = new Date();
+  const diff = eventDate - now;
+  const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  document.getElementById('cd-days').textContent = days;
+}
+
+// ============ INIT ============
+renderSessions('day0', day0Sessions);
+renderSessions('day1', day1Sessions);
+renderSessions('day2', day2Sessions);
+renderTracks();
+renderSpeakers();
+renderAlternatives();
+updateCountdown();
+</script>
+
 </body>
 </html>
