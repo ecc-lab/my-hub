@@ -733,7 +733,7 @@ function M0(){
         <div style={{width:56,height:56,borderRadius:14,background:`linear-gradient(135deg,${C.gn},#15803d)`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:28,fontWeight:800,color:C.w}}>V</span></div>
         <div><h2 style={{fontSize:22,fontWeight:700}}>Tu dinero, tus reglas 💪</h2><p style={{fontSize:13,color:C.td}}>Resumen de tu vida financiera. Cada número cuenta una historia.</p></div>
       </div>
-      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"10px 14px",borderRadius:10,background:"rgba(255,255,255,.6)",border:`1px solid ${C.bd}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",padding:"10px 14px",borderRadius:10,background:C.sa,border:`1px solid ${C.bd}`}}>
         <span style={{fontSize:13,fontWeight:600,color:C.td}}>📅 Año:</span>
         {YEARS.map(y=><Bt key={y} active={selYear===y} onClick={()=>setYear(y)} style={{padding:"5px 14px",fontSize:12,fontWeight:selYear===y?700:400}}>{y}</Bt>)}
       </div>
