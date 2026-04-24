@@ -25,7 +25,7 @@
   --c-rd:#dc2626;--c-rdd:rgba(220,38,38,0.08);--c-rb:rgba(220,38,38,0.25);
   --c-am:#d97706;--c-amd:rgba(217,119,6,0.08);
   --c-bl:#2563eb;--c-bld:rgba(37,99,235,0.08);--c-blb:rgba(37,99,235,0.25);
-  --c-pu:#7c3aed;
+  --c-pu:#7c3aed;--c-put:rgba(124,58,237,0.06);--c-put2:rgba(124,58,237,0.10);
 }
 [data-theme="dark"]{
   --c-bg:#0b1220;--c-sf:#111a2e;--c-sa:#0f172a;--c-bd:#1e293b;--c-bh:#334155;
@@ -35,7 +35,7 @@
   --c-rd:#f87171;--c-rdd:rgba(248,113,113,0.1);--c-rb:rgba(248,113,113,0.25);
   --c-am:#fbbf24;--c-amd:rgba(251,191,36,0.1);
   --c-bl:#60a5fa;--c-bld:rgba(96,165,250,0.1);--c-blb:rgba(96,165,250,0.25);
-  --c-pu:#a78bfa;
+  --c-pu:#a78bfa;--c-put:rgba(167,139,250,0.14);--c-put2:rgba(167,139,250,0.20);
 }
 html,body{background:var(--c-bg);color:var(--c-tx);}
 [data-theme="dark"] body{background:var(--c-bg)!important;}
@@ -62,7 +62,7 @@ html,body{background:var(--c-bg);color:var(--c-tx);}
 .vdb-toast.err{border-left:3px solid var(--c-rd);}
 .vdb-toast.info{border-left:3px solid var(--c-ac);}
 .vdb-toast button{background:transparent;border:none;color:var(--c-ac);cursor:pointer;font-weight:600;font-size:12px;padding:4px 8px;border-radius:4px;}
-.vdb-toast button:hover{background:rgba(14,165,233,0.1);}
+.vdb-toast button:hover{background:var(--c-ad);}
 @keyframes vdbSlideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 </style>
 <body>
@@ -108,7 +108,7 @@ window._vdbLocalOnly=['vdb_theme'];
 
 <script type="text/babel">
 const{useState,useMemo,useEffect,useCallback,useRef,createContext,useContext}=React;
-const C={bg:"var(--c-bg)",sf:"var(--c-sf)",sa:"var(--c-sa)",bd:"var(--c-bd)",bh:"var(--c-bh)",ac:"var(--c-ac)",ad:"var(--c-ad)",ag:"var(--c-ag)",gn:"var(--c-gn)",gd:"var(--c-gd)",gb:"var(--c-gb)",rd:"var(--c-rd)",rdd:"var(--c-rdd)",rb:"var(--c-rb)",am:"var(--c-am)",amd:"var(--c-amd)",bl:"var(--c-bl)",bld:"var(--c-bld)",blb:"var(--c-blb)",tx:"var(--c-tx)",td:"var(--c-td)",tm:"var(--c-tm)",w:"var(--c-w)",pu:"var(--c-pu)",ac30:"var(--c-ac30)",ac40:"var(--c-ac40)"};
+const C={bg:"var(--c-bg)",sf:"var(--c-sf)",sa:"var(--c-sa)",bd:"var(--c-bd)",bh:"var(--c-bh)",ac:"var(--c-ac)",ad:"var(--c-ad)",ag:"var(--c-ag)",gn:"var(--c-gn)",gd:"var(--c-gd)",gb:"var(--c-gb)",rd:"var(--c-rd)",rdd:"var(--c-rdd)",rb:"var(--c-rb)",am:"var(--c-am)",amd:"var(--c-amd)",bl:"var(--c-bl)",bld:"var(--c-bld)",blb:"var(--c-blb)",tx:"var(--c-tx)",td:"var(--c-td)",tm:"var(--c-tm)",w:"var(--c-w)",pu:"var(--c-pu)",put:"var(--c-put)",put2:"var(--c-put2)",ac30:"var(--c-ac30)",ac40:"var(--c-ac40)"};
 const MO=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 // Global value helpers — respect explicit 0 in amounts/real
 const valInc=(r,m)=>r.amounts?.[m]!=null?r.amounts[m]:(r.base??0);
@@ -690,7 +690,7 @@ function MisDatosCard(){
       <button onClick={()=>exportToExcel(false)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.gn}`,background:C.gd,color:C.gn,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📥 Descargar plantilla<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel vacío con la estructura</div></button>
       <button onClick={()=>fileRef.current?.click()} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.ac}`,background:C.ad,color:C.ac,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📤 Importar Excel<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Sustituye tus datos actuales</div></button>
       <input type="file" ref={fileRef} accept=".xlsx,.xls" onChange={handleImport} style={{display:"none"}}/>
-      <button onClick={()=>jsonRef.current?.click()} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.pu}`,background:"rgba(124,58,237,0.06)",color:C.pu,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📋 Importar JSON<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Patrimonio desde JSON maestro</div></button>
+      <button onClick={()=>jsonRef.current?.click()} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.pu}`,background:C.put,color:C.pu,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>📋 Importar JSON<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Patrimonio desde JSON maestro</div></button>
       <input type="file" ref={jsonRef} accept=".json" onChange={handleJsonImport} style={{display:"none"}}/>
       <button onClick={()=>exportToExcel(true)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.bl}`,background:C.bld,color:C.bl,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>💾 Backup ahora<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Excel con TODOS tus datos</div></button>
       <button onClick={wipeAllData} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${C.rd}`,background:C.rdd,color:C.rd,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif",textAlign:"left"}}>🗑️ Borrar todo<div style={{fontSize:10,color:C.tm,fontWeight:400,marginTop:2}}>Empezar de cero</div></button>
@@ -1467,7 +1467,7 @@ function M2(){
             <div style={{fontSize:15,fontWeight:700,color:C.ac,...mn}}>{fmt(liqAmt)} zł</div>
             <div style={{fontSize:10,color:C.tm,...mn}}>{fP(liqPct)}</div>
           </div>
-          <div style={{flex:1,padding:10,borderRadius:8,background:"rgba(124,58,237,0.06)",textAlign:"center",borderLeft:`3px solid ${C.pu}`}}>
+          <div style={{flex:1,padding:10,borderRadius:8,background:C.put,textAlign:"center",borderLeft:`3px solid ${C.pu}`}}>
             <div style={{fontSize:9,color:C.tm}}>Ilíquido</div>
             <div style={{fontSize:15,fontWeight:700,color:C.pu,...mn}}>{fmt(illiqAmt)} zł</div>
             <div style={{fontSize:10,color:C.tm,...mn}}>{fP(illiqPct)}</div>
@@ -1661,7 +1661,7 @@ function M3(){
             <div style={{padding:10,borderRadius:8,background:C.sf,textAlign:"center"}}><div style={{fontSize:9,color:C.tm}}>Entrada necesaria</div><div style={{fontSize:18,fontWeight:700,color:C.am,...mn}}>{fmt(entradaNec)} zł</div></div>
           </div>
         </div>
-        <Bt onClick={()=>sSavedHip({date:new Date().toLocaleDateString("pl-PL"),propPrice,dpPct,amt,tin,yrs,cuota:Math.round(cuota),ratio:pct,maxHip:Math.round(maxHip),maxProp:Math.round(maxProperty)})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
+        <Bt onClick={()=>sSavedHip({date:new Date().toLocaleDateString("pl-PL"),propPrice,dpPct,amt,tin,yrs,cuota:Math.round(cuota),ratio:pct,maxHip:Math.round(maxHip),maxProp:Math.round(maxProperty)})} style={{background:C.put2,borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
         {savedHip&&<span style={{fontSize:11,color:C.pu,marginLeft:10}}>Guardado: {savedHip.date}</span>}
       </div>})()}
     </Cd>
@@ -1914,7 +1914,7 @@ function M6(){
       {yLabs.map(v=><g key={v}><line x1={pX} y1={yP(v)} x2={width-20} y2={yP(v)} stroke={C.bd} strokeWidth={.5} strokeDasharray="3 3"/><text x={pX-6} y={yP(v)+4} textAnchor="end" fill={C.tm} fontSize={9} {...mn}>{fmtY(v)}zł</text></g>)}
       <line x1={xP(accY)} y1={pY} x2={xP(accY)} y2={pY+cH} stroke={C.am} strokeWidth={1.5} strokeDasharray="5 3"/>
       <text x={xP(accY)+4} y={pY+13} fill={C.am} fontSize={10} fontWeight={600}>Jubilación</text>
-      {mkA(10,90,"#0ea5e9",.06)}{mkA(25,75,"#0ea5e9",.12)}
+      {mkA(10,90,C.ac,.06)}{mkA(25,75,C.ac,.12)}
       <path d={detPath.map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join("")} fill="none" stroke={C.am} strokeWidth={2} strokeDasharray="8 4" opacity={.8}/>
       <path d={bands[50].map((v,i)=>`${i===0?"M":"L"}${xP(i)} ${yP(v)}`).join("")} fill="none" stroke={C.ac} strokeWidth={2.5} strokeLinecap="round"/>
       {Array.from({length:Math.min(totY+1,12)},(_,i)=>Math.round(i*totY/11)).map(yr=><text key={yr} x={xP(yr)} y={height-5} textAnchor="middle" fill={C.tm} fontSize={9}>{age+yr}</text>)}
@@ -1954,7 +1954,7 @@ function M6(){
       </div>
       <div style={{marginTop:18,display:"flex",gap:10,flexWrap:"wrap"}}>
         <PB onClick={run} disabled={running}>{running?"⏳ Simulando...":"🎲 Simular Jubilación"}</PB>
-        {res&&<Bt onClick={()=>setSG({date:new Date().toLocaleDateString("pl-PL"),retMed:res.retMed,surv:res.surv,mContr,mWith,age,retAge,lifeExp,meanR,vol})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar Objetivo</Bt>}
+        {res&&<Bt onClick={()=>setSG({date:new Date().toLocaleDateString("pl-PL"),retMed:res.retMed,surv:res.surv,mContr,mWith,age,retAge,lifeExp,meanR,vol})} style={{background:C.put2,borderColor:C.pu,color:C.pu}}>💾 Guardar Objetivo</Bt>}
         {savedGoal&&<span style={{fontSize:11,color:C.pu,alignSelf:"center"}}>Guardado: {savedGoal.date}</span>}
       </div>
     </Cd>
@@ -2050,7 +2050,7 @@ function M7(){
         {adjInf&&<input type="number" value={infRate} onChange={e=>{e.stopPropagation();sInfR(Number(e.target.value)||0)}} onClick={e=>e.stopPropagation()} step="0.5" style={{width:60,fontSize:12}}/>}
       </div>
       <div style={{marginTop:14}}>
-        <Bt onClick={()=>setSavedPlan({date:new Date().toLocaleDateString("pl-PL"),targetPat:Math.round(targetPat),neededGrowth})} style={{background:"rgba(124,58,237,0.08)",borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
+        <Bt onClick={()=>setSavedPlan({date:new Date().toLocaleDateString("pl-PL"),targetPat:Math.round(targetPat),neededGrowth})} style={{background:C.put2,borderColor:C.pu,color:C.pu}}>💾 Guardar escenario</Bt>
         {savedPlan&&<span style={{fontSize:11,color:C.pu,marginLeft:10}}>Guardado: {savedPlan.date}</span>}
       </div>
     </Cd>
